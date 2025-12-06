@@ -1,0 +1,212 @@
+name: ExtraPermissions
+version: 2.0.0
+main: io.github.soul4723.extrapermissions.ExtraPermissions
+api-version: '1.20'
+author: Soul4723
+description: Granular permission control for vanilla Minecraft commands and features
+website: https://github.com/Soul4723
+
+depend: [CommandAPI]
+softdepend: [LuckPerms]
+
+permissions:
+  extrapermissions.use:
+    description: Use ExtraPermissions commands
+    default: op
+  extrapermissions.reload:
+    description: Reload ExtraPermissions configuration
+    default: op
+  extrapermissions.admin:
+    description: Access ExtraPermissions admin features
+    default: op
+    
+  # Command permissions
+  minecraft.command.gamemode:
+    description: Use /gamemode command
+    default: false
+  minecraft.command.gamemode.survival:
+    description: Set gamemode to survival
+    default: false
+  minecraft.command.gamemode.creative:
+    description: Set gamemode to creative
+    default: false
+  minecraft.command.gamemode.adventure:
+    description: Set gamemode to adventure
+    default: false
+  minecraft.command.gamemode.spectator:
+    description: Set gamemode to spectator
+    default: false
+  minecraft.command.gamemode.survival.other:
+    description: Set other players to survival mode
+    default: false
+  minecraft.command.gamemode.creative.other:
+    description: Set other players to creative mode
+    default: false
+  minecraft.command.gamemode.adventure.other:
+    description: Set other players to adventure mode
+    default: false
+  minecraft.command.gamemode.spectator.other:
+    description: Set other players to spectator mode
+    default: false
+  minecraft.command.teleport:
+    description: Use /teleport command
+    default: false
+  minecraft.command.teleport.targets:
+    description: Teleport to player targets
+    default: false
+  minecraft.command.teleport.targets.location:
+    description: Teleport to coordinates
+    default: false
+  minecraft.command.teleport.targets.location.rotation:
+    description: Teleport with rotation
+    default: false
+  minecraft.command.time:
+    description: Use /time command
+    default: false
+  minecraft.command.weather:
+    description: Use /weather command
+    default: false
+  minecraft.command.say:
+    description: Use /say command
+    default: false
+  minecraft.command.give:
+    description: Use /give command
+    default: false
+  minecraft.command.ban:
+    description: Use /ban command
+    default: false
+  minecraft.command.kick:
+    description: Use /kick command
+    default: false
+  minecraft.command.op:
+    description: Use /op command
+    default: false
+  minecraft.command.deop:
+    description: Use /deop command
+    default: false
+    
+  # Selector permissions
+  minecraft.selector:
+    description: Use entity selectors in commands
+    default: false
+  minecraft.selector.entity.a:
+    description: Select all players
+    default: false
+  minecraft.selector.entity.e:
+    description: Select non-player entities
+    default: false
+  minecraft.selector.entity.p:
+    description: Select nearest player
+    default: false
+  minecraft.selector.entity.r:
+    description: Select random player
+    default: false
+  minecraft.selector.entity.s:
+    description: Select self
+    default: false
+  minecraft.selector.player.a:
+    description: Select all players
+    default: false
+  minecraft.selector.player.e:
+    description: Select entities
+    default: false
+  minecraft.selector.player.p:
+    description: Select nearest player
+    default: false
+  minecraft.selector.player.r:
+    description: Select random player
+    default: false
+  minecraft.selector.self.a:
+    description: Select all
+    default: false
+  minecraft.selector.self.e:
+    description: Select entities
+    default: false
+  minecraft.selector.self.p:
+    description: Select players
+    default: false
+  minecraft.selector.self.r:
+    description: Select random
+    default: false
+  minecraft.selector.self.s:
+    description: Select self
+    default: false
+    
+  # Bypass permissions
+  minecraft.bypass.spawn-protection:
+    description: Build inside spawn protection
+    default: false
+  minecraft.bypass.force-gamemode:
+    description: Bypass forced gamemode
+    default: false
+  minecraft.bypass.move-speed.player:
+    description: Bypass player movement speed limit
+    default: false
+  minecraft.bypass.chat-speed:
+    description: Bypass chat speed kick
+    default: false
+  minecraft.bypass.whitelist:
+    description: Bypass server whitelist
+    default: false
+  minecraft.bypass.player-limit:
+    description: Bypass server player limit
+    default: false
+    
+  # Admin permissions
+  minecraft.adminbroadcast.receive:
+    description: Receive command feedback
+    default: false
+  minecraft.debug_stick.use.block:
+    description: Use debug stick on blocks
+    default: false
+  minecraft.debug_chart:
+    description: View debug chart
+    default: false
+  minecraft.query.block:
+    description: Query blocks with NBT data
+    default: false
+  minecraft.query.entity:
+    description: Query entities with NBT data
+    default: false
+  minecraft.load.block:
+    description: Load blocks with NBT data
+    default: false
+  minecraft.load.entity:
+    description: Load entities with NBT data
+    default: false
+  minecraft.operator_block.command_block.place:
+    description: Place command blocks
+    default: false
+  minecraft.operator_block.command_block.view:
+    description: View command block contents
+    default: false
+  minecraft.operator_block.command_block.edit:
+    description: Edit command block contents
+    default: false
+  minecraft.operator_block.command_block.break:
+    description: Break command blocks
+    default: false
+  minecraft.operator_block.jigsaw.place:
+    description: Place jigsaw blocks
+    default: false
+  minecraft.operator_block.jigsaw.view:
+    description: View jigsaw blocks
+    default: false
+  minecraft.operator_block.jigsaw.edit:
+    description: Edit jigsaw blocks
+    default: false
+  minecraft.operator_block.jigsaw.break:
+    description: Break jigsaw blocks
+    default: false
+  minecraft.operator_block.structure_block.place:
+    description: Place structure blocks
+    default: false
+  minecraft.operator_block.structure_block.view:
+    description: View structure blocks
+    default: false
+  minecraft.operator_block.structure_block.edit:
+    description: Edit structure blocks
+    default: false
+  minecraft.operator_block.structure_block.break:
+    description: Break structure blocks
+    default: false
