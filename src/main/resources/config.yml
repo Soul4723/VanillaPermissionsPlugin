@@ -1,45 +1,6 @@
 # ExtraPermissions Configuration
-# Granular permission control for vanilla Minecraft commands
+# Toggle different permission enforcement features
 
-luckperms:
-  integration:
-    enabled: true
-    warning_message: "LuckPerms is required for ExtraPermissions to function"
-
-# Permission mappings for vanilla commands
-permissions:
-  # Command permissions
-  gamemode:
-    survival: "minecraft.command.gamemode.survival"
-    creative: "minecraft.command.gamemode.creative"
-    adventure: "minecraft.command.gamemode.adventure"
-    spectator: "minecraft.command.gamemode.spectator"
-  
-  teleport:
-    self: "minecraft.command.teleport"
-    others: "minecraft.command.teleport.targets"
-    coordinates: "minecraft.command.teleport.targets.location"
-  
-  # Selector permissions
-  selectors:
-    all: "minecraft.selector"
-    player: "minecraft.selector.player"
-    entity: "minecraft.selector.entity"
-  
-  # Admin permissions
-  admin:
-    broadcast: "minecraft.adminbroadcast.receive"
-    debug_stick: "minecraft.debug_stick.use.block"
-    operator_blocks: "minecraft.operator_block"
-
-# Messages
-messages:
-  no_permission: "§cYou don't have permission to use this command!"
-  reload_success: "§aExtraPermissions reloaded!"
-  luckperms_required: "§cExtraPermissions requires LuckPerms to function!"
-  luckperms_missing: "§cLuckPerms not found - plugin functionality limited"
-
-# Feature toggles
 features:
   command_permissions: true
   selector_permissions: true

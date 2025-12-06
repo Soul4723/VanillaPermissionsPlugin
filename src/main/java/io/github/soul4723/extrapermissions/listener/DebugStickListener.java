@@ -8,6 +8,10 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 
+/**
+ * Listener for handling debug stick usage permissions.
+ * Controls which players can use debug sticks on specific block types.
+ */
 public class DebugStickListener implements Listener {
     
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)

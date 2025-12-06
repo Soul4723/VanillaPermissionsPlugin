@@ -8,11 +8,6 @@ import org.bukkit.entity.Player;
 public class TeleportCommandHandler {
     
     public static void handleTeleportCommand(CommandSender sender, Object[] args) {
-        if (!PermissionManager.hasPermission(sender, "minecraft.command.teleport")) {
-            sender.sendMessage("§cYou don't have permission to use /teleport!");
-            return;
-        }
-        
         if (!(sender instanceof Player)) {
             sender.sendMessage("§cThis command can only be run by players!");
             return;
@@ -20,9 +15,15 @@ public class TeleportCommandHandler {
         
         Player player = (Player) sender;
         
-        // Check if first argument is a player (EntitySelectorArgument would provide Player object)
-        if (args[0] instanceof Player) {
+        // Handle player teleportation
+        if (args.length >= 1 && args[0] instanceof Player) {
             Player target = (Player) args[0];
+            if (target == null) {
+                player.sendMessage("§cPlayer not found!");
+                return;
+            }
+            
+            // Check permission for teleporting to players
             if (!PermissionManager.hasPermission(player, "minecraft.command.teleport.targets")) {
                 player.sendMessage("§cYou don't have permission to teleport to players!");
                 return;
@@ -35,6 +36,7 @@ public class TeleportCommandHandler {
         
         // Handle coordinate teleportation
         if (args.length >= 3) {
+            // Check permission for teleporting to coordinates
             if (!PermissionManager.hasPermission(player, "minecraft.command.teleport.targets.location")) {
                 player.sendMessage("§cYou don't have permission to teleport to coordinates!");
                 return;
@@ -57,9 +59,13 @@ public class TeleportCommandHandler {
                 
                 player.teleport(location);
                 player.sendMessage("§aTeleported to " + formatLocation(location));
+            } catch (NumberFormatException e) {
+                player.sendMessage("§cInvalid coordinates! Use numbers for x, y, z values.");
             } catch (Exception e) {
-                player.sendMessage("§cInvalid coordinates!");
+                player.sendMessage("§cError during teleportation: " + e.getMessage());
             }
+        } else {
+            player.sendMessage("§cUsage: /tp <player> or /tpcoords <x> <y> <z> [yaw] [pitch]");
         }
     }
     

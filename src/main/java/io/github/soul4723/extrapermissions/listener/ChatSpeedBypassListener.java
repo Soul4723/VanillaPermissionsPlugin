@@ -7,14 +7,17 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ChatSpeedBypassListener implements Listener {
     
-    private final Map<UUID, Long> lastChatTime = new HashMap<>();
+    private final Map<UUID, Long> lastChatTime = new ConcurrentHashMap<>();
     private static final long DEFAULT_CHAT_COOLDOWN = 1000; // 1 second default
+    private static final long CLEANUP_INTERVAL = 300000; // 5 minutes
+    private static final long MAX_AGE = 600000; // 10 minutes
+    private long lastCleanup = System.currentTimeMillis();
     
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onAsyncPlayerChat(AsyncPlayerChatEvent event) {
@@ -22,6 +25,9 @@ public class ChatSpeedBypassListener implements Listener {
         if (player == null) {
             return;
         }
+        
+        // Periodic cleanup to prevent memory leaks
+        cleanupOldEntries();
 
         // Check if player has chat speed bypass permission
         if (PermissionManager.hasPermission(player, "minecraft.bypass.chat-speed")) {
@@ -67,5 +73,15 @@ public class ChatSpeedBypassListener implements Listener {
         }
         
         lastChatTime.put(playerId, currentTime);
+    }
+    
+    private void cleanupOldEntries() {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastCleanup < CLEANUP_INTERVAL) {
+            return; // Don't cleanup too frequently
+        }
+        
+        lastCleanup = currentTime;
+        lastChatTime.entrySet().removeIf(entry -> currentTime - entry.getValue() > MAX_AGE);
     }
 }

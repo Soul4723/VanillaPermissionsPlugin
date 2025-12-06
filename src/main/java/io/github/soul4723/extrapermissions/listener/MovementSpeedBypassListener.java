@@ -8,31 +8,35 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerVelocityEvent;
 
+/**
+ * Listener for handling movement speed bypass permissions.
+ * Allows players with appropriate permissions to bypass movement speed restrictions.
+ */
 public class MovementSpeedBypassListener implements Listener {
     
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPlayerMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();
+        if (player == null) return;
 
-        // Bypass movement speed limits for players with permission
-        if (PermissionManager.hasPermission(player, "minecraft.bypass.move-speed.player")) {
-            // Allow faster movement by not restricting move events
-            // This allows players to move at speeds beyond normal limits
-            // The actual speed modification would be done by other plugins or server settings
+        // Check for any movement speed bypass permission
+        boolean hasGeneralBypass = PermissionManager.hasPermission(player, "minecraft.bypass.move-speed.player");
+        boolean hasFlyingBypass = player.isFlying() && PermissionManager.hasPermission(player, "minecraft.bypass.move-speed.flying");
+        boolean hasSprintingBypass = player.isSprinting() && PermissionManager.hasPermission(player, "minecraft.bypass.move-speed.sprinting");
+        
+        // If player has any bypass permission, allow movement
+        if (hasGeneralBypass || hasFlyingBypass || hasSprintingBypass) {
             return;
         }
         
-        // Additional bypass for flying speed
-        if (player.isFlying() && PermissionManager.hasPermission(player, "minecraft.bypass.move-speed.flying")) {
-            return;
-        }
-        
-        // Additional bypass for sprinting speed
-        if (player.isSprinting() && PermissionManager.hasPermission(player, "minecraft.bypass.move-speed.sprinting")) {
-            return;
-        }
+        // Note: Actual speed limiting logic would be implemented here
+        // This event currently serves as a permission hook
     }
     
+    /**
+     * Handle velocity events for players with bypass permissions
+     * @param event The velocity event
+     */
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPlayerVelocity(PlayerVelocityEvent event) {
         Player player = event.getPlayer();

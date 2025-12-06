@@ -1,7 +1,7 @@
 name: ExtraPermissions
 version: 2.0.0
 main: io.github.soul4723.extrapermissions.ExtraPermissions
-api-version: '1.20'
+api-version: '1.21'
 author: Soul4723
 description: Granular permission control for vanilla Minecraft commands and features
 website: https://github.com/Soul4723
@@ -142,8 +142,23 @@ permissions:
   minecraft.bypass.move-speed.player:
     description: Bypass player movement speed limit
     default: false
+  minecraft.bypass.move-speed.flying:
+    description: Bypass flying movement speed limit
+    default: false
+  minecraft.bypass.move-speed.sprinting:
+    description: Bypass sprinting movement speed limit
+    default: false
+  minecraft.bypass.move-speed.velocity:
+    description: Bypass velocity modification restrictions
+    default: false
   minecraft.bypass.chat-speed:
     description: Bypass chat speed kick
+    default: false
+  minecraft.bypass.chat-speed.global:
+    description: Bypass all chat speed limits globally
+    default: false
+  minecraft.bypass.chat-speed.reduced:
+    description: Bypass chat speed with reduced cooldown
     default: false
   minecraft.bypass.whitelist:
     description: Bypass server whitelist
@@ -167,6 +182,24 @@ permissions:
     default: false
   minecraft.query.entity:
     description: Query entities with NBT data
+    default: false
+  minecraft.nbt.query.block:
+    description: Query block NBT data
+    default: false
+  minecraft.nbt.query.item:
+    description: Query item NBT data
+    default: false
+  minecraft.nbt.modify.block:
+    description: Modify block NBT data
+    default: false
+  minecraft.nbt.modify.entity:
+    description: Modify entity NBT data
+    default: false
+  minecraft.nbt.load.block:
+    description: Load block NBT data during teleportation
+    default: false
+  minecraft.nbt.load.entity:
+    description: Load entity NBT data during teleportation
     default: false
   minecraft.load.block:
     description: Load blocks with NBT data

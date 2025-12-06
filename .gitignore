@@ -9,3 +9,5 @@ mvnw.cmd
 *.temp
 *.test
 *.log
+opencode.md
+ExtraPermissions.iml

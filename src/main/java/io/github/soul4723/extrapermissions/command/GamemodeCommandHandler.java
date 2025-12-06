@@ -7,39 +7,38 @@ import org.bukkit.entity.Player;
 public class GamemodeCommandHandler {
     
     public static void handleGamemodeCommand(CommandSender sender, Object[] args) {
-        if (!PermissionManager.hasPermission(sender, "minecraft.command.gamemode")) {
-            sender.sendMessage("§cYou don't have permission to use /gamemode!");
+        if (args.length == 0 || args[0] == null) {
+            sender.sendMessage("§cUsage: /gamemode <survival|creative|adventure|spectator> [player]");
             return;
         }
         
         String gamemode = args[0].toString().toLowerCase();
-        String permission = "minecraft.command.gamemode." + gamemode;
         
-        // Check if target player is provided (args[1] exists)
+        // Validate gamemode
+        try {
+            org.bukkit.GameMode.valueOf(gamemode.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            sender.sendMessage("§cInvalid gamemode: " + gamemode + ". Valid modes: survival, creative, adventure, spectator");
+            return;
+        }
+        
+        // Check if target player is provided
         if (args.length == 1) {
             // Self gamemode change
-            if (!PermissionManager.hasPermission(sender, permission)) {
-                sender.sendMessage("§cYou don't have permission to set gamemode to " + gamemode + "!");
-                return;
-            }
-            
             if (!(sender instanceof Player)) {
-                sender.sendMessage("§cThis command can only be run by players!");
+                sender.sendMessage("§cConsole must specify a target player!");
                 return;
             }
             
             Player player = (Player) sender;
-            try {
-                org.bukkit.GameMode gm = org.bukkit.GameMode.valueOf(gamemode.toUpperCase());
-                player.setGameMode(gm);
-                player.sendMessage("§aGamemode set to " + gamemode);
-            } catch (IllegalArgumentException e) {
-                sender.sendMessage("§cInvalid gamemode: " + gamemode);
-            }
-        } else if (args.length == 2) {
+            org.bukkit.GameMode gm = org.bukkit.GameMode.valueOf(gamemode.toUpperCase());
+            player.setGameMode(gm);
+            player.sendMessage("§aGamemode set to " + gamemode);
+            
+        } else if (args.length >= 2) {
             // Target player gamemode change
-            if (!PermissionManager.hasPermission(sender, "minecraft.command.gamemode.other")) {
-                sender.sendMessage("§cYou don't have permission to set other players' gamemode!");
+            if (!(args[1] instanceof Player)) {
+                sender.sendMessage("§cInvalid target! Must be a player.");
                 return;
             }
             
@@ -49,19 +48,23 @@ public class GamemodeCommandHandler {
                 return;
             }
             
-            if (!PermissionManager.hasPermission(sender, permission + ".other")) {
+            // Check if sender has permission to change other players' gamemode
+            if (!PermissionManager.hasPermission(sender, "minecraft.command.gamemode.other")) {
+                sender.sendMessage("§cYou don't have permission to set other players' gamemode!");
+                return;
+            }
+            
+            // Check specific gamemode permission for other players
+            String specificPermission = "minecraft.command.gamemode." + gamemode + ".other";
+            if (!PermissionManager.hasPermission(sender, specificPermission)) {
                 sender.sendMessage("§cYou don't have permission to set " + gamemode + " for other players!");
                 return;
             }
             
-            try {
-                org.bukkit.GameMode gm = org.bukkit.GameMode.valueOf(gamemode.toUpperCase());
-                target.setGameMode(gm);
-                sender.sendMessage("§aSet " + target.getName() + "'s gamemode to " + gamemode);
-                target.sendMessage("§aYour gamemode was set to " + gamemode + " by " + sender.getName());
-            } catch (IllegalArgumentException e) {
-                sender.sendMessage("§cInvalid gamemode: " + gamemode);
-            }
+            org.bukkit.GameMode gm = org.bukkit.GameMode.valueOf(gamemode.toUpperCase());
+            target.setGameMode(gm);
+            sender.sendMessage("§aSet " + target.getName() + "'s gamemode to " + gamemode);
+            target.sendMessage("§aYour gamemode was set to " + gamemode + " by " + sender.getName());
         }
     }
 }

@@ -1,26 +1,25 @@
 package io.github.soul4723.extrapermissions.command;
 
 import dev.jorel.commandapi.arguments.EntitySelectorArgument;
+import io.github.soul4723.extrapermissions.ExtraPermissions;
 import io.github.soul4723.extrapermissions.util.PermissionManager;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 public class BasicCommandHandlers {
     
-    public static void handleReload(CommandSender sender, Object[] args) {
-        if (!PermissionManager.hasPermission(sender, "extrapermissions.reload")) {
-            sender.sendMessage("§cYou don't have permission to reload ExtraPermissions!");
-            return;
+    public static void handleReload(CommandSender sender, Object[] args, ExtraPermissions plugin) {
+        if (plugin != null) {
+            plugin.reloadPluginConfig();
+            sender.sendMessage("§aExtraPermissions configuration reloaded!");
+            sender.sendMessage("§7Note: Some changes may require a full plugin restart to take effect.");
+        } else {
+            sender.sendMessage("§cError: Could not access ExtraPermissions plugin instance!");
         }
-
-        sender.sendMessage("§aExtraPermissions configuration reloaded!");
     }
     
     public static void handleCheck(CommandSender sender, Object[] args) {
-        if (!PermissionManager.hasPermission(sender, "extrapermissions.admin")) {
-            sender.sendMessage("§cYou don't have permission to check permissions!");
-            return;
-        }
         
         Player target = (Player) args[0];
         if (target == null) {
@@ -29,6 +28,38 @@ public class BasicCommandHandlers {
         }
         
         sender.sendMessage("§6Permissions for " + target.getName() + ":");
-        sender.sendMessage("§7- This is a placeholder for permission checking");
+        
+        // Check key ExtraPermissions permissions
+        String[] keyPermissions = {
+            "extrapermissions.use",
+            "extrapermissions.reload", 
+            "extrapermissions.admin",
+            "minecraft.command.gamemode",
+            "minecraft.command.teleport",
+            "minecraft.selector",
+            "minecraft.bypass.chat-speed",
+            "minecraft.operator_block.command_block.place"
+        };
+        
+        for (String permission : keyPermissions) {
+            boolean hasPermission = PermissionManager.hasPermission(target, permission);
+            String status = hasPermission ? "§a✓" : "§c✗";
+            sender.sendMessage("§7  " + status + " §f" + permission);
+        }
+    }
+    
+    public static void handleDebug(CommandSender sender, Object[] args, ExtraPermissions plugin) {
+
+        sender.sendMessage("§6=== ExtraPermissions Debug Info ===");
+        sender.sendMessage("§7Plugin Version: §f" + plugin.getDescription().getVersion());
+        sender.sendMessage("§7LuckPerms Integration: §f" + (PermissionManager.getLuckPermsHook().isEnabled() ? "§aEnabled" : "§cDisabled"));
+        sender.sendMessage("§7" + PermissionManager.getCacheStats());
+        
+        sender.sendMessage("§7Feature Status:");
+        sender.sendMessage("§7  command_permissions: " + (plugin.isFeatureEnabled("command_permissions") ? "§aEnabled" : "§cDisabled"));
+        sender.sendMessage("§7  selector_permissions: " + (plugin.isFeatureEnabled("selector_permissions") ? "§aEnabled" : "§cDisabled"));
+        sender.sendMessage("§7  bypass_permissions: " + (plugin.isFeatureEnabled("bypass_permissions") ? "§aEnabled" : "§cDisabled"));
+        sender.sendMessage("§7  admin_permissions: " + (plugin.isFeatureEnabled("admin_permissions") ? "§aEnabled" : "§cDisabled"));
+        sender.sendMessage("§7  debug_features: " + (plugin.isFeatureEnabled("debug_features") ? "§aEnabled" : "§cDisabled"));
     }
 }

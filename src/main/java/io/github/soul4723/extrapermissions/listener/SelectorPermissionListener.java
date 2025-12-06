@@ -40,10 +40,10 @@ public class SelectorPermissionListener implements Listener {
         
         while (matcher.find()) {
             String selector = matcher.group();
-            String selectorType = selector.substring(0, 2);
-            String scope = getSelectorScope(selectorType);
+            String baseSelector = selector.length() >= 2 ? selector.substring(0, 2) : selector;
+            String scope = getSelectorScope(baseSelector);
             
-            String permission = "minecraft.selector." + scope + "." + selectorType.substring(1);
+            String permission = "minecraft.selector." + scope + "." + baseSelector.substring(1);
             
             if (!PermissionManager.hasPermission(player, permission)) {
                 event.setCancelled(true);
@@ -54,7 +54,13 @@ public class SelectorPermissionListener implements Listener {
     }
     
     private String getSelectorScope(String selector) {
-        return switch (selector) {
+        // Extract the base selector type (first 2 characters)
+        if (selector.length() < 2) {
+            return "unknown";
+        }
+        
+        String baseSelector = selector.substring(0, 2);
+        return switch (baseSelector) {
             case "@s" -> "self";
             case "@a", "@p", "@r" -> "player";
             case "@e" -> "entity";

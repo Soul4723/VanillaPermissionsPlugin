@@ -65,7 +65,7 @@ public class NBTPermissionListener implements Listener {
         // Check NBT modification permissions for placed blocks
         if (!PermissionManager.hasPermission(player, "minecraft.nbt.modify.block")) {
             // Prevent placing blocks with custom NBT if no permission
-            ItemStack item = event.getItemInHand();
+            ItemStack item = event.getPlayer().getInventory().getItemInMainHand();
             if (item != null && item.hasItemMeta()) {
                 // Block has custom NBT data
                 return;
