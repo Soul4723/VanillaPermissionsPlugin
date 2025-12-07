@@ -19,6 +19,24 @@ public class ExtraPermissions extends JavaPlugin {
     
     private LuckPermsHook luckPermsHook;
     
+    private boolean checkDependencies() {
+        boolean hasAll = true;
+        
+        if (getServer().getPluginManager().getPlugin("CommandAPI") == null) {
+            getLogger().severe("ExtraPermissions requires CommandAPI to function!");
+            getLogger().severe("Download: https://github.com/JorelAli/CommandAPI/releases");
+            hasAll = false;
+        }
+        
+        if (getServer().getPluginManager().getPlugin("LuckPerms") == null) {
+            getLogger().severe("ExtraPermissions requires LuckPerms to function!");
+            getLogger().severe("Download: https://luckperms.net/download");
+            hasAll = false;
+        }
+        
+        return hasAll;
+    }
+    
     @Override
     public void onLoad() {
         CommandAPI.onLoad(new CommandAPIBukkitConfig(this));
@@ -26,6 +44,11 @@ public class ExtraPermissions extends JavaPlugin {
     
     @Override
     public void onEnable() {
+        if (!checkDependencies()) {
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
+        
         saveDefaultConfig();
         
         if (!validateConfiguration()) {
@@ -39,7 +62,7 @@ public class ExtraPermissions extends JavaPlugin {
 
         if (!luckPermsHook.isEnabled()) {
             getLogger().severe("ExtraPermissions requires LuckPerms to function!");
-            getLogger().severe("Please install LuckPerms: https://luckperms.net/");
+            getLogger().severe("Download: https://luckperms.net/download");
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
