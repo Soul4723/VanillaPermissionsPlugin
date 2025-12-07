@@ -15,14 +15,11 @@ public class OperatorBlockListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent event) {
         Material blockType = event.getBlock().getType();
-        
-        // Check if it's an operator block that needs permission
         if (isOperatorBlock(blockType)) {
             String permission = getOperatorBlockPermission(blockType, "place");
             if (!PermissionManager.hasPermission(event.getPlayer(), permission)) {
                 event.setCancelled(true);
                 event.getPlayer().sendMessage("§cYou don't have permission to place " + blockType.name().toLowerCase() + "!");
-                return;
             }
         }
     }
@@ -30,14 +27,11 @@ public class OperatorBlockListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
         Material blockType = event.getBlock().getType();
-        
-        // Check if it's an operator block that needs permission
         if (isOperatorBlock(blockType)) {
             String permission = getOperatorBlockPermission(blockType, "break");
             if (!PermissionManager.hasPermission(event.getPlayer(), permission)) {
                 event.setCancelled(true);
                 event.getPlayer().sendMessage("§cYou don't have permission to break " + blockType.name().toLowerCase() + "!");
-                return;
             }
         }
     }
@@ -45,9 +39,7 @@ public class OperatorBlockListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPlayerInteract(PlayerInteractEvent event) {
         ItemStack item = event.getPlayer().getInventory().getItemInMainHand();
-        
-        if (item != null && isOperatorBlock(item.getType())) {
-            // Check view permission
+        if (isOperatorBlock(item.getType())) {
             String viewPermission = getOperatorBlockPermission(item.getType(), "view");
             if (!PermissionManager.hasPermission(event.getPlayer(), viewPermission)) {
                 event.setCancelled(true);
@@ -55,12 +47,10 @@ public class OperatorBlockListener implements Listener {
                 return;
             }
             
-            // Check edit permission
             String editPermission = getOperatorBlockPermission(item.getType(), "edit");
             if (!PermissionManager.hasPermission(event.getPlayer(), editPermission)) {
                 event.setCancelled(true);
                 event.getPlayer().sendMessage("§cYou don't have permission to edit " + item.getType().name().toLowerCase() + " contents!");
-                return;
             }
         }
     }

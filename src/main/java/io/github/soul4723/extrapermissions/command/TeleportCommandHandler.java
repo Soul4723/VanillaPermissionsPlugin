@@ -14,25 +14,20 @@ public class TeleportCommandHandler {
             sender.sendMessage("§cThis command can only be run by players!");
             return;
         }
-
         Player player = (Player) sender;
-
-        // Case 1: /tp <target> (teleport to entity, usually player)
-        try {
-            Object rawTarget = args.getUnchecked("target");
-            if (rawTarget instanceof Entity) {
-                Entity target = (Entity) rawTarget;
-                if (!PermissionManager.hasPermission(player, "minecraft.command.teleport.targets")) {
-                    player.sendMessage("§cYou don't have permission to teleport to targets!");
-                    return;
-                }
-                player.teleport(target);
-                player.sendMessage("§aTeleported to " + target.getName());
+        
+        Object rawTarget = args.getUnchecked("target");
+        if (rawTarget instanceof Entity) {
+            Entity target = (Entity) rawTarget;
+            if (!PermissionManager.hasPermission(player, "minecraft.command.teleport.targets")) {
+                player.sendMessage("§cYou don't have permission to teleport to targets!");
                 return;
             }
-        } catch (Exception ignored) { }
-
-        // Case 2: /tpcoords x y z [yaw] [pitch]
+            player.teleport(target);
+            player.sendMessage("§aTeleported to " + target.getName());
+            return;
+        }
+        
         try {
             Object xObj = args.getUnchecked("x");
             Object yObj = args.getUnchecked("y");
@@ -42,12 +37,11 @@ public class TeleportCommandHandler {
                     player.sendMessage("§cYou don't have permission to teleport to coordinates!");
                     return;
                 }
-
+                
                 double x = ((Number) xObj).doubleValue();
                 double y = ((Number) yObj).doubleValue();
                 double z = ((Number) zObj).doubleValue();
-
-                // Basic coordinate validation (Minecraft world limits)
+                
                 if (Math.abs(x) > 30000000 || Math.abs(z) > 30000000) {
                     player.sendMessage("§cCoordinates out of world bounds! Must be between -30,000,000 and 30,000,000");
                     return;
@@ -56,9 +50,8 @@ public class TeleportCommandHandler {
                     player.sendMessage("§cY coordinate out of bounds! Must be between -64 and 320");
                     return;
                 }
-
+                
                 Location location = new Location(player.getWorld(), x, y, z);
-
                 try {
                     Object yawObj = args.getUnchecked("yaw");
                     Object pitchObj = args.getUnchecked("pitch");
@@ -68,15 +61,14 @@ public class TeleportCommandHandler {
                         location.setYaw(yaw);
                         location.setPitch(pitch);
                     }
-                } catch (Exception ignored) { }
-
+                } catch (Exception ignored) {}
+                
                 player.teleport(location);
                 player.sendMessage("§aTeleported to " + formatLocation(location));
                 return;
             }
-        } catch (Exception ignored) { }
-
-        // Fallback usage message
+        } catch (Exception ignored) {}
+        
         player.sendMessage("§cUsage: /tp <player/entity> or /tpcoords <x> <y> <z> [yaw] [pitch]");
     }
 

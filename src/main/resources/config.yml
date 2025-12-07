@@ -1,4 +1,5 @@
 # ExtraPermissions Configuration
+# Influenced by VanillaPermissions (https://github.com/DrexHD/VanillaPermissions)
 # Toggle different permission enforcement features
 
 features:

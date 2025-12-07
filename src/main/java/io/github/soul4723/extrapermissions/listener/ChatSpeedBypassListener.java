@@ -22,27 +22,12 @@ public class ChatSpeedBypassListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onAsyncPlayerChat(AsyncPlayerChatEvent event) {
         Player player = event.getPlayer();
-        if (player == null) {
-            return;
-        }
-        
-        // Periodic cleanup to prevent memory leaks
         cleanupOldEntries();
 
-        // Check if player has chat speed bypass permission
-        if (PermissionManager.hasPermission(player, "minecraft.bypass.chat-speed")) {
-            // Player has bypass - allow chat without cooldown
-            return;
-        }
-        
-        // Check for specific bypass permissions
-        if (PermissionManager.hasPermission(player, "minecraft.bypass.chat-speed.global")) {
-            // Global bypass - no restrictions
-            return;
-        }
+        if (PermissionManager.hasPermission(player, "minecraft.bypass.chat-speed")) return;
+        if (PermissionManager.hasPermission(player, "minecraft.bypass.chat-speed.global")) return;
         
         if (PermissionManager.hasPermission(player, "minecraft.bypass.chat-speed.reduced")) {
-            // Reduced cooldown - half the normal time
             long reducedCooldown = DEFAULT_CHAT_COOLDOWN / 2;
             UUID playerId = player.getUniqueId();
             long currentTime = System.currentTimeMillis();
@@ -59,7 +44,6 @@ public class ChatSpeedBypassListener implements Listener {
             return;
         }
         
-        // Apply normal chat cooldown for players without bypass
         UUID playerId = player.getUniqueId();
         long currentTime = System.currentTimeMillis();
         
@@ -77,9 +61,7 @@ public class ChatSpeedBypassListener implements Listener {
     
     private void cleanupOldEntries() {
         long currentTime = System.currentTimeMillis();
-        if (currentTime - lastCleanup < CLEANUP_INTERVAL) {
-            return; // Don't cleanup too frequently
-        }
+        if (currentTime - lastCleanup < CLEANUP_INTERVAL) return;
         
         lastCleanup = currentTime;
         lastChatTime.entrySet().removeIf(entry -> currentTime - entry.getValue() > MAX_AGE);

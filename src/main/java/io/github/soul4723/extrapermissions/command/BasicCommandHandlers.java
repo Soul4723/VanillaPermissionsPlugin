@@ -22,20 +22,16 @@ public class BasicCommandHandlers {
     
     public static void handleCheck(CommandSender sender, CommandArguments args) {
         Player target = null;
-        try {
-            Object raw = args.getUnchecked("player");
-            if (raw instanceof Player) {
-                target = (Player) raw;
-            }
-        } catch (Exception ignored) { }
+        Object raw = args.getUnchecked("player");
+        if (raw instanceof Player) {
+            target = (Player) raw;
+        }
         if (target == null) {
             sender.sendMessage("§cPlayer not found!");
             return;
         }
         
         sender.sendMessage("§6Permissions for " + target.getName() + ":");
-        
-        // Check key ExtraPermissions permissions
         String[] keyPermissions = {
             "extrapermissions.use",
             "extrapermissions.reload", 
@@ -55,7 +51,6 @@ public class BasicCommandHandlers {
     }
     
     public static void handleDebug(CommandSender sender, CommandArguments args, ExtraPermissions plugin) {
-
         sender.sendMessage("§6=== ExtraPermissions Debug Info ===");
         sender.sendMessage("§7Plugin Version: §f" + plugin.getDescription().getVersion());
         sender.sendMessage("§7LuckPerms Integration: §f" + (PermissionManager.getLuckPermsHook().isEnabled() ? "§aEnabled" : "§cDisabled"));

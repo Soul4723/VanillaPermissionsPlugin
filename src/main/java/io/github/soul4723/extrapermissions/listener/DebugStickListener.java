@@ -8,19 +8,12 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 
-/**
- * Listener for handling debug stick usage permissions.
- * Controls which players can use debug sticks on specific block types.
- */
 public class DebugStickListener implements Listener {
     
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPlayerInteractWithDebugStick(PlayerInteractEvent event) {
         ItemStack item = event.getPlayer().getInventory().getItemInMainHand();
-        
-        if (item == null || item.getType() != Material.DEBUG_STICK) {
-            return;
-        }
+        if (item.getType() != Material.DEBUG_STICK) return;
         
         if (event.getClickedBlock() != null) {
             String blockType = event.getClickedBlock().getType().name().toLowerCase();

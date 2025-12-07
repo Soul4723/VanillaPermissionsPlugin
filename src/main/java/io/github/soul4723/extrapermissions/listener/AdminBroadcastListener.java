@@ -22,33 +22,19 @@ public class AdminBroadcastListener implements Listener {
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
         Player player = event.getPlayer();
-        if (player == null) {
-            return;
-        }
+        if (event.isCancelled()) return;
         
-        if (event.isCancelled()) {
-            return;
-        }
-        
-        // Rate limiting to prevent spam
         UUID playerId = player.getUniqueId();
         long currentTime = System.currentTimeMillis();
-        
-        // Periodic cleanup to prevent memory leaks
         cleanupOldEntries();
         
         Long lastCommandTime = recentCommands.get(playerId);
-        if (lastCommandTime != null && (currentTime - lastCommandTime) < RATE_LIMIT) {
-            return; // Skip broadcast if this player recently had a command broadcast
-        }
+        if (lastCommandTime != null && (currentTime - lastCommandTime) < RATE_LIMIT) return;
         
         recentCommands.put(playerId, currentTime);
         
-        // Filter sensitive commands
         String command = event.getMessage().toLowerCase();
-        if (isSensitiveCommand(command)) {
-            return; // Don't broadcast sensitive commands
-        }
+        if (isSensitiveCommand(command)) return;
         
         for (Player online : player.getServer().getOnlinePlayers()) {
             if (online != player && PermissionManager.hasPermission(online, "minecraft.adminbroadcast.receive")) {
@@ -69,9 +55,7 @@ public class AdminBroadcastListener implements Listener {
     
     private void cleanupOldEntries() {
         long currentTime = System.currentTimeMillis();
-        if (currentTime - lastCleanup < CLEANUP_INTERVAL) {
-            return; // Don't cleanup too frequently
-        }
+        if (currentTime - lastCleanup < CLEANUP_INTERVAL) return;
         
         lastCleanup = currentTime;
         recentCommands.entrySet().removeIf(entry -> currentTime - entry.getValue() > MAX_AGE);

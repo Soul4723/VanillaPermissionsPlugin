@@ -11,19 +11,11 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Utility class for managing permissions with LuckPerms integration and caching.
- * Provides optimized permission checking with fallback to Bukkit permissions.
- */
 public class PermissionManager {
     
     private static LuckPermsHook luckPermsHook;
-    
-    // Permission caching for performance
     private static final Map<String, CachedPermission> permissionCache = new ConcurrentHashMap<>();
-    private static final long CACHE_DURATION = 30000; // 30 seconds
-    
-    // Cache entry class
+    private static final long CACHE_DURATION = 30000;
     private static class CachedPermission {
         final boolean value;
         final long timestamp;
@@ -38,20 +30,14 @@ public class PermissionManager {
         }
     }
     
-    /**
-     * Initialize the PermissionManager with LuckPerms hook
-     * @param luckPermsHook The LuckPerms integration hook
-     */
     public static void initialize(LuckPermsHook luckPermsHook) {
         PermissionManager.luckPermsHook = luckPermsHook;
         
-        // Register event listener for cache invalidation if LuckPerms is available
         if (luckPermsHook != null && luckPermsHook.isEnabled()) {
             try {
                 LuckPerms luckPerms = luckPermsHook.getLuckPerms();
                 if (luckPerms != null) {
                     luckPerms.getEventBus().subscribe(UserDataRecalculateEvent.class, event -> {
-                        // Clear cache for this user when permissions are recalculated
                         String userPrefix = event.getUser().getUniqueId().toString() + ":";
                         permissionCache.entrySet().removeIf(entry -> entry.getKey().startsWith(userPrefix));
                     });
@@ -62,18 +48,11 @@ public class PermissionManager {
         }
     }
     
-    /**
-     * Check if a command sender has permission
-     * @param sender The command sender (player or console)
-     * @param permission The permission node to check
-     * @return true if sender has permission, false otherwise
-     */
     public static boolean hasPermission(CommandSender sender, String permission) {
         if (sender instanceof Player) {
             return hasPermission((Player) sender, permission);
         }
         
-        // For non-players (console, command blocks), use Bukkit permissions directly
         try {
             return sender.hasPermission(permission);
         } catch (Exception e) {
@@ -82,16 +61,8 @@ public class PermissionManager {
         }
     }
     
-    /**
-     * Check if a player has permission
-     * @param player The player to check
-     * @param permission The permission node to check
-     * @return true if player has permission, false otherwise
-     */
     public static boolean hasPermission(Player player, String permission) {
-        if (player == null) {
-            return false;
-        }
+        if (player == null) return false;
         
         String cacheKey = player.getUniqueId().toString() + ":" + permission;
         CachedPermission cached = permissionCache.get(cacheKey);
@@ -130,7 +101,6 @@ public class PermissionManager {
         return luckPermsHook;
     }
     
-    // Debug method for troubleshooting
     public static String getCacheStats() {
         return "Cache size: " + permissionCache.size() + ", LuckPerms enabled: " + 
                (luckPermsHook != null && luckPermsHook.isEnabled());

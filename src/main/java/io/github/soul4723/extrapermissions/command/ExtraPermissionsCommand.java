@@ -12,10 +12,7 @@ import io.github.soul4723.extrapermissions.ExtraPermissions;
 public class ExtraPermissionsCommand {
     
     public static void registerCommands(ExtraPermissions plugin) {
-        // Always register admin commands
         registerAdminCommands(plugin);
-        
-        // Register vanilla command replacements only if feature is enabled
         if (plugin.isFeatureEnabled("command_permissions")) {
             registerVanillaCommands();
         }
@@ -44,7 +41,6 @@ public class ExtraPermissionsCommand {
     
     private static void registerVanillaCommands() {
         try {
-            // Register gamemode command replacement
             new CommandAPICommand("gamemode")
                 .withPermission("minecraft.command.gamemode")
                 .withAliases("gm")
@@ -54,7 +50,6 @@ public class ExtraPermissionsCommand {
                 .executes((CommandExecutor) GamemodeCommandHandler::handleGamemodeCommand)
                 .register();
             
-            // Register teleport command replacement
             new CommandAPICommand("teleport")
                 .withPermission("minecraft.command.teleport")
                 .withAliases("tp")
@@ -62,7 +57,6 @@ public class ExtraPermissionsCommand {
                 .executes((CommandExecutor) TeleportCommandHandler::handleTeleportCommand)
                 .register();
             
-            // Register teleport coordinates command
             new CommandAPICommand("tpcoords")
                 .withPermission("minecraft.command.teleport.targets.location")
                 .withArguments(
@@ -75,7 +69,6 @@ public class ExtraPermissionsCommand {
                 .executes((CommandExecutor) TeleportCommandHandler::handleTeleportCommand)
                 .register();
         } catch (Exception e) {
-            // Log error but don't crash the plugin
             System.err.println("Failed to register vanilla command replacements: " + e.getMessage());
         }
     }

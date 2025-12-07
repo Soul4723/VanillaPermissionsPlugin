@@ -76,10 +76,8 @@ Fine-grained permission control operates on selector scope:
 
 Commands fail if a player attempts to select unauthorized entities.
 
-## Building
+## Credits
 
-```bash
-mvn clean package
-```
+This plugin was heavily influenced by and adapted from [VanillaPermissions](https://github.com/DrexHD/VanillaPermissions) by DrexHD.
+The core permission system architecture and selector handling concepts are derived from that project.
 
-Compiled JAR available in `target/`

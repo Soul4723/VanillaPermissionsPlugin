@@ -32,10 +32,6 @@ public class SelectorPermissionListener implements Listener {
     }
     
     private void checkSelectorScopes(PlayerCommandPreprocessEvent event, Player player, String command) {
-        if (player == null) {
-            return;
-        }
-        
         Matcher matcher = SELECTOR_PATTERN.matcher(command);
         
         while (matcher.find()) {
@@ -54,13 +50,8 @@ public class SelectorPermissionListener implements Listener {
     }
     
     private String getSelectorScope(String selector) {
-        // Extract the base selector type (first 2 characters)
-        if (selector == null || selector.length() < 2) {
-            return "unknown";
-        }
-        
-        String baseSelector = selector.substring(0, 2);
-        return switch (baseSelector) {
+        if (selector.length() < 2) return "unknown";
+        return switch (selector.substring(0, 2)) {
             case "@s" -> "self";
             case "@a", "@p", "@r" -> "player";
             case "@e" -> "entity";
