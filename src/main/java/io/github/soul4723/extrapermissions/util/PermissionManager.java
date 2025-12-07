@@ -63,67 +63,11 @@ public class PermissionManager {
     }
     
     /**
-     * Check if a player has a specific permission with caching
-     * @param player The player to check permissions for
+     * Check if a command sender has permission
+     * @param sender The command sender (player or console)
      * @param permission The permission node to check
-     * @return true if player has permission, false otherwise
+     * @return true if sender has permission, false otherwise
      */
-    public static boolean hasPermission(Player player, String permission) {
-        if (player == null || permission == null || permission.isEmpty()) {
-            return false;
-        }
-        
-        String cacheKey = player.getUniqueId().toString() + ":" + permission;
-        
-        // Check cache first
-        CachedPermission cached = permissionCache.get(cacheKey);
-        if (cached != null && !cached.isExpired()) {
-            return cached.value;
-        }
-        
-        // Perform actual permission check
-        boolean result = performPermissionCheck(player, permission);
-        
-        // Cache the result
-        permissionCache.put(cacheKey, new CachedPermission(result));
-        
-        // Periodic cleanup of expired entries
-        cleanupExpiredCache();
-        
-        return result;
-    }
-    
-    private static boolean performPermissionCheck(Player player, String permission) {
-        if (luckPermsHook != null && luckPermsHook.isEnabled()) {
-            try {
-                LuckPerms luckPerms = luckPermsHook.getLuckPerms();
-                if (luckPerms != null) {
-                    User user = luckPerms.getUserManager().getUser(player.getUniqueId());
-                    if (user != null && user.getCachedData() != null && user.getCachedData().getPermissionData() != null) {
-                        return user.getCachedData().getPermissionData().checkPermission(permission).asBoolean().orElse(false);
-                    }
-                }
-            } catch (Exception e) {
-                Bukkit.getLogger().warning("LuckPerms permission check failed, falling back to Bukkit: " + e.getMessage());
-            }
-        }
-
-        // Fallback to Bukkit permissions
-        try {
-            return player.hasPermission(permission);
-        } catch (Exception e) {
-            Bukkit.getLogger().warning("Bukkit permission check failed for " + permission + ": " + e.getMessage());
-            return false;
-        }
-    }
-    
-    private static void cleanupExpiredCache() {
-        // Only cleanup if cache is getting large to avoid performance impact
-        if (permissionCache.size() > 1000) {
-            permissionCache.entrySet().removeIf(entry -> entry.getValue().isExpired());
-        }
-    }
-    
     public static boolean hasPermission(CommandSender sender, String permission) {
         if (sender instanceof Player) {
             return hasPermission((Player) sender, permission);
@@ -136,6 +80,41 @@ public class PermissionManager {
             Bukkit.getLogger().warning("Permission check failed for non-player sender: " + e.getMessage());
             return false;
         }
+    }
+    
+    /**
+     * Check if a player has permission
+     * @param player The player to check
+     * @param permission The permission node to check
+     * @return true if player has permission, false otherwise
+     */
+    public static boolean hasPermission(Player player, String permission) {
+        if (player == null) {
+            return false;
+        }
+        
+        String cacheKey = player.getUniqueId().toString() + ":" + permission;
+        CachedPermission cached = permissionCache.get(cacheKey);
+        
+        if (cached != null && !cached.isExpired()) {
+            return cached.value;
+        }
+        
+        boolean hasPermission;
+        if (luckPermsHook != null && luckPermsHook.isEnabled()) {
+            try {
+                net.luckperms.api.model.user.User user = luckPermsHook.getLuckPerms().getUserManager().getUser(player.getUniqueId());
+                hasPermission = user != null && user.getCachedData().getPermissionData().checkPermission(permission).asBoolean();
+            } catch (Exception e) {
+                Bukkit.getLogger().warning("LuckPerms permission check failed, falling back to Bukkit: " + e.getMessage());
+                hasPermission = player.hasPermission(permission);
+            }
+        } else {
+            hasPermission = player.hasPermission(permission);
+        }
+        
+        permissionCache.put(cacheKey, new CachedPermission(hasPermission));
+        return hasPermission;
     }
     
     public static void clearCache() {

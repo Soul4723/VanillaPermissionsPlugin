@@ -26,6 +26,8 @@ public class NBTPermissionListener implements Listener {
         if (event.getClickedBlock() != null) {
             if (!PermissionManager.hasPermission(player, "minecraft.nbt.query.block")) {
                 // Player cannot query NBT data of blocks
+                event.setCancelled(true);
+                player.sendMessage("§cYou don't have permission to query block NBT data!");
                 return;
             }
         }
@@ -35,6 +37,8 @@ public class NBTPermissionListener implements Listener {
         if (item != null) {
             if (!PermissionManager.hasPermission(player, "minecraft.nbt.query.item")) {
                 // Player cannot query NBT data of items
+                event.setCancelled(true);
+                player.sendMessage("§cYou don't have permission to query item NBT data!");
                 return;
             }
         }
@@ -49,8 +53,9 @@ public class NBTPermissionListener implements Listener {
 
         // Check if player can modify NBT data when breaking blocks
         if (!PermissionManager.hasPermission(player, "minecraft.nbt.modify.block")) {
-            // This could be used to prevent certain block modifications
-            // For now, we just log the attempt for debugging
+            // Prevent breaking blocks that might have NBT data
+            event.setCancelled(true);
+            player.sendMessage("§cYou don't have permission to modify block NBT data!");
             return;
         }
     }
@@ -68,6 +73,8 @@ public class NBTPermissionListener implements Listener {
             ItemStack item = event.getPlayer().getInventory().getItemInMainHand();
             if (item != null && item.hasItemMeta()) {
                 // Block has custom NBT data
+                event.setCancelled(true);
+                player.sendMessage("§cYou don't have permission to place blocks with NBT data!");
                 return;
             }
         }
@@ -84,6 +91,8 @@ public class NBTPermissionListener implements Listener {
         // Check NBT modification permissions for entities
         if (!PermissionManager.hasPermission(player, "minecraft.nbt.modify.entity")) {
             // Player cannot modify entity NBT through damage
+            event.setCancelled(true);
+            player.sendMessage("§cYou don't have permission to modify entity NBT data!");
             return;
         }
     }
@@ -113,11 +122,15 @@ public class NBTPermissionListener implements Listener {
         // Check NBT loading permissions during teleportation
         if (!PermissionManager.hasPermission(player, "minecraft.nbt.load.block")) {
             // Prevent teleportation that would load chunk NBT without permission
+            event.setCancelled(true);
+            player.sendMessage("§cYou don't have permission to load block NBT data during teleportation!");
             return;
         }
         
         if (!PermissionManager.hasPermission(player, "minecraft.nbt.load.entity")) {
             // Prevent teleportation that would load entity NBT without permission
+            event.setCancelled(true);
+            player.sendMessage("§cYou don't have permission to load entity NBT data during teleportation!");
             return;
         }
     }

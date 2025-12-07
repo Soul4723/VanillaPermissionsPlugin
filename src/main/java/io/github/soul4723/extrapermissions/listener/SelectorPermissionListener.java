@@ -55,7 +55,7 @@ public class SelectorPermissionListener implements Listener {
     
     private String getSelectorScope(String selector) {
         // Extract the base selector type (first 2 characters)
-        if (selector.length() < 2) {
+        if (selector == null || selector.length() < 2) {
             return "unknown";
         }
         

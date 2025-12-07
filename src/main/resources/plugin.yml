@@ -6,8 +6,8 @@ author: Soul4723
 description: Granular permission control for vanilla Minecraft commands and features
 website: https://github.com/Soul4723
 
-depend: [CommandAPI]
-softdepend: [LuckPerms]
+depend: [CommandAPI, LuckPerms]
+softdepend: []
 
 permissions:
   extrapermissions.use:
@@ -90,7 +90,7 @@ permissions:
     description: Use entity selectors in commands
     default: false
   minecraft.selector.entity.a:
-    description: Select all players
+    description: Select all entities (including players)
     default: false
   minecraft.selector.entity.e:
     description: Select non-player entities

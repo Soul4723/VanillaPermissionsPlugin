@@ -24,7 +24,7 @@ public class DebugStickListener implements Listener {
         
         if (event.getClickedBlock() != null) {
             String blockType = event.getClickedBlock().getType().name().toLowerCase();
-            String permission = "minecraft.debug_stick.use.block." + blockType;
+            String permission = "minecraft.debug_stick.use.block";
             
             if (!PermissionManager.hasPermission(event.getPlayer(), permission)) {
                 event.setCancelled(true);

@@ -1,6 +1,7 @@
 package io.github.soul4723.extrapermissions.command;
 
 import dev.jorel.commandapi.arguments.EntitySelectorArgument;
+import dev.jorel.commandapi.executors.CommandArguments;
 import io.github.soul4723.extrapermissions.ExtraPermissions;
 import io.github.soul4723.extrapermissions.util.PermissionManager;
 import org.bukkit.Bukkit;
@@ -9,7 +10,7 @@ import org.bukkit.entity.Player;
 
 public class BasicCommandHandlers {
     
-    public static void handleReload(CommandSender sender, Object[] args, ExtraPermissions plugin) {
+    public static void handleReload(CommandSender sender, CommandArguments args, ExtraPermissions plugin) {
         if (plugin != null) {
             plugin.reloadPluginConfig();
             sender.sendMessage("§aExtraPermissions configuration reloaded!");
@@ -19,9 +20,14 @@ public class BasicCommandHandlers {
         }
     }
     
-    public static void handleCheck(CommandSender sender, Object[] args) {
-        
-        Player target = (Player) args[0];
+    public static void handleCheck(CommandSender sender, CommandArguments args) {
+        Player target = null;
+        try {
+            Object raw = args.getUnchecked("player");
+            if (raw instanceof Player) {
+                target = (Player) raw;
+            }
+        } catch (Exception ignored) { }
         if (target == null) {
             sender.sendMessage("§cPlayer not found!");
             return;
@@ -48,7 +54,7 @@ public class BasicCommandHandlers {
         }
     }
     
-    public static void handleDebug(CommandSender sender, Object[] args, ExtraPermissions plugin) {
+    public static void handleDebug(CommandSender sender, CommandArguments args, ExtraPermissions plugin) {
 
         sender.sendMessage("§6=== ExtraPermissions Debug Info ===");
         sender.sendMessage("§7Plugin Version: §f" + plugin.getDescription().getVersion());

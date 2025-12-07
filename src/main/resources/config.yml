@@ -7,3 +7,4 @@ features:
   bypass_permissions: true
   admin_permissions: true
   debug_features: true
+  nbt_permissions: false

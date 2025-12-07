@@ -1,74 +1,85 @@
 package io.github.soul4723.extrapermissions.command;
 
+import dev.jorel.commandapi.executors.CommandArguments;
 import io.github.soul4723.extrapermissions.util.PermissionManager;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
 public class TeleportCommandHandler {
-    
-    public static void handleTeleportCommand(CommandSender sender, Object[] args) {
+
+    public static void handleTeleportCommand(CommandSender sender, CommandArguments args) {
         if (!(sender instanceof Player)) {
             sender.sendMessage("§cThis command can only be run by players!");
             return;
         }
-        
+
         Player player = (Player) sender;
-        
-        // Handle player teleportation
-        if (args.length >= 1 && args[0] instanceof Player) {
-            Player target = (Player) args[0];
-            if (target == null) {
-                player.sendMessage("§cPlayer not found!");
-                return;
-            }
-            
-            // Check permission for teleporting to players
-            if (!PermissionManager.hasPermission(player, "minecraft.command.teleport.targets")) {
-                player.sendMessage("§cYou don't have permission to teleport to players!");
-                return;
-            }
-            
-            player.teleport(target);
-            player.sendMessage("§aTeleported to " + target.getName());
-            return;
-        }
-        
-        // Handle coordinate teleportation
-        if (args.length >= 3) {
-            // Check permission for teleporting to coordinates
-            if (!PermissionManager.hasPermission(player, "minecraft.command.teleport.targets.location")) {
-                player.sendMessage("§cYou don't have permission to teleport to coordinates!");
-                return;
-            }
-            
-            try {
-                double x = ((Number) args[0]).doubleValue();
-                double y = ((Number) args[1]).doubleValue();
-                double z = ((Number) args[2]).doubleValue();
-                
-                Location location = new Location(player.getWorld(), x, y, z);
-                
-                // Handle optional yaw and pitch
-                if (args.length >= 5) {
-                    float yaw = ((Number) args[3]).floatValue();
-                    float pitch = ((Number) args[4]).floatValue();
-                    location.setYaw(yaw);
-                    location.setPitch(pitch);
+
+        // Case 1: /tp <target> (teleport to entity, usually player)
+        try {
+            Object rawTarget = args.getUnchecked("target");
+            if (rawTarget instanceof Entity) {
+                Entity target = (Entity) rawTarget;
+                if (!PermissionManager.hasPermission(player, "minecraft.command.teleport.targets")) {
+                    player.sendMessage("§cYou don't have permission to teleport to targets!");
+                    return;
                 }
-                
+                player.teleport(target);
+                player.sendMessage("§aTeleported to " + target.getName());
+                return;
+            }
+        } catch (Exception ignored) { }
+
+        // Case 2: /tpcoords x y z [yaw] [pitch]
+        try {
+            Object xObj = args.getUnchecked("x");
+            Object yObj = args.getUnchecked("y");
+            Object zObj = args.getUnchecked("z");
+            if (xObj instanceof Number && yObj instanceof Number && zObj instanceof Number) {
+                if (!PermissionManager.hasPermission(player, "minecraft.command.teleport.targets.location")) {
+                    player.sendMessage("§cYou don't have permission to teleport to coordinates!");
+                    return;
+                }
+
+                double x = ((Number) xObj).doubleValue();
+                double y = ((Number) yObj).doubleValue();
+                double z = ((Number) zObj).doubleValue();
+
+                // Basic coordinate validation (Minecraft world limits)
+                if (Math.abs(x) > 30000000 || Math.abs(z) > 30000000) {
+                    player.sendMessage("§cCoordinates out of world bounds! Must be between -30,000,000 and 30,000,000");
+                    return;
+                }
+                if (y < -64 || y > 320) {
+                    player.sendMessage("§cY coordinate out of bounds! Must be between -64 and 320");
+                    return;
+                }
+
+                Location location = new Location(player.getWorld(), x, y, z);
+
+                try {
+                    Object yawObj = args.getUnchecked("yaw");
+                    Object pitchObj = args.getUnchecked("pitch");
+                    if (yawObj instanceof Number && pitchObj instanceof Number) {
+                        float yaw = ((Number) yawObj).floatValue();
+                        float pitch = ((Number) pitchObj).floatValue();
+                        location.setYaw(yaw);
+                        location.setPitch(pitch);
+                    }
+                } catch (Exception ignored) { }
+
                 player.teleport(location);
                 player.sendMessage("§aTeleported to " + formatLocation(location));
-            } catch (NumberFormatException e) {
-                player.sendMessage("§cInvalid coordinates! Use numbers for x, y, z values.");
-            } catch (Exception e) {
-                player.sendMessage("§cError during teleportation: " + e.getMessage());
+                return;
             }
-        } else {
-            player.sendMessage("§cUsage: /tp <player> or /tpcoords <x> <y> <z> [yaw] [pitch]");
-        }
+        } catch (Exception ignored) { }
+
+        // Fallback usage message
+        player.sendMessage("§cUsage: /tp <player/entity> or /tpcoords <x> <y> <z> [yaw] [pitch]");
     }
-    
+
     private static String formatLocation(Location loc) {
         return String.format("%.2f, %.2f, %.2f", loc.getX(), loc.getY(), loc.getZ());
     }

@@ -32,7 +32,7 @@ public class ExtraPermissions extends JavaPlugin {
         
         // Validate configuration
         if (!validateConfiguration()) {
-            getLogger().severe("Configuration validation failed! Using default values.");
+            getLogger().severe("Configuration validation failed! Disabling plugin.");
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
@@ -79,9 +79,14 @@ public class ExtraPermissions extends JavaPlugin {
             getServer().getPluginManager().registerEvents(new SelectorPermissionListener(), this);
         }
         
+        // NBT permissions feature (opt-in)
+        if (isFeatureEnabled("nbt_permissions")) {
+            getServer().getPluginManager().registerEvents(new NBTPermissionListener(), this);
+        }
+        
         // Debug features
         if (isFeatureEnabled("debug_features")) {
-            getServer().getPluginManager().registerEvents(new NBTPermissionListener(), this);
+            // Add any lightweight debug-only listeners here
         }
         
         // Note: command_permissions feature is handled in command registration
@@ -110,7 +115,7 @@ public class ExtraPermissions extends JavaPlugin {
         }
         
         // Validate each feature is a boolean
-        String[] features = {"command_permissions", "selector_permissions", "bypass_permissions", "admin_permissions", "debug_features"};
+        String[] features = {"command_permissions", "selector_permissions", "bypass_permissions", "admin_permissions", "debug_features", "nbt_permissions"};
         for (String feature : features) {
             String path = "features." + feature;
             if (getConfig().contains(path) && !(getConfig().get(path) instanceof Boolean)) {
