@@ -25,14 +25,14 @@ public class ExtraPermissionsCommand {
                 .withAliases("eperm", "ep")
                 .withSubcommand(new CommandAPICommand("reload")
                     .withPermission("extrapermissions.reload")
-                    .executes((CommandExecutor) (sender, args) -> BasicCommandHandlers.handleReload(sender, args, plugin)))
+                    .executes((CommandExecutor) (sender, args) -> BasicCommandHandlers.handleReload(sender, plugin)))
                 .withSubcommand(new CommandAPICommand("check")
                     .withPermission("extrapermissions.admin")
                     .withArguments(new EntitySelectorArgument.OnePlayer("player"))
                     .executes((CommandExecutor) BasicCommandHandlers::handleCheck))
                 .withSubcommand(new CommandAPICommand("debug")
                     .withPermission("extrapermissions.admin")
-                    .executes((CommandExecutor) (sender, args) -> BasicCommandHandlers.handleDebug(sender, args, plugin)))
+                    .executes((CommandExecutor) (sender, args) -> BasicCommandHandlers.handleDebug(sender, plugin)))
                 .register();
         } catch (Exception e) {
             plugin.getLogger().severe("Failed to register ExtraPermissions admin commands: " + e.getMessage());

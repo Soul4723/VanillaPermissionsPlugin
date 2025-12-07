@@ -1,5 +1,5 @@
 name: ExtraPermissions
-version: 2.0.0
+version: 2.1.0
 main: io.github.soul4723.extrapermissions.ExtraPermissions
 api-version: '1.21'
 author: Soul4723
@@ -60,29 +60,8 @@ permissions:
   minecraft.command.teleport.targets.location.rotation:
     description: Teleport with rotation
     default: false
-  minecraft.command.time:
-    description: Use /time command
-    default: false
-  minecraft.command.weather:
-    description: Use /weather command
-    default: false
-  minecraft.command.say:
-    description: Use /say command
-    default: false
-  minecraft.command.give:
-    description: Use /give command
-    default: false
-  minecraft.command.ban:
-    description: Use /ban command
-    default: false
-  minecraft.command.kick:
-    description: Use /kick command
-    default: false
-  minecraft.command.op:
-    description: Use /op command
-    default: false
-  minecraft.command.deop:
-    description: Use /deop command
+  minecraft.command.gamemode.other:
+    description: Change other players' gamemode
     default: false
     
   # Selector permissions
@@ -138,18 +117,6 @@ permissions:
     default: false
   minecraft.bypass.force-gamemode:
     description: Bypass forced gamemode
-    default: false
-  minecraft.bypass.move-speed.player:
-    description: Bypass player movement speed limit
-    default: false
-  minecraft.bypass.move-speed.flying:
-    description: Bypass flying movement speed limit
-    default: false
-  minecraft.bypass.move-speed.sprinting:
-    description: Bypass sprinting movement speed limit
-    default: false
-  minecraft.bypass.move-speed.velocity:
-    description: Bypass velocity modification restrictions
     default: false
   minecraft.bypass.chat-speed:
     description: Bypass chat speed kick

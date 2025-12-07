@@ -6,10 +6,10 @@ import io.github.soul4723.extrapermissions.command.ExtraPermissionsCommand;
 import io.github.soul4723.extrapermissions.listener.AdminBroadcastListener;
 import io.github.soul4723.extrapermissions.listener.ChatSpeedBypassListener;
 import io.github.soul4723.extrapermissions.listener.DebugStickListener;
-import io.github.soul4723.extrapermissions.listener.MovementSpeedBypassListener;
 import io.github.soul4723.extrapermissions.listener.NBTPermissionListener;
 import io.github.soul4723.extrapermissions.listener.OperatorBlockListener;
 import io.github.soul4723.extrapermissions.listener.SelectorPermissionListener;
+import io.github.soul4723.extrapermissions.listener.SpawnProtectionListener;
 import io.github.soul4723.extrapermissions.listener.WhitelistBypassListener;
 import io.github.soul4723.extrapermissions.util.LuckPermsHook;
 import io.github.soul4723.extrapermissions.util.PermissionManager;
@@ -51,7 +51,7 @@ public class ExtraPermissions extends JavaPlugin {
         ExtraPermissionsCommand.registerCommands(this);
         registerListeners();
         
-        getLogger().info("ExtraPermissions v2.0.0 enabled (inspired by VanillaPermissions)");
+        getLogger().info("ExtraPermissions v2.1.0 enabled (inspired by VanillaPermissions)");
     }
     
     private void registerListeners() {
@@ -63,7 +63,7 @@ public class ExtraPermissions extends JavaPlugin {
         
         if (isFeatureEnabled("bypass_permissions")) {
             getServer().getPluginManager().registerEvents(new ChatSpeedBypassListener(), this);
-            getServer().getPluginManager().registerEvents(new MovementSpeedBypassListener(), this);
+            getServer().getPluginManager().registerEvents(new SpawnProtectionListener(), this);
             getServer().getPluginManager().registerEvents(new WhitelistBypassListener(), this);
         }
         

@@ -8,7 +8,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.ItemStack;
@@ -61,11 +60,6 @@ public class NBTPermissionListener implements Listener {
             event.setCancelled(true);
             player.sendMessage("§cYou don't have permission to modify entity NBT data!");
         }
-    }
-    
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onEntityTarget(EntityTargetEvent event) {
-        if (!(event.getTarget() instanceof Player)) return;
     }
     
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)

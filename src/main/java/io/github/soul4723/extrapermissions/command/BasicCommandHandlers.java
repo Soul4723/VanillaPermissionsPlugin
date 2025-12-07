@@ -1,23 +1,17 @@
 package io.github.soul4723.extrapermissions.command;
 
-import dev.jorel.commandapi.arguments.EntitySelectorArgument;
 import dev.jorel.commandapi.executors.CommandArguments;
 import io.github.soul4723.extrapermissions.ExtraPermissions;
 import io.github.soul4723.extrapermissions.util.PermissionManager;
-import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 public class BasicCommandHandlers {
     
-    public static void handleReload(CommandSender sender, CommandArguments args, ExtraPermissions plugin) {
-        if (plugin != null) {
-            plugin.reloadPluginConfig();
-            sender.sendMessage("§aExtraPermissions configuration reloaded!");
-            sender.sendMessage("§7Note: Some changes may require a full plugin restart to take effect.");
-        } else {
-            sender.sendMessage("§cError: Could not access ExtraPermissions plugin instance!");
-        }
+    public static void handleReload(CommandSender sender, ExtraPermissions plugin) {
+        plugin.reloadPluginConfig();
+        sender.sendMessage("§aExtraPermissions configuration reloaded!");
+        sender.sendMessage("§7Note: Some changes may require a full plugin restart to take effect.");
     }
     
     public static void handleCheck(CommandSender sender, CommandArguments args) {
@@ -50,7 +44,7 @@ public class BasicCommandHandlers {
         }
     }
     
-    public static void handleDebug(CommandSender sender, CommandArguments args, ExtraPermissions plugin) {
+    public static void handleDebug(CommandSender sender, ExtraPermissions plugin) {
         sender.sendMessage("§6=== ExtraPermissions Debug Info ===");
         sender.sendMessage("§7Plugin Version: §f" + plugin.getDescription().getVersion());
         sender.sendMessage("§7LuckPerms Integration: §f" + (PermissionManager.getLuckPermsHook().isEnabled() ? "§aEnabled" : "§cDisabled"));

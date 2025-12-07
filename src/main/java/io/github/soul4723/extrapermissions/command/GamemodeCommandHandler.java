@@ -34,6 +34,13 @@ public class GamemodeCommandHandler {
                 return;
             }
             Player player = (Player) sender;
+            
+            String gamemodePermission = "minecraft.command.gamemode." + gamemode;
+            if (!PermissionManager.hasPermission(player, gamemodePermission)) {
+                player.sendMessage("§cYou don't have permission to use gamemode " + gamemode + "!");
+                return;
+            }
+            
             org.bukkit.GameMode gm = org.bukkit.GameMode.valueOf(gamemode.toUpperCase());
             player.setGameMode(gm);
             player.sendMessage("§aGamemode set to " + gamemode);

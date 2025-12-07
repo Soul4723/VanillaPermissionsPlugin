@@ -1,14 +1,12 @@
 package io.github.soul4723.extrapermissions.util;
 
 import net.luckperms.api.LuckPerms;
-import net.luckperms.api.model.user.User;
 import net.luckperms.api.event.user.UserDataRecalculateEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class PermissionManager {
@@ -90,11 +88,6 @@ public class PermissionManager {
     
     public static void clearCache() {
         permissionCache.clear();
-    }
-    
-    public static void clearCacheForPlayer(UUID playerUuid) {
-        String userPrefix = playerUuid.toString() + ":";
-        permissionCache.entrySet().removeIf(entry -> entry.getKey().startsWith(userPrefix));
     }
     
     public static LuckPermsHook getLuckPermsHook() {
