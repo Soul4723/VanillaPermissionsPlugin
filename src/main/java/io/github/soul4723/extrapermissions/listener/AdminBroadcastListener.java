@@ -44,13 +44,23 @@ public class AdminBroadcastListener implements Listener {
     }
     
     private boolean isSensitiveCommand(String command) {
-        return command.startsWith("/login") || 
-               command.startsWith("/register") || 
-               command.startsWith("/password") ||
-               command.startsWith("/email") ||
-               command.startsWith("/2fa") ||
-               command.contains("password") ||
-               command.contains("secret");
+        String[] parts = command.split(" ", 2);
+        String baseCommand = parts[0].toLowerCase();
+        
+        if (baseCommand.equals("/login") || baseCommand.equals("/register") || 
+            baseCommand.equals("/password") || baseCommand.equals("/email") || 
+            baseCommand.equals("/2fa")) {
+            return true;
+        }
+        
+        if (parts.length > 1) {
+            String args = parts[1].toLowerCase();
+            return args.contains(" password ") || args.contains(" secret ") || 
+                   args.startsWith("password ") || args.startsWith("secret ") ||
+                   args.endsWith(" password") || args.endsWith(" secret");
+        }
+        
+        return false;
     }
     
     private void cleanupOldEntries() {

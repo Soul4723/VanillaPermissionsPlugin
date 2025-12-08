@@ -62,7 +62,9 @@ public class ExtraPermissionsCommand {
                 .withArguments(
                     new DoubleArgument("x"),
                     new DoubleArgument("y"), 
-                    new DoubleArgument("z"),
+                    new DoubleArgument("z")
+                )
+                .withOptionalArguments(
                     new FloatArgument("yaw"),
                     new FloatArgument("pitch")
                 )

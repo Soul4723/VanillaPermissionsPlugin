@@ -8,7 +8,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.inventory.ItemStack;
 
 public class OperatorBlockListener implements Listener {
     
@@ -38,19 +37,14 @@ public class OperatorBlockListener implements Listener {
     
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPlayerInteract(PlayerInteractEvent event) {
-        ItemStack item = event.getPlayer().getInventory().getItemInMainHand();
-        if (isOperatorBlock(item.getType())) {
-            String viewPermission = getOperatorBlockPermission(item.getType(), "view");
+        if (event.getClickedBlock() == null) return;
+        
+        Material blockType = event.getClickedBlock().getType();
+        if (isOperatorBlock(blockType)) {
+            String viewPermission = getOperatorBlockPermission(blockType, "view");
             if (!PermissionManager.hasPermission(event.getPlayer(), viewPermission)) {
                 event.setCancelled(true);
-                event.getPlayer().sendMessage("§cYou don't have permission to view " + item.getType().name().toLowerCase() + " contents!");
-                return;
-            }
-            
-            String editPermission = getOperatorBlockPermission(item.getType(), "edit");
-            if (!PermissionManager.hasPermission(event.getPlayer(), editPermission)) {
-                event.setCancelled(true);
-                event.getPlayer().sendMessage("§cYou don't have permission to edit " + item.getType().name().toLowerCase() + " contents!");
+                event.getPlayer().sendMessage("§cYou don't have permission to view " + blockType.name().toLowerCase() + " contents!");
             }
         }
     }

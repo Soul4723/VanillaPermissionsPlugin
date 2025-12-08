@@ -60,14 +60,8 @@ permissions:
   minecraft.command.teleport.targets.location:
     description: Teleport to coordinates
     default: false
-  minecraft.command.teleport.targets.location.rotation:
-    description: Teleport with rotation
-    default: false
     
   # Selector permissions
-  minecraft.selector:
-    description: Use entity selectors in commands
-    default: false
   minecraft.selector.entity.a:
     description: Select all entities (including players)
     default: false
@@ -118,12 +112,6 @@ permissions:
   minecraft.bypass.chat-speed:
     description: Bypass chat speed kick
     default: false
-  minecraft.bypass.chat-speed.global:
-    description: Bypass all chat speed limits globally
-    default: false
-  minecraft.bypass.chat-speed.reduced:
-    description: Bypass chat speed with reduced cooldown
-    default: false
   minecraft.bypass.whitelist:
     description: Bypass server whitelist
     default: false
@@ -144,9 +132,6 @@ permissions:
   minecraft.operator_block.command_block.view:
     description: View command block contents
     default: false
-  minecraft.operator_block.command_block.edit:
-    description: Edit command block contents
-    default: false
   minecraft.operator_block.command_block.break:
     description: Break command blocks
     default: false
@@ -156,9 +141,6 @@ permissions:
   minecraft.operator_block.jigsaw.view:
     description: View jigsaw blocks
     default: false
-  minecraft.operator_block.jigsaw.edit:
-    description: Edit jigsaw blocks
-    default: false
   minecraft.operator_block.jigsaw.break:
     description: Break jigsaw blocks
     default: false
@@ -167,9 +149,6 @@ permissions:
     default: false
   minecraft.operator_block.structure_block.view:
     description: View structure blocks
-    default: false
-  minecraft.operator_block.structure_block.edit:
-    description: Edit structure blocks
     default: false
   minecraft.operator_block.structure_block.break:
     description: Break structure blocks

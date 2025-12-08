@@ -33,7 +33,7 @@ Heavily influenced by [VanillaPermissions](https://github.com/DrexHD/VanillaPerm
 - Player limit - Join when server is full
 
 **Operator Blocks** - Control command blocks, jigsaw blocks, and structure blocks
-- Separate permissions for place, view, edit, and break
+- Separate permissions for place, view, and break
 - Prevent unauthorized command block usage
 
 **Admin**
@@ -57,28 +57,24 @@ Heavily influenced by [VanillaPermissions](https://github.com/DrexHD/VanillaPerm
 - `minecraft.command.teleport` - Base permission
 - `minecraft.command.teleport.targets` - Teleport to entities
 - `minecraft.command.teleport.targets.location` - Teleport to coordinates
-- `minecraft.command.teleport.targets.location.rotation` - Teleport with rotation
 
 ### Selectors
-- `minecraft.selector` - Use selectors
-- `minecraft.selector.entity.<selector>` - Select entities
-- `minecraft.selector.player.<selector>` - Select players
-- `minecraft.selector.self.<selector>` - Select self
+- `minecraft.selector.entity.<selector>` - Select entities (@a, @e, @p, @r, @s)
+- `minecraft.selector.player.<selector>` - Select players (@a, @p, @r)
+- `minecraft.selector.self.<selector>` - Select self (@s)
 
 ### Bypasses
 - `minecraft.bypass.spawn-protection` - Build in spawn protection
-- `minecraft.bypass.chat-speed` - Bypass chat cooldown
-- `minecraft.bypass.chat-speed.global` - Bypass all chat speed limits
-- `minecraft.bypass.chat-speed.reduced` - Reduced chat cooldown
+- `minecraft.bypass.chat-speed` - Bypass chat speed kick
 - `minecraft.bypass.whitelist` - Bypass whitelist
-- `minecraft.bypass.player-limit` - Bypass player limit
+- `minecraft.bypass.player-limit` - Join when server is full
 
 ### Operator Blocks
 - `minecraft.operator_block.command_block.<action>` - Control command blocks
 - `minecraft.operator_block.jigsaw.<action>` - Control jigsaw blocks
 - `minecraft.operator_block.structure_block.<action>` - Control structure blocks
 
-Actions: `place`, `view`, `edit`, `break`
+Actions: `place`, `view`, `break`
 
 ### Admin
 - `minecraft.adminbroadcast.receive` - See command broadcasts

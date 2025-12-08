@@ -18,16 +18,6 @@ public class SelectorPermissionListener implements Listener {
     public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
         Player player = event.getPlayer();
         String command = event.getMessage();
-        
-        if (!PermissionManager.hasPermission(player, "minecraft.selector")) {
-            Matcher matcher = SELECTOR_PATTERN.matcher(command);
-            if (matcher.find()) {
-                event.setCancelled(true);
-                player.sendMessage("§cYou don't have permission to use selectors!");
-                return;
-            }
-        }
-        
         checkSelectorScopes(event, player, command);
     }
     
