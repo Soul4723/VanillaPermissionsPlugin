@@ -43,22 +43,20 @@ public class ExtraPermissionsCommand {
         try {
             new CommandAPICommand("gamemode")
                 .withPermission("minecraft.command.gamemode")
-                .withAliases("gm")
                 .withArguments(new StringArgument("gamemode")
                     .replaceSuggestions(ArgumentSuggestions.strings("survival", "creative", "adventure", "spectator")))
                 .withOptionalArguments(new EntitySelectorArgument.OnePlayer("target"))
                 .executes((CommandExecutor) GamemodeCommandHandler::handleGamemodeCommand)
                 .register();
             
-            new CommandAPICommand("teleport")
+            new CommandAPICommand("tp")
                 .withPermission("minecraft.command.teleport")
-                .withAliases("tp")
                 .withArguments(new EntitySelectorArgument.OneEntity("target"))
                 .executes((CommandExecutor) TeleportCommandHandler::handleTeleportCommand)
                 .register();
             
-            new CommandAPICommand("tpcoords")
-                .withPermission("minecraft.command.teleport.targets.location")
+            new CommandAPICommand("tp")
+                .withPermission("minecraft.command.teleport")
                 .withArguments(
                     new DoubleArgument("x"),
                     new DoubleArgument("y"), 
@@ -71,7 +69,7 @@ public class ExtraPermissionsCommand {
                 .executes((CommandExecutor) TeleportCommandHandler::handleTeleportCommand)
                 .register();
         } catch (Exception e) {
-            System.err.println("Failed to register vanilla command replacements: " + e.getMessage());
+            throw new RuntimeException("Failed to register vanilla command replacements: " + e.getMessage(), e);
         }
     }
 }

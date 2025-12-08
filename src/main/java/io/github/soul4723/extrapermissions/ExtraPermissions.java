@@ -58,14 +58,13 @@ public class ExtraPermissions extends JavaPlugin {
         
         luckPermsHook = new LuckPermsHook();
         luckPermsHook.initialize(this);
-
+        
         if (!luckPermsHook.isEnabled()) {
-            getLogger().severe("ExtraPermissions requires LuckPerms to function!");
-            getLogger().severe("Download: https://luckperms.net/download");
+            getLogger().severe("Failed to initialize LuckPerms integration!");
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
-
+        
         PermissionManager.initialize(luckPermsHook);
 
         CommandAPI.onEnable();
@@ -73,7 +72,7 @@ public class ExtraPermissions extends JavaPlugin {
         ExtraPermissionsCommand.registerCommands(this);
         registerListeners();
         
-        getLogger().info("ExtraPermissions v2.1.0 enabled (inspired by VanillaPermissions)");
+        getLogger().info("ExtraPermissions v" + getDescription().getVersion() + " enabled (inspired by VanillaPermissions)");
     }
     
     private void registerListeners() {
@@ -104,7 +103,7 @@ public class ExtraPermissions extends JavaPlugin {
             return false;
         }
         
-        String[] features = {"command_permissions", "selector_permissions", "bypass_permissions", "admin_permissions", "debug_features"};
+        String[] features = {"command_permissions", "selector_permissions", "bypass_permissions", "admin_permissions"};
         for (String feature : features) {
             String path = "features." + feature;
             if (getConfig().contains(path) && !(getConfig().get(path) instanceof Boolean)) {

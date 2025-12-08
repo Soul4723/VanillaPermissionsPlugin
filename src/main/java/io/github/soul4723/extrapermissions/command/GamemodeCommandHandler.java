@@ -36,7 +36,7 @@ public class GamemodeCommandHandler {
             Player player = (Player) sender;
             
             String gamemodePermission = "minecraft.command.gamemode." + gamemode;
-            if (!PermissionManager.hasPermission(player, gamemodePermission)) {
+            if (!PermissionManager.hasPermissionOrParent(player, gamemodePermission)) {
                 player.sendMessage("§cYou don't have permission to use gamemode " + gamemode + "!");
                 return;
             }
@@ -45,13 +45,13 @@ public class GamemodeCommandHandler {
             player.setGameMode(gm);
             player.sendMessage("§aGamemode set to " + gamemode);
         } else {
-            if (!PermissionManager.hasPermission(sender, "minecraft.command.gamemode.other")) {
+            if (!PermissionManager.hasPermissionOrParent(sender, "minecraft.command.gamemode.other")) {
                 sender.sendMessage("§cYou don't have permission to set other players' gamemode!");
                 return;
             }
             
             String specificPermission = "minecraft.command.gamemode." + gamemode + ".other";
-            if (!PermissionManager.hasPermission(sender, specificPermission)) {
+            if (!PermissionManager.hasPermissionOrParent(sender, specificPermission)) {
                 sender.sendMessage("§cYou don't have permission to set " + gamemode + " for other players!");
                 return;
             }

@@ -7,7 +7,6 @@ description: Granular permission control for vanilla Minecraft commands and feat
 website: https://github.com/Soul4723
 
 depend: [CommandAPI, LuckPerms]
-softdepend: []
 
 permissions:
   extrapermissions.use:
@@ -62,47 +61,20 @@ permissions:
     default: false
     
   # Selector permissions
-  minecraft.selector.entity.a:
-    description: Select all entities (including players)
-    default: false
   minecraft.selector.entity.e:
-    description: Select non-player entities
-    default: false
-  minecraft.selector.entity.p:
-    description: Select nearest player
-    default: false
-  minecraft.selector.entity.r:
-    description: Select random player
-    default: false
-  minecraft.selector.entity.s:
-    description: Select self
+    description: Use @e selector (all entities)
     default: false
   minecraft.selector.player.a:
-    description: Select all players
-    default: false
-  minecraft.selector.player.e:
-    description: Select entities
+    description: Use @a selector (all players)
     default: false
   minecraft.selector.player.p:
-    description: Select nearest player
+    description: Use @p selector (nearest player)
     default: false
   minecraft.selector.player.r:
-    description: Select random player
-    default: false
-  minecraft.selector.self.a:
-    description: Select all
-    default: false
-  minecraft.selector.self.e:
-    description: Select entities
-    default: false
-  minecraft.selector.self.p:
-    description: Select players
-    default: false
-  minecraft.selector.self.r:
-    description: Select random
+    description: Use @r selector (random player)
     default: false
   minecraft.selector.self.s:
-    description: Select self
+    description: Use @s selector (self)
     default: false
     
   # Bypass permissions

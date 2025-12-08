@@ -9,39 +9,29 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
 
 public class SpawnProtectionListener implements Listener {
     
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOW)
     public void onBlockBreak(BlockBreakEvent event) {
+        if (!event.isCancelled()) return;
+        
         Player player = event.getPlayer();
         if (isInSpawnProtection(event.getBlock().getLocation())) {
-            if (!PermissionManager.hasPermission(player, "minecraft.bypass.spawn-protection")) {
-                event.setCancelled(true);
-                player.sendMessage("§cYou cannot break blocks in spawn protection!");
+            if (PermissionManager.hasPermissionOrParent(player, "minecraft.bypass.spawn-protection")) {
+                event.setCancelled(false);
             }
         }
     }
     
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOW)
     public void onBlockPlace(BlockPlaceEvent event) {
+        if (!event.isCancelled()) return;
+        
         Player player = event.getPlayer();
         if (isInSpawnProtection(event.getBlock().getLocation())) {
-            if (!PermissionManager.hasPermission(player, "minecraft.bypass.spawn-protection")) {
-                event.setCancelled(true);
-                player.sendMessage("§cYou cannot place blocks in spawn protection!");
-            }
-        }
-    }
-    
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onPlayerInteract(PlayerInteractEvent event) {
-        Player player = event.getPlayer();
-        if (event.getClickedBlock() != null && isInSpawnProtection(event.getClickedBlock().getLocation())) {
-            if (!PermissionManager.hasPermission(player, "minecraft.bypass.spawn-protection")) {
-                event.setCancelled(true);
-                player.sendMessage("§cYou cannot interact with blocks in spawn protection!");
+            if (PermissionManager.hasPermissionOrParent(player, "minecraft.bypass.spawn-protection")) {
+                event.setCancelled(false);
             }
         }
     }

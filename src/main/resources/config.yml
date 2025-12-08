@@ -7,4 +7,3 @@ features:
   selector_permissions: true
   bypass_permissions: true
   admin_permissions: true
-  debug_features: true

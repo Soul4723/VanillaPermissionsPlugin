@@ -98,4 +98,39 @@ public class PermissionManager {
         return "Cache size: " + permissionCache.size() + ", LuckPerms enabled: " + 
                (luckPermsHook != null && luckPermsHook.isEnabled());
     }
+    
+    public static boolean hasPermissionOrParent(CommandSender sender, String permission) {
+        if (sender.isOp()) return true;
+        
+        if (isExplicitlyDenied(sender, permission)) return false;
+        if (hasPermission(sender, permission)) return true;
+        
+        String[] parts = permission.split("\\.");
+        for (int i = parts.length - 1; i > 0; i--) {
+            String parentPerm = String.join(".", java.util.Arrays.copyOf(parts, i));
+            if (isExplicitlyDenied(sender, parentPerm)) return false;
+            if (hasPermission(sender, parentPerm)) return true;
+        }
+        
+        return false;
+    }
+    
+    private static boolean isExplicitlyDenied(CommandSender sender, String permission) {
+        if (!(sender instanceof Player)) return false;
+        
+        Player player = (Player) sender;
+        if (luckPermsHook != null && luckPermsHook.isEnabled()) {
+            try {
+                net.luckperms.api.model.user.User user = luckPermsHook.getLuckPerms().getUserManager().getUser(player.getUniqueId());
+                if (user != null) {
+                    return !user.getCachedData().getPermissionData().checkPermission(permission).asBoolean() &&
+                           user.getCachedData().getPermissionData().queryPermission(permission).result() != net.luckperms.api.util.Tristate.UNDEFINED;
+                }
+            } catch (Exception e) {
+                return false;
+            }
+        }
+        
+        return false;
+    }
 }

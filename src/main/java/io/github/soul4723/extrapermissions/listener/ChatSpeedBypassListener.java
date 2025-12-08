@@ -12,7 +12,7 @@ public class ChatSpeedBypassListener implements Listener {
     public void onPlayerKick(PlayerKickEvent event) {
         String reason = event.getReason().toLowerCase();
         if (reason.contains("chat") || reason.contains("spam") || reason.contains("too quickly")) {
-            if (PermissionManager.hasPermission(event.getPlayer(), "minecraft.bypass.chat-speed")) {
+            if (PermissionManager.hasPermissionOrParent(event.getPlayer(), "minecraft.bypass.chat-speed")) {
                 event.setCancelled(true);
             }
         }

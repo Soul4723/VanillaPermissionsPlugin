@@ -26,12 +26,12 @@ public class SelectorPermissionListener implements Listener {
         
         while (matcher.find()) {
             String selector = matcher.group();
-            String baseSelector = selector.length() >= 2 ? selector.substring(0, 2) : selector;
+            String baseSelector = selector.substring(0, 2);
             String scope = getSelectorScope(baseSelector);
             
             String permission = "minecraft.selector." + scope + "." + baseSelector.substring(1);
             
-            if (!PermissionManager.hasPermission(player, permission)) {
+            if (!PermissionManager.hasPermissionOrParent(player, permission)) {
                 event.setCancelled(true);
                 player.sendMessage("§cYou don't have permission to use " + selector + " selector!");
                 return;

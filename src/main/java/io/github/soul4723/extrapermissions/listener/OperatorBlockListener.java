@@ -16,7 +16,7 @@ public class OperatorBlockListener implements Listener {
         Material blockType = event.getBlock().getType();
         if (isOperatorBlock(blockType)) {
             String permission = getOperatorBlockPermission(blockType, "place");
-            if (!PermissionManager.hasPermission(event.getPlayer(), permission)) {
+            if (!PermissionManager.hasPermissionOrParent(event.getPlayer(), permission)) {
                 event.setCancelled(true);
                 event.getPlayer().sendMessage("§cYou don't have permission to place " + blockType.name().toLowerCase() + "!");
             }
@@ -28,7 +28,7 @@ public class OperatorBlockListener implements Listener {
         Material blockType = event.getBlock().getType();
         if (isOperatorBlock(blockType)) {
             String permission = getOperatorBlockPermission(blockType, "break");
-            if (!PermissionManager.hasPermission(event.getPlayer(), permission)) {
+            if (!PermissionManager.hasPermissionOrParent(event.getPlayer(), permission)) {
                 event.setCancelled(true);
                 event.getPlayer().sendMessage("§cYou don't have permission to break " + blockType.name().toLowerCase() + "!");
             }
@@ -42,7 +42,7 @@ public class OperatorBlockListener implements Listener {
         Material blockType = event.getClickedBlock().getType();
         if (isOperatorBlock(blockType)) {
             String viewPermission = getOperatorBlockPermission(blockType, "view");
-            if (!PermissionManager.hasPermission(event.getPlayer(), viewPermission)) {
+            if (!PermissionManager.hasPermissionOrParent(event.getPlayer(), viewPermission)) {
                 event.setCancelled(true);
                 event.getPlayer().sendMessage("§cYou don't have permission to view " + blockType.name().toLowerCase() + " contents!");
             }

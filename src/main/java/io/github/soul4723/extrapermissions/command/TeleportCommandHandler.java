@@ -19,7 +19,7 @@ public class TeleportCommandHandler {
         Object rawTarget = args.getUnchecked("target");
         if (rawTarget instanceof Entity) {
             Entity target = (Entity) rawTarget;
-            if (!PermissionManager.hasPermission(player, "minecraft.command.teleport.targets")) {
+            if (!PermissionManager.hasPermissionOrParent(player, "minecraft.command.teleport.targets")) {
                 player.sendMessage("§cYou don't have permission to teleport to targets!");
                 return;
             }
@@ -33,7 +33,7 @@ public class TeleportCommandHandler {
             Object yObj = args.getUnchecked("y");
             Object zObj = args.getUnchecked("z");
             if (xObj instanceof Number && yObj instanceof Number && zObj instanceof Number) {
-                if (!PermissionManager.hasPermission(player, "minecraft.command.teleport.targets.location")) {
+                if (!PermissionManager.hasPermissionOrParent(player, "minecraft.command.teleport.targets.location")) {
                     player.sendMessage("§cYou don't have permission to teleport to coordinates!");
                     return;
                 }
@@ -69,7 +69,7 @@ public class TeleportCommandHandler {
             }
         } catch (Exception ignored) {}
         
-        player.sendMessage("§cUsage: /tp <player/entity> or /tpcoords <x> <y> <z> [yaw] [pitch]");
+        player.sendMessage("§cUsage: /tp <player/entity> or /tp <x> <y> <z> [yaw] [pitch]");
     }
 
     private static String formatLocation(Location loc) {
