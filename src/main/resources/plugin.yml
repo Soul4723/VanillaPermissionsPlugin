@@ -1,7 +1,7 @@
 name: ExtraPermissions
 version: 2.1.0
 main: io.github.soul4723.extrapermissions.ExtraPermissions
-api-version: '1.21'
+api-version: '1.20'
 author: Soul4723
 description: Granular permission control for vanilla Minecraft commands and features
 website: https://github.com/Soul4723
@@ -137,18 +137,6 @@ permissions:
     default: false
   minecraft.debug_stick.use.block:
     description: Use debug stick on blocks
-    default: false
-  minecraft.nbt.query.block:
-    description: Query block NBT data
-    default: false
-  minecraft.nbt.query.item:
-    description: Query item NBT data
-    default: false
-  minecraft.nbt.modify.block:
-    description: Modify block NBT data
-    default: false
-  minecraft.nbt.modify.entity:
-    description: Modify entity NBT data
     default: false
   minecraft.operator_block.command_block.place:
     description: Place command blocks

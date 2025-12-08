@@ -1,27 +1,44 @@
 # VanillaPermissionsPlugin
 
-Paper plugin that adds granular permission control to vanilla Minecraft commands and features.
+Adds granular permission control for vanilla Minecraft commands on Paper servers. Lets you control specific gamemode types, teleport options, entity selectors, and more.
 
 Heavily influenced by [VanillaPermissions](https://github.com/DrexHD/VanillaPermissions) by DrexHD.
 
 ## Requirements
 
-- Paper/Spigot 1.20.1+
+- Paper 1.20.1+
 - [CommandAPI](https://github.com/JorelAli/CommandAPI) 9.5.0+
 - [LuckPerms](https://luckperms.net) 5.4+
 
-## Features
+## What It Does
 
-- Granular gamemode control (per-mode, self vs others)
-- Teleport permissions (entity, coordinates, rotation)
-- Selector permissions (@a, @e, @p, @r, @s)
-- Spawn protection bypass
-- Chat speed bypass
-- Whitelist bypass
-- Operator block control (command/jigsaw/structure blocks)
-- NBT permissions (opt-in)
-- Debug stick restrictions
-- Admin command broadcast
+**Gamemode** - Control which gamemodes players can use and whether they can change others
+- Give `/gamemode spectator` to staff without giving creative
+- Let players change their own gamemode but not others
+- Restrict specific modes (creative, survival, adventure, spectator)
+
+**Teleport** - Separate permissions for teleporting to players vs coordinates
+- Allow `/tp PlayerName` but block `/tp 100 64 100`
+- Control coordinate and rotation teleports independently
+
+**Selectors** - Control entity selector usage (@a, @e, @p, @r, @s)
+- Block mass-targeting with `@a` or `@e`
+- Allow self-targeting with `@s` only
+- Separate permissions for player vs entity selectors
+
+**Bypasses**
+- Spawn protection - Let specific players build in spawn
+- Chat speed - Bypass chat rate limiting
+- Whitelist - Join when whitelist is enabled
+- Player limit - Join when server is full
+
+**Operator Blocks** - Control command blocks, jigsaw blocks, and structure blocks
+- Separate permissions for place, view, edit, and break
+- Prevent unauthorized command block usage
+
+**Admin**
+- Control who sees command feedback broadcasts
+- Restrict debug stick usage
 
 ## Permissions
 
@@ -40,6 +57,7 @@ Heavily influenced by [VanillaPermissions](https://github.com/DrexHD/VanillaPerm
 - `minecraft.command.teleport` - Base permission
 - `minecraft.command.teleport.targets` - Teleport to entities
 - `minecraft.command.teleport.targets.location` - Teleport to coordinates
+- `minecraft.command.teleport.targets.location.rotation` - Teleport with rotation
 
 ### Selectors
 - `minecraft.selector` - Use selectors
@@ -50,6 +68,8 @@ Heavily influenced by [VanillaPermissions](https://github.com/DrexHD/VanillaPerm
 ### Bypasses
 - `minecraft.bypass.spawn-protection` - Build in spawn protection
 - `minecraft.bypass.chat-speed` - Bypass chat cooldown
+- `minecraft.bypass.chat-speed.global` - Bypass all chat speed limits
+- `minecraft.bypass.chat-speed.reduced` - Reduced chat cooldown
 - `minecraft.bypass.whitelist` - Bypass whitelist
 - `minecraft.bypass.player-limit` - Bypass player limit
 
@@ -59,12 +79,6 @@ Heavily influenced by [VanillaPermissions](https://github.com/DrexHD/VanillaPerm
 - `minecraft.operator_block.structure_block.<action>` - Control structure blocks
 
 Actions: `place`, `view`, `edit`, `break`
-
-### NBT (Opt-in)
-- `minecraft.nbt.query.block` - Query block NBT
-- `minecraft.nbt.query.item` - Query item NBT
-- `minecraft.nbt.modify.block` - Modify block NBT
-- `minecraft.nbt.modify.entity` - Modify entity NBT
 
 ### Admin
 - `minecraft.adminbroadcast.receive` - See command broadcasts
@@ -79,7 +93,6 @@ features:
   bypass_permissions: true
   admin_permissions: true
   debug_features: true
-  nbt_permissions: false
 ```
 
 ## Commands
@@ -90,4 +103,4 @@ features:
 
 ## License
 
-MIT
+This project is licensed under the MIT License. See the `LICENSE` file for details.

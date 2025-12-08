@@ -6,7 +6,6 @@ import io.github.soul4723.extrapermissions.command.ExtraPermissionsCommand;
 import io.github.soul4723.extrapermissions.listener.AdminBroadcastListener;
 import io.github.soul4723.extrapermissions.listener.ChatSpeedBypassListener;
 import io.github.soul4723.extrapermissions.listener.DebugStickListener;
-import io.github.soul4723.extrapermissions.listener.NBTPermissionListener;
 import io.github.soul4723.extrapermissions.listener.OperatorBlockListener;
 import io.github.soul4723.extrapermissions.listener.SelectorPermissionListener;
 import io.github.soul4723.extrapermissions.listener.SpawnProtectionListener;
@@ -93,10 +92,6 @@ public class ExtraPermissions extends JavaPlugin {
         if (isFeatureEnabled("selector_permissions")) {
             getServer().getPluginManager().registerEvents(new SelectorPermissionListener(), this);
         }
-        
-        if (isFeatureEnabled("nbt_permissions")) {
-            getServer().getPluginManager().registerEvents(new NBTPermissionListener(), this);
-        }
     }
     
     public boolean isFeatureEnabled(String feature) {
@@ -109,7 +104,7 @@ public class ExtraPermissions extends JavaPlugin {
             return false;
         }
         
-        String[] features = {"command_permissions", "selector_permissions", "bypass_permissions", "admin_permissions", "debug_features", "nbt_permissions"};
+        String[] features = {"command_permissions", "selector_permissions", "bypass_permissions", "admin_permissions", "debug_features"};
         for (String feature : features) {
             String path = "features." + feature;
             if (getConfig().contains(path) && !(getConfig().get(path) instanceof Boolean)) {
