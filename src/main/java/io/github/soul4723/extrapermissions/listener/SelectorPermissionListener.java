@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 
 public class SelectorPermissionListener implements Listener {
     
-    private static final Pattern SELECTOR_PATTERN = Pattern.compile("@[aepsr](?:\\[[^\\]]*\\])?");
+    private static final Pattern SELECTOR_PATTERN = Pattern.compile("@[aepsr](?:\\\\[[^\\\\]]*\\\\])*");
     
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPlayerCommand(PlayerCommandPreprocessEvent event) {

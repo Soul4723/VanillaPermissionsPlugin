@@ -2,10 +2,18 @@ package io.github.soul4723.extrapermissions;
 
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPIBukkitConfig;
+import io.github.soul4723.extrapermissions.command.DifficultyCommandHandler;
+import io.github.soul4723.extrapermissions.command.EffectCommandHandler;
 import io.github.soul4723.extrapermissions.command.ExtraPermissionsCommand;
+import io.github.soul4723.extrapermissions.command.GameruleCommandHandler;
+import io.github.soul4723.extrapermissions.command.TimeCommandHandler;
+import io.github.soul4723.extrapermissions.command.WeatherCommandHandler;
+import io.github.soul4723.extrapermissions.command.WhitelistCommandHandler;
 import io.github.soul4723.extrapermissions.listener.AdminBroadcastListener;
 import io.github.soul4723.extrapermissions.listener.ChatSpeedBypassListener;
 import io.github.soul4723.extrapermissions.listener.DebugStickListener;
+import io.github.soul4723.extrapermissions.listener.ForceGamemodeBypassListener;
+import io.github.soul4723.extrapermissions.listener.MoveSpeedBypassListener;
 import io.github.soul4723.extrapermissions.listener.OperatorBlockListener;
 import io.github.soul4723.extrapermissions.listener.SelectorPermissionListener;
 import io.github.soul4723.extrapermissions.listener.SpawnProtectionListener;
@@ -70,9 +78,26 @@ public class ExtraPermissions extends JavaPlugin {
         CommandAPI.onEnable();
 
         ExtraPermissionsCommand.registerCommands(this);
+        registerGranularCommands();
         registerListeners();
         
         getLogger().info("ExtraPermissions v" + getDescription().getVersion() + " enabled (inspired by VanillaPermissions)");
+    }
+    
+    private void registerGranularCommands() {
+        if (isFeatureEnabled("command_permissions")) {
+            try {
+                WhitelistCommandHandler.registerCommands();
+                TimeCommandHandler.registerCommands();
+                WeatherCommandHandler.registerCommands();
+                GameruleCommandHandler.registerCommands();
+                DifficultyCommandHandler.registerCommands();
+                EffectCommandHandler.registerCommands();
+                getLogger().info("Granular commands registered successfully");
+            } catch (Exception e) {
+                getLogger().warning("Failed to register granular commands: " + e.getMessage());
+            }
+        }
     }
     
     private void registerListeners() {
@@ -86,6 +111,8 @@ public class ExtraPermissions extends JavaPlugin {
             getServer().getPluginManager().registerEvents(new ChatSpeedBypassListener(), this);
             getServer().getPluginManager().registerEvents(new SpawnProtectionListener(), this);
             getServer().getPluginManager().registerEvents(new WhitelistBypassListener(), this);
+            getServer().getPluginManager().registerEvents(new ForceGamemodeBypassListener(), this);
+            getServer().getPluginManager().registerEvents(new MoveSpeedBypassListener(), this);
         }
         
         if (isFeatureEnabled("selector_permissions")) {
@@ -123,6 +150,7 @@ public class ExtraPermissions extends JavaPlugin {
     
     @Override
     public void onDisable() {
+        PermissionManager.close();
         CommandAPI.onDisable();
         getLogger().info("ExtraPermissions disabled");
     }

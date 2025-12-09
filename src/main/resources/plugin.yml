@@ -77,6 +77,78 @@ permissions:
     description: Use @s selector (self)
     default: false
     
+  # Whitelist command
+  minecraft.command.whitelist:
+    description: Use /whitelist command
+    default: false
+  minecraft.command.whitelist.add:
+    description: Add player to whitelist
+    default: false
+  minecraft.command.whitelist.remove:
+    description: Remove player from whitelist
+    default: false
+  minecraft.command.whitelist.on:
+    description: Enable whitelist
+    default: false
+  minecraft.command.whitelist.off:
+    description: Disable whitelist
+    default: false
+
+  # Time command
+  minecraft.command.time:
+    description: Use /time command
+    default: false
+  minecraft.command.time.set:
+    description: Set world time
+    default: false
+  minecraft.command.time.add:
+    description: Add time to world
+    default: false
+  minecraft.command.time.query:
+    description: Query world time
+    default: false
+
+  # Effect command
+  minecraft.command.effect:
+    description: Use /effect command
+    default: false
+  minecraft.command.effect.give:
+    description: Give effect to entity
+    default: false
+  minecraft.command.effect.clear:
+    description: Clear effects from entity
+    default: false
+
+  # Weather command
+  minecraft.command.weather:
+    description: Use /weather command
+    default: false
+  minecraft.command.weather.clear:
+    description: Clear weather
+    default: false
+  minecraft.command.weather.rain:
+    description: Start rain
+    default: false
+  minecraft.command.weather.thunder:
+    description: Start thunderstorm
+    default: false
+
+  # Gamerule command
+  minecraft.command.gamerule:
+    description: Use /gamerule command
+    default: false
+  minecraft.command.gamerule.query:
+    description: Query gamerule value
+    default: false
+  minecraft.command.gamerule.set:
+    description: Set gamerule value
+    default: false
+
+  # Difficulty command
+  minecraft.command.difficulty:
+    description: Use /difficulty command
+    default: false
+    
   # Bypass permissions
   minecraft.bypass.spawn-protection:
     description: Build inside spawn protection
@@ -89,6 +161,18 @@ permissions:
     default: false
   minecraft.bypass.player-limit:
     description: Bypass server player limit
+    default: false
+  minecraft.bypass.force-gamemode:
+    description: Override server force-gamemode setting
+    default: false
+  minecraft.bypass.move-speed.player:
+    description: Bypass player movement speed kicks
+    default: false
+  minecraft.bypass.move-speed.vehicle.boat:
+    description: Bypass movement speed kick while in boat
+    default: false
+  minecraft.bypass.move-speed.vehicle.minecart:
+    description: Bypass movement speed kick while in minecart
     default: false
     
   # Admin permissions

@@ -14,6 +14,7 @@ public class PermissionManager {
     private static LuckPermsHook luckPermsHook;
     private static final Map<String, CachedPermission> permissionCache = new ConcurrentHashMap<>();
     private static final long CACHE_DURATION = 30000;
+    private static net.luckperms.api.event.EventSubscription<UserDataRecalculateEvent> eventSubscription;
     private static class CachedPermission {
         final boolean value;
         final long timestamp;
@@ -35,8 +36,8 @@ public class PermissionManager {
             try {
                 LuckPerms luckPerms = luckPermsHook.getLuckPerms();
                 if (luckPerms != null) {
-                    luckPerms.getEventBus().subscribe(UserDataRecalculateEvent.class, event -> {
-                        String userPrefix = event.getUser().getUniqueId().toString() + ":";
+                    eventSubscription = luckPerms.getEventBus().subscribe(UserDataRecalculateEvent.class, event -> {
+                        String userPrefix = event.getUser().getUniqueId() + ":";
                         permissionCache.entrySet().removeIf(entry -> entry.getKey().startsWith(userPrefix));
                     });
                 }
@@ -62,7 +63,7 @@ public class PermissionManager {
     public static boolean hasPermission(Player player, String permission) {
         if (player == null) return false;
         
-        String cacheKey = player.getUniqueId().toString() + ":" + permission;
+        String cacheKey = player.getUniqueId() + ":" + permission;
         CachedPermission cached = permissionCache.get(cacheKey);
         
         if (cached != null && !cached.isExpired()) {
@@ -90,14 +91,22 @@ public class PermissionManager {
         permissionCache.clear();
     }
     
+    public static void close() {
+        if (eventSubscription != null) {
+            eventSubscription.close();
+            eventSubscription = null;
+        }
+    }
+    
     public static LuckPermsHook getLuckPermsHook() {
         return luckPermsHook;
     }
     
     public static String getCacheStats() {
         return "Cache size: " + permissionCache.size() + ", LuckPerms enabled: " + 
-               (luckPermsHook != null && luckPermsHook.isEnabled());
+               (luckPermsHook != null && luckPermsHook.isEnabled() ? "true" : "false");
     }
+    
     
     public static boolean hasPermissionOrParent(CommandSender sender, String permission) {
         if (sender.isOp()) return true;
@@ -107,7 +116,9 @@ public class PermissionManager {
         
         String[] parts = permission.split("\\.");
         for (int i = parts.length - 1; i > 0; i--) {
-            String parentPerm = String.join(".", java.util.Arrays.copyOf(parts, i));
+            String[] parentParts = new String[i];
+            System.arraycopy(parts, 0, parentParts, 0, i);
+            String parentPerm = String.join(".", parentParts);
             if (isExplicitlyDenied(sender, parentPerm)) return false;
             if (hasPermission(sender, parentPerm)) return true;
         }
