@@ -2,17 +2,15 @@
 
 Adds granular permission control for vanilla Minecraft commands on Paper servers. Lets you control specific gamemode types, teleport options, entity selectors, and more.
 
-Heavily influenced by [VanillaPermissions](https://github.com/DrexHD/VanillaPermissions) by DrexHD.
+Heavily influenced by the [VanillaPermissions](https://github.com/DrexHD/VanillaPermissions) mod from DrexHD.
 
-## Installation
+## Requirements/Dependencies
 
-1. Install [Paper](https://papermc.io/downloads) 1.20.6+
-2. Download [CommandAPI](https://github.com/CommandAPI/CommandAPI/releases) 11.0.0+
-3. Download [LuckPerms](https://luckperms.net/download) 5.5+
-4. Download [ExtraPermissions](https://github.com/Soul4723/ExtraPermissions)
-5. Drop all three in your plugins folder and restart
+[Paper](https://papermc.io/downloads) 1.20.6+ (*Forks might work, but I won't be testing them. If you confirm a fork works, open an issue and I’ll add it to the supported list.*)
 
-Configure permissions through LuckPerms with `/lp editor`.
+[CommandAPI](https://github.com/CommandAPI/CommandAPI/releases) 11.0.0+
+
+[LuckPerms](https://luckperms.net/download) 5.5+
 
 ## What does it do?
 
