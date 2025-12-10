@@ -6,9 +6,9 @@ Heavily influenced by [VanillaPermissions](https://github.com/DrexHD/VanillaPerm
 
 ## Requirements
 
-- Paper 1.20.1+
-- [CommandAPI](https://github.com/JorelAli/CommandAPI) 9.5.0+
-- [LuckPerms](https://luckperms.net) 5.4+
+- Paper 1.20.6+
+- [CommandAPI](https://github.com/CommandAPI/CommandAPI) 11.0.0+
+- [LuckPerms](https://luckperms.net) 5.5+
 
 ## What It Does
 
@@ -58,6 +58,38 @@ Heavily influenced by [VanillaPermissions](https://github.com/DrexHD/VanillaPerm
 - `minecraft.command.teleport.targets` - Teleport to entities
 - `minecraft.command.teleport.targets.location` - Teleport to coordinates
 
+#### Whitelist
+- `minecraft.command.whitelist` - Base permission
+- `minecraft.command.whitelist.add` - Add player to whitelist
+- `minecraft.command.whitelist.remove` - Remove player from whitelist
+- `minecraft.command.whitelist.on` - Enable whitelist
+- `minecraft.command.whitelist.off` - Disable whitelist
+
+#### Time
+- `minecraft.command.time` - Base permission
+- `minecraft.command.time.set` - Set world time
+- `minecraft.command.time.add` - Add time to world
+- `minecraft.command.time.query` - Query world time
+
+#### Effect
+- `minecraft.command.effect` - Base permission
+- `minecraft.command.effect.give` - Give effect to entity
+- `minecraft.command.effect.clear` - Clear effects from entity
+
+#### Weather
+- `minecraft.command.weather` - Base permission
+- `minecraft.command.weather.clear` - Clear weather
+- `minecraft.command.weather.rain` - Start rain
+- `minecraft.command.weather.thunder` - Start thunderstorm
+
+#### Gamerule
+- `minecraft.command.gamerule` - Base permission
+- `minecraft.command.gamerule.query` - Query gamerule value
+- `minecraft.command.gamerule.set` - Set gamerule value
+
+#### Difficulty
+- `minecraft.command.difficulty` - Use /difficulty command
+
 ### Selectors
 - `minecraft.selector.entity.e` - Use @e selector (all entities)
 - `minecraft.selector.player.a` - Use @a selector (all players)
@@ -70,6 +102,10 @@ Heavily influenced by [VanillaPermissions](https://github.com/DrexHD/VanillaPerm
 - `minecraft.bypass.chat-speed` - Bypass chat speed kick
 - `minecraft.bypass.whitelist` - Bypass whitelist
 - `minecraft.bypass.player-limit` - Join when server is full
+- `minecraft.bypass.force-gamemode` - Override server force-gamemode setting
+- `minecraft.bypass.move-speed.player` - Bypass player movement speed kicks
+- `minecraft.bypass.move-speed.vehicle.boat` - Bypass movement speed kick while in boat
+- `minecraft.bypass.move-speed.vehicle.minecart` - Bypass movement speed kick while in minecart
 
 ### Operator Blocks
 - `minecraft.operator_block.command_block.<action>` - Control command blocks
@@ -82,6 +118,15 @@ Actions: `place`, `view`, `break`
 - `minecraft.adminbroadcast.receive` - See command broadcasts
 - `minecraft.debug_stick.use.block` - Use debug stick
 
+## Installation
+
+1. Download [CommandAPI](https://github.com/CommandAPI/CommandAPI/releases) 11.0.0+
+2. Download [LuckPerms](https://luckperms.net/download) 5.5+
+3. Download ExtraPermissions
+4. Place all three plugins in your `plugins/` folder
+5. Restart your server
+6. Configure permissions using LuckPerms (`/lp editor`)
+
 ## Configuration
 
 ```yaml
@@ -90,16 +135,99 @@ features:
   selector_permissions: true
   bypass_permissions: true
   admin_permissions: true
+
+default_permissions:
+  # Whether OP players automatically bypass all permission checks
+  ops_bypass_all: true
+  # Minimum OP level required to bypass permission checks (1-4)
+  minimum_op_level: 4
 ```
+
+### Configuration Options
+
+**Features** - Toggle entire feature categories on/off
+- `command_permissions` - Enable granular command permissions
+- `selector_permissions` - Enable entity selector restrictions
+- `bypass_permissions` - Enable bypass permissions (spawn protection, whitelist, etc.)
+- `admin_permissions` - Enable admin-related permissions (debug stick, operator blocks, etc.)
+
+**Default Permissions** - Control OP behavior
+- `ops_bypass_all` - If true, OP players bypass all ExtraPermissions checks (default: true)
+- `minimum_op_level` - Minimum OP level (1-4) required to bypass checks (default: 4)
+  - Set to 1-3 to require higher OP levels for bypassing
+  - Set `ops_bypass_all: false` to make all OPs respect permissions
+
+## Quick Start
+
+### Understanding `.other` Permissions
+
+For commands like gamemode, there are two ways to control targeting other players:
+
+**Simple Control:**
+- `minecraft.command.gamemode.other true` - Can change any player to any gamemode
+- `minecraft.command.gamemode.other false` - Cannot change other players at all
+
+**Granular Control:**
+- `minecraft.command.gamemode.survival.other true` - Can only change others to survival
+- `minecraft.command.gamemode.creative.other false` - Cannot change others to creative
+- Set each mode's `.other` permission individually for precise control
+
+### Example: Moderator Setup
+Give moderators spectator mode and teleport, can change others to survival only:
+```
+minecraft.command.gamemode true
+minecraft.command.gamemode.survival true
+minecraft.command.gamemode.spectator true
+minecraft.command.gamemode.creative false
+minecraft.command.gamemode.adventure false
+minecraft.command.gamemode.survival.other true
+minecraft.command.gamemode.spectator.other false
+minecraft.command.gamemode.creative.other false
+minecraft.command.gamemode.adventure.other false
+
+minecraft.command.teleport true
+minecraft.command.teleport.targets true
+minecraft.command.teleport.targets.location false
+```
+
+### Example: Builder Setup
+Let builders bypass spawn protection and use creative mode:
+```
+minecraft.command.gamemode true
+minecraft.command.gamemode.creative true
+minecraft.command.gamemode.survival true
+minecraft.command.gamemode.spectator false
+minecraft.command.gamemode.adventure false
+minecraft.command.gamemode.other false
+
+minecraft.bypass.spawn-protection true
+```
+
+### Example: Make OPs Respect Permissions
+In `config.yml`:
+```yaml
+default_permissions:
+  ops_bypass_all: false
+```
+Now even OP players must have explicit permissions granted through LuckPerms.
 
 ## Commands
 
+### Plugin Commands
 - `/extrapermissions reload` (or `/eperm reload`, `/ep reload`) - Reload config
 - `/extrapermissions check <player>` - Check player permissions
 - `/extrapermissions debug` - View debug info
+
+### Overridden Vanilla Commands
 - `/gamemode <mode> [player]` - Change gamemode with granular permissions
 - `/tp <player|entity>` - Teleport to entity
 - `/tp <x> <y> <z> [yaw] [pitch]` - Teleport to coordinates
+- `/whitelist <add|remove|on|off> [player]` - Manage whitelist with permissions
+- `/time <set|add|query> [value]` - Control world time
+- `/effect <give|clear> <target> [effect] [seconds]` - Manage effects
+- `/weather <clear|rain|thunder>` - Control weather
+- `/gamerule <query|set> <rule> [value]` - Manage gamerules
+- `/difficulty <peaceful|easy|normal|hard>` - Set difficulty
 
 ## Notes & Limitations
 
@@ -124,12 +252,13 @@ features:
 - Bypass permission allows building in spawn protection radius
 
 **Chat Speed Bypass**
-- Detects kick messages containing "chat", "spam", or "too quickly"
-- May not work with all server configurations or custom chat plugins
+- Detects kick messages containing movement speed related keywords
+- May not work with all server configurations or custom anti-cheat plugins
 - Consider this feature experimental
 
 **Permission System Behavior**
-- OP players bypass ALL permission checks automatically
+- OP players bypass ALL permission checks by default (configurable via `ops_bypass_all`)
+- Set `ops_bypass_all: false` to make OPs use the permission system like regular players
 - Parent permissions grant access to child permissions (e.g., `minecraft.command.gamemode` grants all gamemode sub-permissions)
 - Explicit denies (setting permission to `false`) override parent permissions
 - Without explicit permissions, non-OP players are blocked from commands (vanilla behavior)

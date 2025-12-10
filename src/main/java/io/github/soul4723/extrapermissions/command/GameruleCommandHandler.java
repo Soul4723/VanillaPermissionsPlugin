@@ -3,18 +3,18 @@ package io.github.soul4723.extrapermissions.command;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.TextArgument;
-import org.bukkit.Bukkit;
 import org.bukkit.World;
+import org.bukkit.plugin.java.JavaPlugin;
 
 public class GameruleCommandHandler {
 
     private static final String BASE_PERM = "minecraft.command.gamerule";
 
-    public static void registerCommands() {
+    public static void registerCommands(JavaPlugin plugin) {
         try {
             CommandAPI.unregister("gamerule");
         } catch (Exception e) {
-            Bukkit.getLogger().fine("Gamerule command not previously registered");
+            plugin.getLogger().fine("Gamerule command not previously registered");
         }
 
         CommandAPICommand gamerule = new CommandAPICommand("gamerule")
@@ -73,8 +73,22 @@ public class GameruleCommandHandler {
         gamerule.register();
     }
 
-    private static <T> void setGameRuleValue(org.bukkit.World world, org.bukkit.GameRule<T> gameRule, String value) {
-        T val = (T) value;
-        world.setGameRule(gameRule, val);
+    @SuppressWarnings("unchecked")
+    private static <T> void setGameRuleValue(org.bukkit.World world, org.bukkit.GameRule<T> gameRule, String value) throws IllegalArgumentException {
+        Class<?> type = gameRule.getType();
+        
+        if (type == Boolean.class) {
+            Boolean boolValue = Boolean.parseBoolean(value);
+            world.setGameRule((org.bukkit.GameRule<Boolean>) gameRule, boolValue);
+        } else if (type == Integer.class) {
+            try {
+                Integer intValue = Integer.parseInt(value);
+                world.setGameRule((org.bukkit.GameRule<Integer>) gameRule, intValue);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Invalid integer value: " + value);
+            }
+        } else {
+            throw new IllegalArgumentException("Unsupported gamerule type: " + type.getName());
+        }
     }
 }

@@ -3,18 +3,18 @@ package io.github.soul4723.extrapermissions.command;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.IntegerArgument;
-import org.bukkit.Bukkit;
 import org.bukkit.World;
+import org.bukkit.plugin.java.JavaPlugin;
 
 public class TimeCommandHandler {
 
     private static final String BASE_PERM = "minecraft.command.time";
 
-    public static void registerCommands() {
+    public static void registerCommands(JavaPlugin plugin) {
         try {
             CommandAPI.unregister("time");
         } catch (Exception e) {
-            Bukkit.getLogger().fine("Time command not previously registered");
+            plugin.getLogger().fine("Time command not previously registered");
         }
 
         CommandAPICommand timeCmd = new CommandAPICommand("time")

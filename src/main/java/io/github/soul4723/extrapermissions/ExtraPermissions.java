@@ -1,7 +1,7 @@
 package io.github.soul4723.extrapermissions;
 
 import dev.jorel.commandapi.CommandAPI;
-import dev.jorel.commandapi.CommandAPIBukkitConfig;
+import dev.jorel.commandapi.CommandAPIPaperConfig;
 import io.github.soul4723.extrapermissions.command.DifficultyCommandHandler;
 import io.github.soul4723.extrapermissions.command.EffectCommandHandler;
 import io.github.soul4723.extrapermissions.command.ExtraPermissionsCommand;
@@ -31,7 +31,7 @@ public class ExtraPermissions extends JavaPlugin {
         
         if (getServer().getPluginManager().getPlugin("CommandAPI") == null) {
             getLogger().severe("ExtraPermissions requires CommandAPI to function!");
-            getLogger().severe("Download: https://github.com/JorelAli/CommandAPI/releases");
+            getLogger().severe("Download: https://github.com/CommandAPI/CommandAPI/releases");
             hasAll = false;
         }
         
@@ -46,7 +46,7 @@ public class ExtraPermissions extends JavaPlugin {
     
     @Override
     public void onLoad() {
-        CommandAPI.onLoad(new CommandAPIBukkitConfig(this));
+        CommandAPI.onLoad(new CommandAPIPaperConfig(this));
     }
     
     @Override
@@ -73,7 +73,7 @@ public class ExtraPermissions extends JavaPlugin {
             return;
         }
         
-        PermissionManager.initialize(luckPermsHook);
+        PermissionManager.initialize(luckPermsHook, this);
 
         CommandAPI.onEnable();
 
@@ -87,12 +87,12 @@ public class ExtraPermissions extends JavaPlugin {
     private void registerGranularCommands() {
         if (isFeatureEnabled("command_permissions")) {
             try {
-                WhitelistCommandHandler.registerCommands();
-                TimeCommandHandler.registerCommands();
-                WeatherCommandHandler.registerCommands();
-                GameruleCommandHandler.registerCommands();
-                DifficultyCommandHandler.registerCommands();
-                EffectCommandHandler.registerCommands();
+                WhitelistCommandHandler.registerCommands(this);
+                TimeCommandHandler.registerCommands(this);
+                WeatherCommandHandler.registerCommands(this);
+                GameruleCommandHandler.registerCommands(this);
+                DifficultyCommandHandler.registerCommands(this);
+                EffectCommandHandler.registerCommands(this);
                 getLogger().info("Granular commands registered successfully");
             } catch (Exception e) {
                 getLogger().warning("Failed to register granular commands: " + e.getMessage());
@@ -124,6 +124,10 @@ public class ExtraPermissions extends JavaPlugin {
         return getConfig().getBoolean("features." + feature, true);
     }
     
+    public boolean isOpsBypassAll() {
+        return getConfig().getBoolean("default_permissions.ops_bypass_all", true);
+    }
+    
     private boolean validateConfiguration() {
         if (!getConfig().contains("features")) {
             getLogger().warning("Missing 'features' section in config.yml");
@@ -135,6 +139,13 @@ public class ExtraPermissions extends JavaPlugin {
             String path = "features." + feature;
             if (getConfig().contains(path) && !(getConfig().get(path) instanceof Boolean)) {
                 getLogger().warning("Feature '" + feature + "' must be true or false");
+                return false;
+            }
+        }
+        
+        if (getConfig().contains("default_permissions.ops_bypass_all")) {
+            if (!(getConfig().get("default_permissions.ops_bypass_all") instanceof Boolean)) {
+                getLogger().warning("default_permissions.ops_bypass_all must be true or false");
                 return false;
             }
         }

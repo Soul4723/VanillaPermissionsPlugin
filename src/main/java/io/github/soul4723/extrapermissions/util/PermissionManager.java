@@ -2,16 +2,19 @@ package io.github.soul4723.extrapermissions.util;
 
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.event.user.UserDataRecalculateEvent;
-import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 
 public class PermissionManager {
     
     private static LuckPermsHook luckPermsHook;
+    private static Logger logger;
+    private static JavaPlugin plugin;
     private static final Map<String, CachedPermission> permissionCache = new ConcurrentHashMap<>();
     private static final long CACHE_DURATION = 30000;
     private static net.luckperms.api.event.EventSubscription<UserDataRecalculateEvent> eventSubscription;
@@ -29,8 +32,10 @@ public class PermissionManager {
         }
     }
     
-    public static void initialize(LuckPermsHook luckPermsHook) {
+    public static void initialize(LuckPermsHook luckPermsHook, JavaPlugin plugin) {
         PermissionManager.luckPermsHook = luckPermsHook;
+        PermissionManager.logger = plugin.getLogger();
+        PermissionManager.plugin = plugin;
         
         if (luckPermsHook != null && luckPermsHook.isEnabled()) {
             try {
@@ -42,7 +47,9 @@ public class PermissionManager {
                     });
                 }
             } catch (Exception e) {
-                Bukkit.getLogger().warning("Failed to register LuckPerms event listener: " + e.getMessage());
+                if (logger != null) {
+                    logger.warning("Failed to register LuckPerms event listener: " + e.getMessage());
+                }
             }
         }
     }
@@ -55,7 +62,9 @@ public class PermissionManager {
         try {
             return sender.hasPermission(permission);
         } catch (Exception e) {
-            Bukkit.getLogger().warning("Permission check failed for non-player sender: " + e.getMessage());
+            if (logger != null) {
+                logger.warning("Permission check failed for non-player sender: " + e.getMessage());
+            }
             return false;
         }
     }
@@ -76,7 +85,9 @@ public class PermissionManager {
                 net.luckperms.api.model.user.User user = luckPermsHook.getLuckPerms().getUserManager().getUser(player.getUniqueId());
                 hasPermission = user != null && user.getCachedData().getPermissionData().checkPermission(permission).asBoolean();
             } catch (Exception e) {
-                Bukkit.getLogger().warning("LuckPerms permission check failed, falling back to Bukkit: " + e.getMessage());
+                if (logger != null) {
+                    logger.warning("LuckPerms permission check failed, falling back to Bukkit: " + e.getMessage());
+                }
                 hasPermission = player.hasPermission(permission);
             }
         } else {
@@ -109,7 +120,7 @@ public class PermissionManager {
     
     
     public static boolean hasPermissionOrParent(CommandSender sender, String permission) {
-        if (sender.isOp()) return true;
+        if (shouldOpBypass(sender)) return true;
         
         if (isExplicitlyDenied(sender, permission)) return false;
         if (hasPermission(sender, permission)) return true;
@@ -124,6 +135,19 @@ public class PermissionManager {
         }
         
         return false;
+    }
+    
+    private static boolean shouldOpBypass(CommandSender sender) {
+        if (!sender.isOp()) return false;
+        
+        if (plugin instanceof io.github.soul4723.extrapermissions.ExtraPermissions) {
+            io.github.soul4723.extrapermissions.ExtraPermissions ep = 
+                (io.github.soul4723.extrapermissions.ExtraPermissions) plugin;
+            
+            return ep.isOpsBypassAll();
+        }
+        
+        return true;
     }
     
     private static boolean isExplicitlyDenied(CommandSender sender, String permission) {

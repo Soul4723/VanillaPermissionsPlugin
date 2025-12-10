@@ -5,16 +5,17 @@ import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import org.bukkit.Bukkit;
 import org.bukkit.Difficulty;
+import org.bukkit.plugin.java.JavaPlugin;
 
 public class DifficultyCommandHandler {
 
     private static final String BASE_PERM = "minecraft.command.difficulty";
 
-    public static void registerCommands() {
+    public static void registerCommands(JavaPlugin plugin) {
         try {
             CommandAPI.unregister("difficulty");
         } catch (Exception e) {
-            Bukkit.getLogger().fine("Difficulty command not previously registered");
+            plugin.getLogger().fine("Difficulty command not previously registered");
         }
 
         CommandAPICommand difficulty = new CommandAPICommand("difficulty")

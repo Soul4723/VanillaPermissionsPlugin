@@ -36,9 +36,9 @@ public class MoveSpeedBypassListener implements Listener {
 
     private boolean isMovementSpeedKick(String kickReason) {
         return kickReason.contains("moved too quickly") ||
-               kickReason.contains("move") ||
-               kickReason.contains("speed") ||
-               kickReason.contains("flying") ||
-               kickReason.contains("high");
+               kickReason.contains("moved wrongly") ||
+               kickReason.contains("moving too fast") ||
+               kickReason.contains("flying is not enabled") ||
+               kickReason.contains("vehicle") && kickReason.contains("moved");
     }
 }

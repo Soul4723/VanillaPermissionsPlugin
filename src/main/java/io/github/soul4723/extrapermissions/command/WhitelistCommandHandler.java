@@ -2,26 +2,27 @@ package io.github.soul4723.extrapermissions.command;
 
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
-import dev.jorel.commandapi.arguments.PlayerArgument;
+import dev.jorel.commandapi.arguments.EntitySelectorArgument;
 import dev.jorel.commandapi.arguments.TextArgument;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 
 public class WhitelistCommandHandler {
 
     private static final String BASE_PERM = "minecraft.command.whitelist";
 
-    public static void registerCommands() {
+    public static void registerCommands(JavaPlugin plugin) {
         try {
             CommandAPI.unregister("whitelist");
         } catch (Exception e) {
-            Bukkit.getLogger().fine("Whitelist command not previously registered");
+            plugin.getLogger().fine("Whitelist command not previously registered");
         }
 
         CommandAPICommand whitelist = new CommandAPICommand("whitelist")
                 .withSubcommand(new CommandAPICommand("add")
                         .withPermission(BASE_PERM + ".add")
-                        .withArguments(new PlayerArgument("player"))
+                        .withArguments(new EntitySelectorArgument.OnePlayer("player"))
                         .executesPlayer((player, args) -> {
                             Player target = (Player) args.get("player");
                             if (target == null) {

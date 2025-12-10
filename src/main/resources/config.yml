@@ -7,3 +7,9 @@ features:
   selector_permissions: true
   bypass_permissions: true
   admin_permissions: true
+
+# Default permission behavior
+default_permissions:
+  # Whether OP players automatically bypass all permission checks
+  # Set false to make OPs respect ExtraPermissions like regular players
+  ops_bypass_all: true

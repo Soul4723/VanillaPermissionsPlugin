@@ -7,9 +7,11 @@ import dev.jorel.commandapi.arguments.IntegerArgument;
 import dev.jorel.commandapi.arguments.TextArgument;
 import io.github.soul4723.extrapermissions.util.PermissionManager;
 import io.github.soul4723.extrapermissions.util.SelectorPathBuilder;
-import org.bukkit.Bukkit;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
@@ -20,11 +22,11 @@ public class EffectCommandHandler {
     private static final String BASE_PERM = "minecraft.command.effect";
     private static final String COMMAND_NAME = "effect";
 
-    public static void registerCommands() {
+    public static void registerCommands(JavaPlugin plugin) {
         try {
             CommandAPI.unregister("effect");
         } catch (Exception e) {
-            Bukkit.getLogger().fine("Effect command not previously registered");
+            plugin.getLogger().fine("Effect command not previously registered");
         }
 
         CommandAPICommand effect = new CommandAPICommand("effect")
@@ -54,7 +56,8 @@ public class EffectCommandHandler {
                             }
                             
                             int seconds = secondsObj;
-                            PotionEffectType effectType = PotionEffectType.getByName(effectName.toUpperCase());
+                            NamespacedKey effectKey = NamespacedKey.minecraft(effectName.toLowerCase());
+                            PotionEffectType effectType = Registry.EFFECT.get(effectKey);
                             if (effectType == null) {
                                 player.sendMessage("§cUnknown effect: " + effectName);
                                 return;
@@ -111,7 +114,8 @@ public class EffectCommandHandler {
                                     living.clearActivePotionEffects();
                                     player.sendMessage("§aCleared all effects from the target");
                                 } else {
-                                    PotionEffectType effectType = PotionEffectType.getByName(effectName.toUpperCase());
+                                    NamespacedKey effectKey = NamespacedKey.minecraft(effectName.toLowerCase());
+                                    PotionEffectType effectType = Registry.EFFECT.get(effectKey);
                                     if (effectType != null) {
                                         living.removePotionEffect(effectType);
                                         player.sendMessage("§aCleared " + effectName + " from the target");
