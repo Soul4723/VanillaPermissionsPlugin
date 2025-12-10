@@ -1,7 +1,5 @@
 package io.github.soul4723.extrapermissions;
 
-import dev.jorel.commandapi.CommandAPI;
-import dev.jorel.commandapi.CommandAPIPaperConfig;
 import io.github.soul4723.extrapermissions.command.DifficultyCommandHandler;
 import io.github.soul4723.extrapermissions.command.EffectCommandHandler;
 import io.github.soul4723.extrapermissions.command.ExtraPermissionsCommand;
@@ -44,10 +42,6 @@ public class ExtraPermissions extends JavaPlugin {
         return hasAll;
     }
     
-    @Override
-    public void onLoad() {
-        CommandAPI.onLoad(new CommandAPIPaperConfig(this));
-    }
     
     @Override
     public void onEnable() {
@@ -74,8 +68,6 @@ public class ExtraPermissions extends JavaPlugin {
         }
         
         PermissionManager.initialize(luckPermsHook, this);
-
-        CommandAPI.onEnable();
 
         ExtraPermissionsCommand.registerCommands(this);
         registerGranularCommands();
@@ -162,7 +154,6 @@ public class ExtraPermissions extends JavaPlugin {
     @Override
     public void onDisable() {
         PermissionManager.close();
-        CommandAPI.onDisable();
         getLogger().info("ExtraPermissions disabled");
     }
 }

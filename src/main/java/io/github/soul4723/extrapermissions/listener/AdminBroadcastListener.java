@@ -67,7 +67,10 @@ public class AdminBroadcastListener implements Listener {
         long currentTime = System.currentTimeMillis();
         if (currentTime - lastCleanup < CLEANUP_INTERVAL) return;
         
-        lastCleanup = currentTime;
-        recentCommands.entrySet().removeIf(entry -> currentTime - entry.getValue() > MAX_AGE);
+        synchronized (this) {
+            if (currentTime - lastCleanup < CLEANUP_INTERVAL) return;
+            lastCleanup = currentTime;
+            recentCommands.entrySet().removeIf(entry -> currentTime - entry.getValue() > MAX_AGE);
+        }
     }
 }

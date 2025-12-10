@@ -99,10 +99,6 @@ public class ExtraPermissionsCommand {
                     }
                     
                     String gamemode = ((String) gmObj).toLowerCase();
-                    if (gamemode.isEmpty()) {
-                        sender.sendMessage("§cInvalid gamemode");
-                        return;
-                    }
                     try {
                         org.bukkit.GameMode.valueOf(gamemode.toUpperCase());
                     } catch (IllegalArgumentException e) {
@@ -201,7 +197,7 @@ public class ExtraPermissionsCommand {
                         Object yObj = args.getUnchecked("y");
                         Object zObj = args.getUnchecked("z");
                         if (xObj instanceof Number && yObj instanceof Number && zObj instanceof Number) {
-                            if (!PermissionManager.hasPermissionOrParent(player, "minecraft.command.teleport.targets.location")) {
+                            if (!PermissionManager.hasPermissionOrParent(player, "minecraft.command.teleport.location")) {
                                 player.sendMessage("§cYou don't have permission to teleport to coordinates!");
                                 return;
                             }
@@ -238,6 +234,116 @@ public class ExtraPermissionsCommand {
                     } catch (Exception ignored) {}
                     
                     player.sendMessage("§cUsage: /tp <player/entity> or /tp <x> <y> <z> [yaw] [pitch]");
+                })
+                .register();
+            
+            // /tp <target> <destination> - Teleport entity TO another entity
+            new CommandAPICommand("tp")
+                .withPermission("minecraft.command.teleport")
+                .withArguments(
+                    new EntitySelectorArgument.ManyEntities("targets"),
+                    new EntitySelectorArgument.OneEntity("destination")
+                )
+                .executes((sender, args) -> {
+                    if (!PermissionManager.hasPermissionOrParent(sender, "minecraft.command.teleport.targets.targets")) {
+                        sender.sendMessage("§cYou don't have permission to teleport entities to other entities!");
+                        return;
+                    }
+                    
+                    Object rawTargets = args.getUnchecked("targets");
+                    Object rawDestination = args.getUnchecked("destination");
+                    
+                    if (rawTargets instanceof java.util.Collection && rawDestination instanceof Entity) {
+                        @SuppressWarnings("unchecked")
+                        java.util.Collection<Entity> targets = (java.util.Collection<Entity>) rawTargets;
+                        Entity destination = (Entity) rawDestination;
+                        
+                        int count = 0;
+                        for (Entity target : targets) {
+                            target.teleport(destination);
+                            count++;
+                        }
+                        sender.sendMessage("§aTeleported " + count + " entit" + (count == 1 ? "y" : "ies") + " to " + destination.getName());
+                    }
+                })
+                .register();
+            
+            // /tp <target> <x> <y> <z> - Teleport entity TO coordinates
+            new CommandAPICommand("tp")
+                .withPermission("minecraft.command.teleport")
+                .withArguments(
+                    new EntitySelectorArgument.ManyEntities("targets"),
+                    new DoubleArgument("x"),
+                    new DoubleArgument("y"),
+                    new DoubleArgument("z")
+                )
+                .withOptionalArguments(
+                    new FloatArgument("yaw"),
+                    new FloatArgument("pitch")
+                )
+                .executes((sender, args) -> {
+                    if (!PermissionManager.hasPermissionOrParent(sender, "minecraft.command.teleport.targets.location")) {
+                        sender.sendMessage("§cYou don't have permission to teleport entities to coordinates!");
+                        return;
+                    }
+                    
+                    Object rawTargets = args.getUnchecked("targets");
+                    Object xObj = args.getUnchecked("x");
+                    Object yObj = args.getUnchecked("y");
+                    Object zObj = args.getUnchecked("z");
+                    
+                    if (rawTargets instanceof java.util.Collection && 
+                        xObj instanceof Number && yObj instanceof Number && zObj instanceof Number) {
+                        @SuppressWarnings("unchecked")
+                        java.util.Collection<Entity> targets = (java.util.Collection<Entity>) rawTargets;
+                        
+                        double x = ((Number) xObj).doubleValue();
+                        double y = ((Number) yObj).doubleValue();
+                        double z = ((Number) zObj).doubleValue();
+                        
+                        if (Math.abs(x) > 30000000 || Math.abs(z) > 30000000) {
+                            sender.sendMessage("§cCoordinates out of world bounds! Must be between -30,000,000 and 30,000,000");
+                            return;
+                        }
+                        if (y < -64 || y > 320) {
+                            sender.sendMessage("§cY coordinate out of bounds! Must be between -64 and 320");
+                            return;
+                        }
+                        
+                        if (targets.isEmpty()) {
+                            sender.sendMessage("§cNo targets found!");
+                            return;
+                        }
+                        
+                        // Get world from first target
+                        Entity firstTarget = targets.iterator().next();
+                        org.bukkit.World world = firstTarget != null ? firstTarget.getWorld() : null;
+                        
+                        if (world == null) {
+                            sender.sendMessage("§cCould not determine target world!");
+                            return;
+                        }
+                        
+                        Location location = new Location(world, x, y, z);
+                        
+                        try {
+                            Object yawObj = args.getUnchecked("yaw");
+                            Object pitchObj = args.getUnchecked("pitch");
+                            if (yawObj instanceof Number && pitchObj instanceof Number) {
+                                float yaw = ((Number) yawObj).floatValue();
+                                float pitch = ((Number) pitchObj).floatValue();
+                                location.setYaw(yaw);
+                                location.setPitch(pitch);
+                            }
+                        } catch (Exception ignored) {}
+                        
+                        int count = 0;
+                        for (Entity target : targets) {
+                            target.teleport(location);
+                            count++;
+                        }
+                        sender.sendMessage("§aTeleported " + count + " entit" + (count == 1 ? "y" : "ies") + " to " + formatLocation(location));
+                    }
                 })
                 .register();
         } catch (Exception e) {

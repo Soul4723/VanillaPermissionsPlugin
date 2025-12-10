@@ -41,6 +41,7 @@ public class SpawnProtectionListener implements Listener {
         if (spawnProtection <= 0) return false;
         
         Location spawnLocation = location.getWorld().getSpawnLocation();
+        // Use 2D distance (X/Z only) to match vanilla Minecraft spawn protection behavior
         double distance = Math.sqrt(
             Math.pow(location.getX() - spawnLocation.getX(), 2) + 
             Math.pow(location.getZ() - spawnLocation.getZ(), 2)

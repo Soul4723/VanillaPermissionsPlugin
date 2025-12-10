@@ -54,10 +54,16 @@ permissions:
     description: Use /teleport command
     default: false
   minecraft.command.teleport.targets:
-    description: Teleport to player targets
+    description: Teleport self to entities/players
+    default: false
+  minecraft.command.teleport.location:
+    description: Teleport self to coordinates
+    default: false
+  minecraft.command.teleport.targets.targets:
+    description: Teleport entities to other entities
     default: false
   minecraft.command.teleport.targets.location:
-    description: Teleport to coordinates
+    description: Teleport entities to coordinates
     default: false
     
   # Selector permissions
@@ -75,6 +81,12 @@ permissions:
     default: false
   minecraft.selector.self.s:
     description: Use @s selector (self)
+    default: false
+  minecraft.selector.player.effect.targets:
+    description: Use player selectors in effect command
+    default: false
+  minecraft.selector.entity.effect.targets:
+    description: Use entity selectors in effect command
     default: false
     
   # Whitelist command

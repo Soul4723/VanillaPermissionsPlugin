@@ -29,7 +29,7 @@ public class WhitelistCommandHandler {
                                 player.sendMessage("§cPlayer not found");
                                 return;
                             }
-                            Bukkit.getWhitelistedPlayers().add(target);
+                            target.setWhitelisted(true);
                             player.sendMessage("§a" + target.getName() + " added to whitelist.");
                         })
                 )
@@ -43,7 +43,7 @@ public class WhitelistCommandHandler {
                                 return;
                             }
                             org.bukkit.OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
-                            Bukkit.getWhitelistedPlayers().remove(target);
+                            target.setWhitelisted(false);
                             player.sendMessage("§a" + targetName + " removed from whitelist.");
                         })
                 )

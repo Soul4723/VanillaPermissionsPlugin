@@ -20,7 +20,7 @@ public class TimeCommandHandler {
         CommandAPICommand timeCmd = new CommandAPICommand("time")
                 .withSubcommand(new CommandAPICommand("set")
                         .withPermission(BASE_PERM + ".set")
-                        .withArguments(new IntegerArgument("time", 0, 24000))
+                        .withArguments(new IntegerArgument("time"))
                         .executesPlayer((player, args) -> {
                             Integer ticksObj = (Integer) args.get("time");
                             if (ticksObj == null) {
@@ -35,7 +35,7 @@ public class TimeCommandHandler {
                 )
                 .withSubcommand(new CommandAPICommand("add")
                         .withPermission(BASE_PERM + ".add")
-                        .withArguments(new IntegerArgument("time", 0))
+                        .withArguments(new IntegerArgument("time"))
                         .executesPlayer((player, args) -> {
                             Integer ticksObj = (Integer) args.get("time");
                             if (ticksObj == null) {

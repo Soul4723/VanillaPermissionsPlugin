@@ -18,7 +18,7 @@ public class MoveSpeedBypassListener implements Listener {
         String kickReason = event.getReason().toLowerCase();
 
         if (isMovementSpeedKick(kickReason)) {
-            if (PermissionManager.hasPermission(player, PLAYER_SPEED_PERMISSION)) {
+            if (PermissionManager.hasPermissionOrParent(player, PLAYER_SPEED_PERMISSION)) {
                 event.setCancelled(true);
                 return;
             }
@@ -27,7 +27,7 @@ public class MoveSpeedBypassListener implements Listener {
             if (vehicle != null) {
                 String vehicleType = vehicle.getType().toString().toLowerCase();
                 String vehiclePermission = VEHICLE_SPEED_PREFIX + vehicleType;
-                if (PermissionManager.hasPermission(player, vehiclePermission)) {
+                if (PermissionManager.hasPermissionOrParent(player, vehiclePermission)) {
                     event.setCancelled(true);
                 }
             }
