@@ -162,12 +162,6 @@ permissions:
     default: false
     
   # Bypass permissions
-  minecraft.bypass.spawn-protection:
-    description: Build inside spawn protection
-    default: false
-  minecraft.bypass.chat-speed:
-    description: Bypass chat speed kick
-    default: false
   minecraft.bypass.whitelist:
     description: Bypass server whitelist
     default: false

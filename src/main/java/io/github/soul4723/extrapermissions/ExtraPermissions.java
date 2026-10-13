@@ -7,13 +7,11 @@ import io.github.soul4723.extrapermissions.command.GameruleCommandHandler;
 import io.github.soul4723.extrapermissions.command.TimeCommandHandler;
 import io.github.soul4723.extrapermissions.command.WeatherCommandHandler;
 import io.github.soul4723.extrapermissions.command.WhitelistCommandHandler;
-import io.github.soul4723.extrapermissions.listener.ChatSpeedBypassListener;
 import io.github.soul4723.extrapermissions.listener.DebugStickListener;
 import io.github.soul4723.extrapermissions.listener.ForceGamemodeBypassListener;
 import io.github.soul4723.extrapermissions.listener.MoveSpeedBypassListener;
 import io.github.soul4723.extrapermissions.listener.OperatorBlockListener;
 import io.github.soul4723.extrapermissions.listener.SelectorPermissionListener;
-import io.github.soul4723.extrapermissions.listener.SpawnProtectionListener;
 import io.github.soul4723.extrapermissions.listener.WhitelistBypassListener;
 import io.github.soul4723.extrapermissions.util.LuckPermsHook;
 import io.github.soul4723.extrapermissions.util.PermissionManager;
@@ -98,8 +96,6 @@ public class ExtraPermissions extends JavaPlugin {
         }
         
         if (isFeatureEnabled("bypass_permissions")) {
-            getServer().getPluginManager().registerEvents(new ChatSpeedBypassListener(), this);
-            getServer().getPluginManager().registerEvents(new SpawnProtectionListener(), this);
             getServer().getPluginManager().registerEvents(new WhitelistBypassListener(), this);
             getServer().getPluginManager().registerEvents(new ForceGamemodeBypassListener(), this);
             getServer().getPluginManager().registerEvents(new MoveSpeedBypassListener(), this);

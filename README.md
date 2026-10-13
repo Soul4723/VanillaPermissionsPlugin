@@ -23,11 +23,11 @@ Gives you actual control over vanilla commands instead of the usual all-or-nothi
 - Control who can use `@a`, `@e`, `@p`, `@r`, `@s` in commands
 
 **Useful bypasses:**
-- Spawn protection
-- Chat speed kicks
 - Whitelist
 - Server full kicks
 - Movement speed kicks
+
+Per-player spawn protection bypass and chat-only speed bypass are deferred on Paper 1.20.6 pending supported native integration. Historical nodes `minecraft.bypass.spawn-protection` and `minecraft.bypass.chat-speed` no longer provide bypasses; native spawn protection and chat checks retain normal behavior.
 
 **Admin controls:**
 - Command blocks, structure blocks, jigsaw blocks (place/view/break)
@@ -64,8 +64,6 @@ minecraft.command.gamemode.survival true
 minecraft.command.gamemode.spectator false
 minecraft.command.gamemode.adventure false
 minecraft.command.gamemode.other false
-
-minecraft.bypass.spawn-protection true
 ```
 
 ### Making OPs respect permissions
@@ -98,7 +96,7 @@ For commands that target players (like gamemode), permissions are checked in thi
 features:
   command_permissions: true    # Granular command controls
   selector_permissions: true   # Entity selector restrictions
-  bypass_permissions: true     # Spawn protection, whitelist, etc.
+  bypass_permissions: true     # Whitelist, server full, movement speed, etc.
   admin_permissions: true      # Command blocks, debug stick, etc.
 
 default_permissions:
@@ -165,8 +163,6 @@ default_permissions:
 - `minecraft.selector.entity.effect.targets` - Use entity selectors in /effect command
 
 ### Bypasses
-- `minecraft.bypass.spawn-protection` - Build in spawn protection
-- `minecraft.bypass.chat-speed` - Bypass chat speed kick
 - `minecraft.bypass.whitelist` - Join when whitelist is on
 - `minecraft.bypass.player-limit` - Join when server is full
 - `minecraft.bypass.force-gamemode` - Override force-gamemode setting
