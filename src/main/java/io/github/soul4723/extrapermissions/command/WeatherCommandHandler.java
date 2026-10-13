@@ -2,6 +2,7 @@ package io.github.soul4723.extrapermissions.command;
 
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
+import io.github.soul4723.extrapermissions.util.PermissionManager;
 import org.bukkit.World;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -18,7 +19,7 @@ public class WeatherCommandHandler {
 
         CommandAPICommand weather = new CommandAPICommand("weather")
                 .withSubcommand(new CommandAPICommand("clear")
-                        .withPermission(BASE_PERM + ".clear")
+                        .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".clear"))
                         .executesPlayer((player, args) -> {
                             World world = player.getWorld();
                             world.setStorm(false);
@@ -27,7 +28,7 @@ public class WeatherCommandHandler {
                         })
                 )
                 .withSubcommand(new CommandAPICommand("rain")
-                        .withPermission(BASE_PERM + ".rain")
+                        .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".rain"))
                         .executesPlayer((player, args) -> {
                             World world = player.getWorld();
                             world.setStorm(true);
@@ -36,7 +37,7 @@ public class WeatherCommandHandler {
                         })
                 )
                 .withSubcommand(new CommandAPICommand("thunder")
-                        .withPermission(BASE_PERM + ".thunder")
+                        .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".thunder"))
                         .executesPlayer((player, args) -> {
                             World world = player.getWorld();
                             world.setStorm(true);

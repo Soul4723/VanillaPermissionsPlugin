@@ -24,17 +24,17 @@ public class ExtraPermissionsCommand {
     private static void registerAdminCommands(ExtraPermissions plugin) {
         try {
             new CommandAPICommand("extrapermissions")
-                .withPermission("extrapermissions.use")
+                .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "extrapermissions.use"))
                 .withAliases("eperm", "ep")
                 .withSubcommand(new CommandAPICommand("reload")
-                    .withPermission("extrapermissions.reload")
+                    .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "extrapermissions.reload"))
                     .executes((sender, args) -> {
                         plugin.reloadPluginConfig();
                         sender.sendMessage("§aExtraPermissions configuration reloaded!");
                         sender.sendMessage("§7Note: Some changes may require a full plugin restart to take effect.");
                     }))
                 .withSubcommand(new CommandAPICommand("check")
-                    .withPermission("extrapermissions.admin")
+                    .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "extrapermissions.admin"))
                     .withArguments(new EntitySelectorArgument.OnePlayer("player"))
                     .executes((sender, args) -> {
                         Object raw = args.getUnchecked("player");
@@ -63,7 +63,7 @@ public class ExtraPermissionsCommand {
                         }
                     }))
                 .withSubcommand(new CommandAPICommand("debug")
-                    .withPermission("extrapermissions.admin")
+                    .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "extrapermissions.admin"))
                     .executes((sender, args) -> {
                         sender.sendMessage("§6=== ExtraPermissions Debug Info ===");
                         sender.sendMessage("§7Plugin Version: §f" + plugin.getDescription().getVersion());
@@ -87,7 +87,7 @@ public class ExtraPermissionsCommand {
     private static void registerVanillaCommands() {
         try {
             new CommandAPICommand("gamemode")
-                .withPermission("minecraft.command.gamemode")
+                .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "minecraft.command.gamemode"))
                 .withArguments(new StringArgument("gamemode")
                     .replaceSuggestions(ArgumentSuggestions.strings("survival", "creative", "adventure", "spectator")))
                 .withOptionalArguments(new EntitySelectorArgument.OnePlayer("target"))
@@ -149,7 +149,7 @@ public class ExtraPermissionsCommand {
                 .register();
             
             new CommandAPICommand("tp")
-                .withPermission("minecraft.command.teleport")
+                .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "minecraft.command.teleport"))
                 .withArguments(new EntitySelectorArgument.OneEntity("target"))
                 .executes((sender, args) -> {
                     if (!(sender instanceof Player)) {
@@ -175,7 +175,7 @@ public class ExtraPermissionsCommand {
                 .register();
             
             new CommandAPICommand("tp")
-                .withPermission("minecraft.command.teleport")
+                .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "minecraft.command.teleport"))
                 .withArguments(
                     new DoubleArgument("x"),
                     new DoubleArgument("y"), 
@@ -239,7 +239,7 @@ public class ExtraPermissionsCommand {
             
             // /tp <target> <destination> - Teleport entity TO another entity
             new CommandAPICommand("tp")
-                .withPermission("minecraft.command.teleport")
+                .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "minecraft.command.teleport"))
                 .withArguments(
                     new EntitySelectorArgument.ManyEntities("targets"),
                     new EntitySelectorArgument.OneEntity("destination")
@@ -270,7 +270,7 @@ public class ExtraPermissionsCommand {
             
             // /tp <target> <x> <y> <z> - Teleport entity TO coordinates
             new CommandAPICommand("tp")
-                .withPermission("minecraft.command.teleport")
+                .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "minecraft.command.teleport"))
                 .withArguments(
                     new EntitySelectorArgument.ManyEntities("targets"),
                     new DoubleArgument("x"),

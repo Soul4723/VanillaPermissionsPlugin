@@ -3,6 +3,7 @@ package io.github.soul4723.extrapermissions.command;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.MultiLiteralArgument;
+import io.github.soul4723.extrapermissions.util.PermissionManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Difficulty;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -19,7 +20,7 @@ public class DifficultyCommandHandler {
         }
 
         CommandAPICommand difficulty = new CommandAPICommand("difficulty")
-                .withPermission(BASE_PERM)
+                .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM))
                 .withArguments(new MultiLiteralArgument("difficulty", "peaceful", "easy", "normal", "hard"))
                 .executesPlayer((player, args) -> {
                     String diffStr = (String) args.get("difficulty");

@@ -3,6 +3,7 @@ package io.github.soul4723.extrapermissions.command;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.TextArgument;
+import io.github.soul4723.extrapermissions.util.PermissionManager;
 import org.bukkit.World;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -19,7 +20,7 @@ public class GameruleCommandHandler {
 
         CommandAPICommand gamerule = new CommandAPICommand("gamerule")
                 .withSubcommand(new CommandAPICommand("query")
-                        .withPermission(BASE_PERM + ".query")
+                        .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".query"))
                         .withArguments(new TextArgument("rule"))
                         .executesPlayer((player, args) -> {
                             String rule = (String) args.get("rule");
@@ -42,7 +43,7 @@ public class GameruleCommandHandler {
                         })
                 )
                 .withSubcommand(new CommandAPICommand("set")
-                        .withPermission(BASE_PERM + ".set")
+                        .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".set"))
                         .withArguments(new TextArgument("rule"), new TextArgument("value"))
                         .executesPlayer((player, args) -> {
                             String rule = (String) args.get("rule");

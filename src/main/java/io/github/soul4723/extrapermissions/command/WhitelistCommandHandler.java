@@ -4,6 +4,7 @@ import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.EntitySelectorArgument;
 import dev.jorel.commandapi.arguments.TextArgument;
+import io.github.soul4723.extrapermissions.util.PermissionManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -21,7 +22,7 @@ public class WhitelistCommandHandler {
 
         CommandAPICommand whitelist = new CommandAPICommand("whitelist")
                 .withSubcommand(new CommandAPICommand("add")
-                        .withPermission(BASE_PERM + ".add")
+                        .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".add"))
                         .withArguments(new EntitySelectorArgument.OnePlayer("player"))
                         .executesPlayer((player, args) -> {
                             Player target = (Player) args.get("player");
@@ -34,7 +35,7 @@ public class WhitelistCommandHandler {
                         })
                 )
                 .withSubcommand(new CommandAPICommand("remove")
-                        .withPermission(BASE_PERM + ".remove")
+                        .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".remove"))
                         .withArguments(new TextArgument("player"))
                         .executesPlayer((player, args) -> {
                             String targetName = (String) args.get("player");
@@ -48,14 +49,14 @@ public class WhitelistCommandHandler {
                         })
                 )
                 .withSubcommand(new CommandAPICommand("on")
-                        .withPermission(BASE_PERM + ".on")
+                        .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".on"))
                         .executesPlayer((player, args) -> {
                             Bukkit.setWhitelist(true);
                             player.sendMessage("§aWhitelist enabled.");
                         })
                 )
                 .withSubcommand(new CommandAPICommand("off")
-                        .withPermission(BASE_PERM + ".off")
+                        .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".off"))
                         .executesPlayer((player, args) -> {
                             Bukkit.setWhitelist(false);
                             player.sendMessage("§aWhitelist disabled.");

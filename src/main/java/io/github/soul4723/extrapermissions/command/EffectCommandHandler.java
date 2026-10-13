@@ -5,6 +5,7 @@ import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.EntitySelectorArgument;
 import dev.jorel.commandapi.arguments.IntegerArgument;
 import dev.jorel.commandapi.arguments.TextArgument;
+import io.github.soul4723.extrapermissions.ExtraPermissions;
 import io.github.soul4723.extrapermissions.util.PermissionManager;
 import io.github.soul4723.extrapermissions.util.SelectorPathBuilder;
 import org.bukkit.NamespacedKey;
@@ -24,6 +25,7 @@ public class EffectCommandHandler {
     private static final String COMMAND_NAME = "effect";
 
     public static void registerCommands(JavaPlugin plugin) {
+        boolean selectorPermissions = ((ExtraPermissions) plugin).isFeatureEnabled("selector_permissions");
         try {
             CommandAPI.unregister("effect");
         } catch (Exception e) {
@@ -32,7 +34,7 @@ public class EffectCommandHandler {
 
         CommandAPICommand effect = new CommandAPICommand("effect")
                 .withSubcommand(new CommandAPICommand("give")
-                        .withPermission(BASE_PERM + ".give")
+                        .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".give"))
                         .withArguments(
                                 new EntitySelectorArgument.OneEntity("targets"),
                                 new TextArgument("effect"),
@@ -69,7 +71,7 @@ public class EffectCommandHandler {
                             SelectorPathBuilder pathBuilder = new SelectorPathBuilder(COMMAND_NAME, "targets", targetSet);
                             String selectorPath = pathBuilder.build();
 
-                            if (!PermissionManager.hasPermission(player, selectorPath)) {
+                            if (selectorPermissions && !PermissionManager.hasPermissionOrParent(player, selectorPath)) {
                                 player.sendMessage("§cYou don't have permission to use " + pathBuilder.getScope() + " selectors for this command.");
                                 return;
                             }
@@ -84,7 +86,7 @@ public class EffectCommandHandler {
                         })
                 )
                 .withSubcommand(new CommandAPICommand("clear")
-                        .withPermission(BASE_PERM + ".clear")
+                        .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".clear"))
                         .withArguments(
                                 new EntitySelectorArgument.OneEntity("targets"),
                                 new TextArgument("effect").setOptional(true)
@@ -104,7 +106,7 @@ public class EffectCommandHandler {
                             SelectorPathBuilder pathBuilder = new SelectorPathBuilder(COMMAND_NAME, "targets", targetSet);
                             String selectorPath = pathBuilder.build();
 
-                            if (!PermissionManager.hasPermission(player, selectorPath)) {
+                            if (selectorPermissions && !PermissionManager.hasPermissionOrParent(player, selectorPath)) {
                                 player.sendMessage("§cYou don't have permission to use " + pathBuilder.getScope() + " selectors for this command.");
                                 return;
                             }

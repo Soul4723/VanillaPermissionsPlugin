@@ -3,6 +3,7 @@ package io.github.soul4723.extrapermissions.command;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.IntegerArgument;
+import io.github.soul4723.extrapermissions.util.PermissionManager;
 import org.bukkit.World;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -19,7 +20,7 @@ public class TimeCommandHandler {
 
         CommandAPICommand timeCmd = new CommandAPICommand("time")
                 .withSubcommand(new CommandAPICommand("set")
-                        .withPermission(BASE_PERM + ".set")
+                        .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".set"))
                         .withArguments(new IntegerArgument("time"))
                         .executesPlayer((player, args) -> {
                             Integer ticksObj = (Integer) args.get("time");
@@ -34,7 +35,7 @@ public class TimeCommandHandler {
                         })
                 )
                 .withSubcommand(new CommandAPICommand("add")
-                        .withPermission(BASE_PERM + ".add")
+                        .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".add"))
                         .withArguments(new IntegerArgument("time"))
                         .executesPlayer((player, args) -> {
                             Integer ticksObj = (Integer) args.get("time");
@@ -49,7 +50,7 @@ public class TimeCommandHandler {
                         })
                 )
                 .withSubcommand(new CommandAPICommand("query")
-                        .withPermission(BASE_PERM + ".query")
+                        .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".query"))
                         .withArguments(new dev.jorel.commandapi.arguments.MultiLiteralArgument("type", "daytime", "gametime", "day"))
                         .executesPlayer((player, args) -> {
                             World world = player.getWorld();
