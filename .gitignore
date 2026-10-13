@@ -1,0 +1,13 @@
+# Maven
+target/
+.mvn/
+mvnw
+mvnw.cmd
+#ide and extras
+.idea/
+.vscode/
+*.temp
+*.test
+*.log
+opencode.md
+ExtraPermissions.iml
