@@ -189,8 +189,10 @@ permissions:
     
   # Admin permissions
   minecraft.adminbroadcast.receive:
-    description: Receive command feedback
+    description: Grant-only compatibility alias for native command feedback
     default: false
+    children:
+      minecraft.admin.command_feedback: true
   minecraft.debug_stick.use.block:
     description: Use debug stick on blocks
     default: false

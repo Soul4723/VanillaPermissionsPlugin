@@ -7,7 +7,6 @@ import io.github.soul4723.extrapermissions.command.GameruleCommandHandler;
 import io.github.soul4723.extrapermissions.command.TimeCommandHandler;
 import io.github.soul4723.extrapermissions.command.WeatherCommandHandler;
 import io.github.soul4723.extrapermissions.command.WhitelistCommandHandler;
-import io.github.soul4723.extrapermissions.listener.AdminBroadcastListener;
 import io.github.soul4723.extrapermissions.listener.ChatSpeedBypassListener;
 import io.github.soul4723.extrapermissions.listener.DebugStickListener;
 import io.github.soul4723.extrapermissions.listener.ForceGamemodeBypassListener;
@@ -94,7 +93,6 @@ public class ExtraPermissions extends JavaPlugin {
     
     private void registerListeners() {
         if (isFeatureEnabled("admin_permissions")) {
-            getServer().getPluginManager().registerEvents(new AdminBroadcastListener(), this);
             getServer().getPluginManager().registerEvents(new DebugStickListener(), this);
             getServer().getPluginManager().registerEvents(new OperatorBlockListener(), this);
         }
