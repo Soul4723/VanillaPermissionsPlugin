@@ -9,7 +9,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.logging.Logger;
 
 public class PermissionManager {
-    
+
     private static LuckPermsHook luckPermsHook;
     private static Logger logger;
     private static JavaPlugin plugin;
@@ -18,12 +18,12 @@ public class PermissionManager {
         PermissionManager.logger = plugin.getLogger();
         PermissionManager.plugin = plugin;
     }
-    
+
     public static boolean hasPermission(CommandSender sender, String permission) {
         if (sender instanceof Player) {
             return hasPermission((Player) sender, permission);
         }
-        
+
         try {
             return sender.hasPermission(permission);
         } catch (Exception e) {
@@ -33,10 +33,10 @@ public class PermissionManager {
             return false;
         }
     }
-    
+
     public static boolean hasPermission(Player player, String permission) {
         if (player == null) return false;
-        
+
         boolean hasPermission;
         if (luckPermsHook != null && luckPermsHook.isEnabled()) {
             try {
@@ -53,20 +53,20 @@ public class PermissionManager {
         } else {
             hasPermission = player.hasPermission(permission);
         }
-        
+
         return hasPermission;
     }
-    
+
     public static LuckPermsHook getLuckPermsHook() {
         return luckPermsHook;
     }
-    
+
     public static boolean hasPermissionOrParent(CommandSender sender, String permission) {
         if (shouldOpBypass(sender)) return true;
-        
+
         if (isExplicitlyDenied(sender, permission)) return false;
         if (hasPermission(sender, permission)) return true;
-        
+
         String[] parts = permission.split("\\.");
         for (int i = parts.length - 1; i > 0; i--) {
             String[] parentParts = new String[i];
@@ -75,26 +75,26 @@ public class PermissionManager {
             if (isExplicitlyDenied(sender, parentPerm)) return false;
             if (hasPermission(sender, parentPerm)) return true;
         }
-        
+
         return false;
     }
-    
+
     private static boolean shouldOpBypass(CommandSender sender) {
         if (!sender.isOp()) return false;
-        
+
         if (plugin instanceof io.github.soul4723.extrapermissions.ExtraPermissions) {
-            io.github.soul4723.extrapermissions.ExtraPermissions ep = 
+            io.github.soul4723.extrapermissions.ExtraPermissions ep =
                 (io.github.soul4723.extrapermissions.ExtraPermissions) plugin;
-            
+
             return ep.isOpsBypassAll();
         }
-        
+
         return true;
     }
-    
+
     private static boolean isExplicitlyDenied(CommandSender sender, String permission) {
         if (!(sender instanceof Player)) return false;
-        
+
         Player player = (Player) sender;
         if (luckPermsHook != null && luckPermsHook.isEnabled()) {
             try {
@@ -110,7 +110,7 @@ public class PermissionManager {
                 return false;
             }
         }
-        
+
         return false;
     }
 }

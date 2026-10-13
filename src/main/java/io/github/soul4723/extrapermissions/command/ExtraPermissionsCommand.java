@@ -14,14 +14,14 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
 public class ExtraPermissionsCommand {
-    
+
     public static void registerCommands(ExtraPermissions plugin) {
         registerAdminCommands(plugin);
         if (plugin.isFeatureEnabled("command_permissions")) {
             registerVanillaCommands();
         }
     }
-    
+
     private static void registerAdminCommands(ExtraPermissions plugin) {
         try {
             new CommandAPICommand("extrapermissions")
@@ -44,18 +44,18 @@ public class ExtraPermissionsCommand {
                             return;
                         }
                         Player target = (Player) raw;
-                        
+
                         sender.sendMessage("§6Permissions for " + target.getName() + ":");
                         String[] keyPermissions = {
                             "extrapermissions.use",
-                            "extrapermissions.reload", 
+                            "extrapermissions.reload",
                             "extrapermissions.admin",
                             "minecraft.command.gamemode",
                             "minecraft.command.teleport",
                             "minecraft.selector.self.s",
                             "minecraft.operator_block.command_block.place"
                         };
-                        
+
                         for (String permission : keyPermissions) {
                             boolean hasPermission = PermissionManager.hasPermissionOrParent(target, permission);
                             String status = hasPermission ? "§a✓" : "§c✗";
@@ -67,10 +67,10 @@ public class ExtraPermissionsCommand {
                     .executes((sender, args) -> {
                         sender.sendMessage("§6=== ExtraPermissions Debug Info ===");
                         sender.sendMessage("§7Plugin Version: §f" + plugin.getDescription().getVersion());
-                        
+
                         var hook = PermissionManager.getLuckPermsHook();
                         sender.sendMessage("§7LuckPerms Integration: §f" + (hook != null && hook.isEnabled() ? "§aEnabled" : "§cDisabled"));
-                        
+
                         sender.sendMessage("§7Feature Status:");
                         sender.sendMessage("§7  command_permissions: " + (plugin.isFeatureEnabled("command_permissions") ? "§aEnabled" : "§cDisabled"));
                         sender.sendMessage("§7  selector_permissions: " + (plugin.isFeatureEnabled("selector_permissions") ? "§aEnabled" : "§cDisabled"));
@@ -82,7 +82,7 @@ public class ExtraPermissionsCommand {
             plugin.getLogger().severe("Failed to register ExtraPermissions admin commands: " + e.getMessage());
         }
     }
-    
+
     private static void registerVanillaCommands() {
         try {
             new CommandAPICommand("gamemode")
@@ -96,7 +96,7 @@ public class ExtraPermissionsCommand {
                         sender.sendMessage("§cUsage: /gamemode <survival|creative|adventure|spectator> [player]");
                         return;
                     }
-                    
+
                     String gamemode = ((String) gmObj).toLowerCase();
                     try {
                         org.bukkit.GameMode.valueOf(gamemode.toUpperCase());
@@ -104,26 +104,26 @@ public class ExtraPermissionsCommand {
                         sender.sendMessage("§cInvalid gamemode: " + gamemode + ". Valid modes: survival, creative, adventure, spectator");
                         return;
                     }
-                    
+
                     Player target = null;
                     Object rawTarget = args.getUnchecked("target");
                     if (rawTarget instanceof Player) {
                         target = (Player) rawTarget;
                     }
-                    
+
                     if (target == null) {
                         if (!(sender instanceof Player)) {
                             sender.sendMessage("§cConsole must specify a target player!");
                             return;
                         }
                         Player player = (Player) sender;
-                        
+
                         String gamemodePermission = "minecraft.command.gamemode." + gamemode;
                         if (!PermissionManager.hasPermissionOrParent(player, gamemodePermission)) {
                             player.sendMessage("§cYou don't have permission to use gamemode " + gamemode + "!");
                             return;
                         }
-                        
+
                         org.bukkit.GameMode gm = org.bukkit.GameMode.valueOf(gamemode.toUpperCase());
                         player.setGameMode(gm);
                         player.sendMessage("§aGamemode set to " + gamemode);
@@ -132,13 +132,13 @@ public class ExtraPermissionsCommand {
                             sender.sendMessage("§cYou don't have permission to set other players' gamemode!");
                             return;
                         }
-                        
+
                         String specificPermission = "minecraft.command.gamemode." + gamemode + ".other";
                         if (!PermissionManager.hasPermissionOrParent(sender, specificPermission)) {
                             sender.sendMessage("§cYou don't have permission to set " + gamemode + " for other players!");
                             return;
                         }
-                        
+
                         org.bukkit.GameMode gm = org.bukkit.GameMode.valueOf(gamemode.toUpperCase());
                         target.setGameMode(gm);
                         sender.sendMessage("§aSet " + target.getName() + "'s gamemode to " + gamemode);
@@ -146,7 +146,7 @@ public class ExtraPermissionsCommand {
                     }
                 })
                 .register();
-            
+
             new CommandAPICommand("tp")
                 .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "minecraft.command.teleport"))
                 .withArguments(new EntitySelectorArgument.OneEntity("target"))
@@ -156,7 +156,7 @@ public class ExtraPermissionsCommand {
                         return;
                     }
                     Player player = (Player) sender;
-                    
+
                     Object rawTarget = args.getUnchecked("target");
                     if (rawTarget instanceof Entity) {
                         Entity target = (Entity) rawTarget;
@@ -171,16 +171,16 @@ public class ExtraPermissionsCommand {
                         }
                         return;
                     }
-                    
+
                     player.sendMessage("§cUsage: /tp <player/entity> or /tp <x> <y> <z> [yaw] [pitch]");
                 })
                 .register();
-            
+
             new CommandAPICommand("tp")
                 .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "minecraft.command.teleport"))
                 .withArguments(
                     new DoubleArgument("x"),
-                    new DoubleArgument("y"), 
+                    new DoubleArgument("y"),
                     new DoubleArgument("z")
                 )
                 .withOptionalArguments(
@@ -193,7 +193,7 @@ public class ExtraPermissionsCommand {
                         return;
                     }
                     Player player = (Player) sender;
-                    
+
                     try {
                         Object xObj = args.getUnchecked("x");
                         Object yObj = args.getUnchecked("y");
@@ -203,11 +203,11 @@ public class ExtraPermissionsCommand {
                                 player.sendMessage("§cYou don't have permission to teleport to coordinates!");
                                 return;
                             }
-                            
+
                             double x = ((Number) xObj).doubleValue();
                             double y = ((Number) yObj).doubleValue();
                             double z = ((Number) zObj).doubleValue();
-                            
+
                             if (Math.abs(x) > 30000000 || Math.abs(z) > 30000000) {
                                 player.sendMessage("§cCoordinates out of world bounds! Must be between -30,000,000 and 30,000,000");
                                 return;
@@ -216,7 +216,7 @@ public class ExtraPermissionsCommand {
                                 player.sendMessage("§cY coordinate out of bounds! Must be between -64 and 320");
                                 return;
                             }
-                            
+
                             Location location = new Location(player.getWorld(), x, y, z);
                             try {
                                 Object yawObj = args.getUnchecked("yaw");
@@ -228,7 +228,7 @@ public class ExtraPermissionsCommand {
                                     location.setPitch(pitch);
                                 }
                             } catch (Exception ignored) {}
-                            
+
                             if (player.teleport(location)) {
                                 player.sendMessage("§aTeleported to " + formatLocation(location));
                             } else {
@@ -237,11 +237,11 @@ public class ExtraPermissionsCommand {
                             return;
                         }
                     } catch (Exception ignored) {}
-                    
+
                     player.sendMessage("§cUsage: /tp <player/entity> or /tp <x> <y> <z> [yaw] [pitch]");
                 })
                 .register();
-            
+
             // /tp <target> <destination> - Teleport entity TO another entity
             new CommandAPICommand("tp")
                 .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "minecraft.command.teleport"))
@@ -254,15 +254,15 @@ public class ExtraPermissionsCommand {
                         sender.sendMessage("§cYou don't have permission to teleport entities to other entities!");
                         return;
                     }
-                    
+
                     Object rawTargets = args.getUnchecked("targets");
                     Object rawDestination = args.getUnchecked("destination");
-                    
+
                     if (rawTargets instanceof java.util.Collection && rawDestination instanceof Entity) {
                         @SuppressWarnings("unchecked")
                         java.util.Collection<Entity> targets = (java.util.Collection<Entity>) rawTargets;
                         Entity destination = (Entity) rawDestination;
-                        
+
                         if (targets.isEmpty()) {
                             sender.sendMessage("§cNo targets found!");
                             return;
@@ -281,7 +281,7 @@ public class ExtraPermissionsCommand {
                     }
                 })
                 .register();
-            
+
             // /tp <target> <x> <y> <z> - Teleport entity TO coordinates
             new CommandAPICommand("tp")
                 .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "minecraft.command.teleport"))
@@ -301,21 +301,21 @@ public class ExtraPermissionsCommand {
                         sender.sendMessage("§cYou don't have permission to teleport entities to coordinates!");
                         return;
                     }
-                    
+
                     Object rawTargets = args.getUnchecked("targets");
                     Object xObj = args.getUnchecked("x");
                     Object yObj = args.getUnchecked("y");
                     Object zObj = args.getUnchecked("z");
-                    
-                    if (rawTargets instanceof java.util.Collection && 
+
+                    if (rawTargets instanceof java.util.Collection &&
                         xObj instanceof Number && yObj instanceof Number && zObj instanceof Number) {
                         @SuppressWarnings("unchecked")
                         java.util.Collection<Entity> targets = (java.util.Collection<Entity>) rawTargets;
-                        
+
                         double x = ((Number) xObj).doubleValue();
                         double y = ((Number) yObj).doubleValue();
                         double z = ((Number) zObj).doubleValue();
-                        
+
                         if (Math.abs(x) > 30000000 || Math.abs(z) > 30000000) {
                             sender.sendMessage("§cCoordinates out of world bounds! Must be between -30,000,000 and 30,000,000");
                             return;
@@ -324,14 +324,14 @@ public class ExtraPermissionsCommand {
                             sender.sendMessage("§cY coordinate out of bounds! Must be between -64 and 320");
                             return;
                         }
-                        
+
                         if (targets.isEmpty()) {
                             sender.sendMessage("§cNo targets found!");
                             return;
                         }
-                        
+
                         Location location = new Location(proxy.getWorld(), x, y, z);
-                        
+
                         try {
                             Object yawObj = args.getUnchecked("yaw");
                             Object pitchObj = args.getUnchecked("pitch");
@@ -342,7 +342,7 @@ public class ExtraPermissionsCommand {
                                 location.setPitch(pitch);
                             }
                         } catch (Exception ignored) {}
-                        
+
                         int count = 0;
                         for (Entity target : targets) {
                             if (target.teleport(location)) count++;
@@ -360,7 +360,7 @@ public class ExtraPermissionsCommand {
             throw new RuntimeException("Failed to register vanilla command replacements: " + e.getMessage(), e);
         }
     }
-    
+
     private static String formatLocation(Location loc) {
         return String.format("%.2f, %.2f, %.2f", loc.getX(), loc.getY(), loc.getZ());
     }

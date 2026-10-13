@@ -10,7 +10,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 
 public class OperatorBlockListener implements Listener {
-    
+
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent event) {
         Material blockType = event.getBlock().getType();
@@ -22,7 +22,7 @@ public class OperatorBlockListener implements Listener {
             }
         }
     }
-    
+
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
         Material blockType = event.getBlock().getType();
@@ -34,11 +34,11 @@ public class OperatorBlockListener implements Listener {
             }
         }
     }
-    
+
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPlayerInteract(PlayerInteractEvent event) {
         if (event.getClickedBlock() == null) return;
-        
+
         Material blockType = event.getClickedBlock().getType();
         if (isOperatorBlock(blockType)) {
             String viewPermission = getOperatorBlockPermission(blockType, "view");
@@ -48,7 +48,7 @@ public class OperatorBlockListener implements Listener {
             }
         }
     }
-    
+
     private boolean isOperatorBlock(Material material) {
         return material == Material.COMMAND_BLOCK ||
                material == Material.REPEATING_COMMAND_BLOCK ||
@@ -56,11 +56,11 @@ public class OperatorBlockListener implements Listener {
                material == Material.JIGSAW ||
                material == Material.STRUCTURE_BLOCK;
     }
-    
+
     private String getOperatorBlockPermission(Material material, String action) {
         String blockType;
-        if (material == Material.COMMAND_BLOCK || 
-            material == Material.REPEATING_COMMAND_BLOCK || 
+        if (material == Material.COMMAND_BLOCK ||
+            material == Material.REPEATING_COMMAND_BLOCK ||
             material == Material.CHAIN_COMMAND_BLOCK) {
             blockType = "command_block";
         } else if (material == Material.JIGSAW) {
@@ -70,7 +70,7 @@ public class OperatorBlockListener implements Listener {
         } else {
             blockType = "unknown";
         }
-        
+
         return "minecraft.operator_block." + blockType + "." + action;
     }
 }

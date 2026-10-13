@@ -81,7 +81,7 @@ public class GameruleCommandHandler {
     private static <T> void setGameRuleValue(org.bukkit.World world, org.bukkit.GameRule<T> gameRule, String value) throws IllegalArgumentException {
         Class<?> type = gameRule.getType();
         boolean success;
-        
+
         if (type == Boolean.class) {
             if (!value.equalsIgnoreCase("true") && !value.equalsIgnoreCase("false")) {
                 throw new IllegalArgumentException("Invalid boolean value: " + value + " (expected true or false)");

@@ -8,14 +8,14 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 public class LuckPermsHook {
     private LuckPerms luckPerms;
     private boolean enabled = false;
-    
+
     public void initialize(Plugin plugin) {
         Plugin luckPermsPlugin = Bukkit.getPluginManager().getPlugin("LuckPerms");
         if (luckPermsPlugin != null) {
             try {
-                RegisteredServiceProvider<LuckPerms> provider = 
+                RegisteredServiceProvider<LuckPerms> provider =
                     Bukkit.getServicesManager().getRegistration(LuckPerms.class);
-                
+
                 if (provider != null) {
                     this.luckPerms = provider.getProvider();
                     this.enabled = true;
@@ -30,11 +30,11 @@ public class LuckPermsHook {
             plugin.getLogger().warning("LuckPerms not found - plugin will not function");
         }
     }
-    
+
     public boolean isEnabled() {
         return enabled && luckPerms != null;
     }
-    
+
     public LuckPerms getLuckPerms() {
         return luckPerms;
     }

@@ -18,61 +18,61 @@ import io.github.soul4723.extrapermissions.util.PermissionManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class ExtraPermissions extends JavaPlugin {
-    
+
     private LuckPermsHook luckPermsHook;
-    
+
     private boolean checkDependencies() {
         boolean hasAll = true;
-        
+
         if (getServer().getPluginManager().getPlugin("CommandAPI") == null) {
             getLogger().severe("ExtraPermissions requires CommandAPI to function!");
             getLogger().severe("Download: https://github.com/CommandAPI/CommandAPI/releases");
             hasAll = false;
         }
-        
+
         if (getServer().getPluginManager().getPlugin("LuckPerms") == null) {
             getLogger().severe("ExtraPermissions requires LuckPerms to function!");
             getLogger().severe("Download: https://luckperms.net/download");
             hasAll = false;
         }
-        
+
         return hasAll;
     }
-    
-    
+
+
     @Override
     public void onEnable() {
         if (!checkDependencies()) {
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
-        
+
         saveDefaultConfig();
-        
+
         if (!validateConfiguration()) {
             getLogger().severe("Configuration validation failed! Disabling plugin.");
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
-        
+
         luckPermsHook = new LuckPermsHook();
         luckPermsHook.initialize(this);
-        
+
         if (!luckPermsHook.isEnabled()) {
             getLogger().severe("Failed to initialize LuckPerms integration!");
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
-        
+
         PermissionManager.initialize(luckPermsHook, this);
 
         ExtraPermissionsCommand.registerCommands(this);
         registerGranularCommands();
         registerListeners();
-        
+
         getLogger().info("ExtraPermissions v" + getDescription().getVersion() + " enabled (inspired by VanillaPermissions)");
     }
-    
+
     private void registerGranularCommands() {
         if (isFeatureEnabled("command_permissions")) {
             try {
@@ -88,38 +88,38 @@ public class ExtraPermissions extends JavaPlugin {
             }
         }
     }
-    
+
     private void registerListeners() {
         if (isFeatureEnabled("admin_permissions")) {
             getServer().getPluginManager().registerEvents(new DebugStickListener(), this);
             getServer().getPluginManager().registerEvents(new OperatorBlockListener(), this);
         }
-        
+
         if (isFeatureEnabled("bypass_permissions")) {
             getServer().getPluginManager().registerEvents(new WhitelistBypassListener(), this);
             getServer().getPluginManager().registerEvents(new ForceGamemodeBypassListener(), this);
             getServer().getPluginManager().registerEvents(new MoveSpeedBypassListener(), this);
         }
-        
+
         if (isFeatureEnabled("selector_permissions")) {
             getServer().getPluginManager().registerEvents(new SelectorPermissionListener(), this);
         }
     }
-    
+
     public boolean isFeatureEnabled(String feature) {
         return getConfig().getBoolean("features." + feature, true);
     }
-    
+
     public boolean isOpsBypassAll() {
         return getConfig().getBoolean("default_permissions.ops_bypass_all", true);
     }
-    
+
     private boolean validateConfiguration() {
         if (!getConfig().contains("features")) {
             getLogger().warning("Missing 'features' section in config.yml");
             return false;
         }
-        
+
         String[] features = {"command_permissions", "selector_permissions", "bypass_permissions", "admin_permissions"};
         for (String feature : features) {
             String path = "features." + feature;
@@ -128,22 +128,22 @@ public class ExtraPermissions extends JavaPlugin {
                 return false;
             }
         }
-        
+
         if (getConfig().contains("default_permissions.ops_bypass_all")) {
             if (!(getConfig().get("default_permissions.ops_bypass_all") instanceof Boolean)) {
                 getLogger().warning("default_permissions.ops_bypass_all must be true or false");
                 return false;
             }
         }
-        
+
         return true;
     }
-    
+
     public void reloadPluginConfig() {
         reloadConfig();
         getLogger().info("Configuration reloaded - restart plugin for full effect");
     }
-    
+
     @Override
     public void onDisable() {
         getLogger().info("ExtraPermissions disabled");

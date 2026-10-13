@@ -44,7 +44,7 @@ public class EffectCommandHandler {
                             Entity targetEntity = (Entity) args.get("targets");
                             String effectName = (String) args.get("effect");
                             Integer secondsObj = (Integer) args.get("seconds");
-                            
+
                             if (targetEntity == null) {
                                 player.sendMessage("§cTarget entity not found");
                                 return;
@@ -57,7 +57,7 @@ public class EffectCommandHandler {
                                 player.sendMessage("§cEffect name is required");
                                 return;
                             }
-                            
+
                             int seconds = secondsObj;
                             NamespacedKey effectKey = NamespacedKey.fromString(effectName.toLowerCase(Locale.ROOT));
                             PotionEffectType effectType = effectKey == null ? null : Registry.EFFECT.get(effectKey);

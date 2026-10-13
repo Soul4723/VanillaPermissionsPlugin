@@ -18,7 +18,7 @@ permissions:
   extrapermissions.admin:
     description: Access ExtraPermissions admin features
     default: op
-    
+
   # Command permissions
   minecraft.command.gamemode:
     description: Use /gamemode command
@@ -65,7 +65,7 @@ permissions:
   minecraft.command.teleport.targets.location:
     description: Teleport entities to coordinates
     default: false
-    
+
   # Selector permissions
   minecraft.selector.entity.e:
     description: Use @e selector (all entities)
@@ -88,7 +88,7 @@ permissions:
   minecraft.selector.entity.effect.targets:
     description: Use entity selectors in effect command
     default: false
-    
+
   # Whitelist command
   minecraft.command.whitelist:
     description: Use /whitelist command
@@ -160,7 +160,7 @@ permissions:
   minecraft.command.difficulty:
     description: Use /difficulty command
     default: false
-    
+
   # Bypass permissions
   minecraft.bypass.whitelist:
     description: Bypass server whitelist
@@ -180,7 +180,7 @@ permissions:
   minecraft.bypass.move-speed.vehicle.minecart:
     description: Bypass movement speed kick while in minecart
     default: false
-    
+
   # Admin permissions
   minecraft.adminbroadcast.receive:
     description: Grant-only compatibility alias for native command feedback
