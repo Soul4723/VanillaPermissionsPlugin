@@ -71,7 +71,6 @@ public class ExtraPermissionsCommand {
                         
                         var hook = PermissionManager.getLuckPermsHook();
                         sender.sendMessage("§7LuckPerms Integration: §f" + (hook != null && hook.isEnabled() ? "§aEnabled" : "§cDisabled"));
-                        sender.sendMessage("§7" + PermissionManager.getCacheStats());
                         
                         sender.sendMessage("§7Feature Status:");
                         sender.sendMessage("§7  command_permissions: " + (plugin.isFeatureEnabled("command_permissions") ? "§aEnabled" : "§cDisabled"));

@@ -147,13 +147,11 @@ public class ExtraPermissions extends JavaPlugin {
     
     public void reloadPluginConfig() {
         reloadConfig();
-        PermissionManager.clearCache();
         getLogger().info("Configuration reloaded - restart plugin for full effect");
     }
     
     @Override
     public void onDisable() {
-        PermissionManager.close();
         getLogger().info("ExtraPermissions disabled");
     }
 }
