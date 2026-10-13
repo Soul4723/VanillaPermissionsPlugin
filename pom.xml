@@ -11,7 +11,7 @@
     
     <name>ExtraPermissions</name>
     <description>Granular permission control for vanilla Minecraft commands and features</description>
-    <url>https://github.com/Soul4723</url>
+    <url>https://github.com/Soul4723/VanillaPermissionsPlugin</url>
     
     <properties>
         <java.version>17</java.version>
@@ -22,14 +22,14 @@
     </properties>
     
     <scm>
-        <connection>scm:git:git://github.com/Soul4723/ExtraPermissions.git</connection>
-        <developerConnection>scm:git:ssh://github.com:Soul4723/ExtraPermissions.git</developerConnection>
-        <url>https://github.com/Soul4723/ExtraPermissions/tree/main</url>
+        <connection>scm:git:git://github.com/Soul4723/VanillaPermissionsPlugin.git</connection>
+        <developerConnection>scm:git:ssh://github.com:Soul4723/VanillaPermissionsPlugin.git</developerConnection>
+        <url>https://github.com/Soul4723/VanillaPermissionsPlugin/tree/main</url>
     </scm>
     
     <issueManagement>
         <system>GitHub</system>
-        <url>https://github.com/Soul4723/ExtraPermissions/issues</url>
+        <url>https://github.com/Soul4723/VanillaPermissionsPlugin/issues</url>
     </issueManagement>
     
     <licenses>
