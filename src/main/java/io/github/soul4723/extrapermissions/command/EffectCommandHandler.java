@@ -38,17 +38,17 @@ public class EffectCommandHandler {
                 .withSubcommand(new CommandAPICommand("give")
                         .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".give"))
                         .withArguments(
-                                new EntitySelectorArgument.OneEntity("targets"),
+                                new EntitySelectorArgument.ManyEntities("targets"),
                                 new TextArgument("effect"),
                                 new IntegerArgument("seconds", 1, 1_000_000)
                         )
                         .executesNative((proxy, args) -> {
                             CommandSender sender = proxy.getCaller();
-                            Collection<Entity> targets = targets(args.get("targets"));
+                            Collection<Entity> targetEntities = asEntities(args.get("targets"));
                             String effectName = (String) args.get("effect");
                             Integer secondsObj = (Integer) args.get("seconds");
 
-                            if (targets.isEmpty()) {
+                            if (targetEntities.isEmpty()) {
                                 sender.sendMessage("§cTarget entity not found");
                                 return;
                             }
@@ -69,7 +69,7 @@ public class EffectCommandHandler {
                                 return;
                             }
 
-                            SelectorPathBuilder pathBuilder = new SelectorPathBuilder(COMMAND_NAME, "targets", new HashSet<>(targets));
+                            SelectorPathBuilder pathBuilder = new SelectorPathBuilder(COMMAND_NAME, "targets", new HashSet<>(targetEntities));
                             String selectorPath = pathBuilder.build();
 
                             if (selectorPermissions && !PermissionManager.hasPermissionOrParent(sender, selectorPath)) {
@@ -78,7 +78,7 @@ public class EffectCommandHandler {
                             }
 
                             int applied = 0;
-                            for (Entity target : targets) {
+                            for (Entity target : targetEntities) {
                                 if (target instanceof LivingEntity
                                         && ((LivingEntity) target).addPotionEffect(new PotionEffect(effectType, seconds * 20, 0, true, true))) {
                                     applied++;
@@ -99,16 +99,16 @@ public class EffectCommandHandler {
                         )
                         .executesNative((proxy, args) -> {
                             CommandSender sender = proxy.getCaller();
-                            Collection<Entity> targets = targets(args.get("targets"));
+                            Collection<Entity> targetEntities = asEntities(args.get("targets"));
                             Object effectArg = args.get(1);
                             String effectName = effectArg != null ? (String) effectArg : null;
 
-                            if (targets.isEmpty()) {
+                            if (targetEntities.isEmpty()) {
                                 sender.sendMessage("§cTarget entity not found");
                                 return;
                             }
 
-                            SelectorPathBuilder pathBuilder = new SelectorPathBuilder(COMMAND_NAME, "targets", new HashSet<>(targets));
+                            SelectorPathBuilder pathBuilder = new SelectorPathBuilder(COMMAND_NAME, "targets", new HashSet<>(targetEntities));
                             String selectorPath = pathBuilder.build();
 
                             if (selectorPermissions && !PermissionManager.hasPermissionOrParent(sender, selectorPath)) {
@@ -127,7 +127,7 @@ public class EffectCommandHandler {
                             }
 
                             int affected = 0;
-                            for (Entity target : targets) {
+                            for (Entity target : targetEntities) {
                                 if (target instanceof LivingEntity) {
                                     LivingEntity living = (LivingEntity) target;
                                     if (effectType == null) {
@@ -152,7 +152,7 @@ public class EffectCommandHandler {
     }
 
     @SuppressWarnings("unchecked")
-    private static Collection<Entity> targets(Object value) {
+    private static Collection<Entity> asEntities(Object value) {
         return value instanceof Collection ? (Collection<Entity>) value : java.util.List.of();
     }
 }

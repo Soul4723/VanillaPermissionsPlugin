@@ -90,7 +90,7 @@ public class ExtraPermissionsCommand {
                 .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "minecraft.command.gamemode"))
                 .withArguments(new StringArgument("gamemode")
                     .replaceSuggestions(ArgumentSuggestions.strings("survival", "creative", "adventure", "spectator")))
-                .withOptionalArguments(new EntitySelectorArgument.OnePlayer("target"))
+                .withOptionalArguments(new EntitySelectorArgument.ManyPlayers("target"))
                 .executes((sender, args) -> {
                     Object gmObj = args.getUnchecked("gamemode");
                     if (gmObj == null) {
@@ -100,50 +100,44 @@ public class ExtraPermissionsCommand {
 
                     String gamemode = ((String) gmObj).toLowerCase(Locale.ROOT);
                     try {
-                        org.bukkit.GameMode.valueOf(gamemode.toUpperCase());
+                        org.bukkit.GameMode.valueOf(gamemode.toUpperCase(Locale.ROOT));
                     } catch (IllegalArgumentException e) {
                         sender.sendMessage("§cInvalid gamemode: " + gamemode + ". Valid modes: survival, creative, adventure, spectator");
                         return;
                     }
 
-                    Player target = null;
                     Object rawTarget = args.getUnchecked("target");
-                    if (rawTarget instanceof Player) {
-                        target = (Player) rawTarget;
-                    }
-
-                    if (target == null) {
-                        if (!(sender instanceof Player)) {
-                            sender.sendMessage("§cConsole must specify a target player!");
-                            return;
-                        }
-                        Player player = (Player) sender;
-
-                        String gamemodePermission = "minecraft.command.gamemode." + gamemode;
-                        if (!PermissionManager.hasPermissionOrParent(player, gamemodePermission)) {
-                            player.sendMessage("§cYou don't have permission to use gamemode " + gamemode + "!");
-                            return;
-                        }
-
-                        org.bukkit.GameMode gm = org.bukkit.GameMode.valueOf(gamemode.toUpperCase());
-                        player.setGameMode(gm);
-                        player.sendMessage("§aGamemode set to " + gamemode);
+                    java.util.Collection<Player> targets;
+                    if (rawTarget instanceof java.util.Collection<?>) {
+                        @SuppressWarnings("unchecked")
+                        java.util.Collection<Player> selected = (java.util.Collection<Player>) rawTarget;
+                        targets = selected;
+                    } else if (sender instanceof Player player) {
+                        targets = java.util.List.of(player);
                     } else {
-                        if (!PermissionManager.hasPermissionOrParent(sender, "minecraft.command.gamemode.other")) {
+                        sender.sendMessage("§cConsole must specify target players!");
+                        return;
+                    }
+                    if (targets.isEmpty()) {
+                        sender.sendMessage("§cNo targets found!");
+                        return;
+                    }
+                    for (Player target : targets) {
+                        boolean self = target.equals(sender);
+                        if (!self && !PermissionManager.hasPermissionOrParent(sender, "minecraft.command.gamemode.other")) {
                             sender.sendMessage("§cYou don't have permission to set other players' gamemode!");
                             return;
                         }
-
-                        String specificPermission = "minecraft.command.gamemode." + gamemode + ".other";
-                        if (!PermissionManager.hasPermissionOrParent(sender, specificPermission)) {
-                            sender.sendMessage("§cYou don't have permission to set " + gamemode + " for other players!");
+                        if (!PermissionManager.hasPermissionOrParent(sender,
+                                "minecraft.command.gamemode." + gamemode + (self ? "" : ".other"))) {
+                            sender.sendMessage("§cYou don't have permission to set gamemode " + gamemode + "!");
                             return;
                         }
-
-                        org.bukkit.GameMode gm = org.bukkit.GameMode.valueOf(gamemode.toUpperCase());
-                        target.setGameMode(gm);
+                    }
+                    org.bukkit.GameMode mode = org.bukkit.GameMode.valueOf(gamemode.toUpperCase(Locale.ROOT));
+                    for (Player target : targets) {
+                        target.setGameMode(mode);
                         sender.sendMessage("§aSet " + target.getName() + "'s gamemode to " + gamemode);
-                        target.sendMessage("§aYour gamemode was set to " + gamemode + " by " + sender.getName());
                     }
                 })
                 .register();
@@ -209,12 +203,8 @@ public class ExtraPermissionsCommand {
                             double y = ((Number) yObj).doubleValue();
                             double z = ((Number) zObj).doubleValue();
 
-                            if (Math.abs(x) > 30000000 || Math.abs(z) > 30000000) {
+                            if (!Double.isFinite(x) || !Double.isFinite(y) || !Double.isFinite(z) || Math.abs(x) > 30000000 || Math.abs(z) > 30000000 || Math.abs(y) > 20000000) {
                                 player.sendMessage("§cCoordinates out of world bounds! Must be between -30,000,000 and 30,000,000");
-                                return;
-                            }
-                            if (y < -64 || y > 320) {
-                                player.sendMessage("§cY coordinate out of bounds! Must be between -64 and 320");
                                 return;
                             }
 
@@ -317,12 +307,8 @@ public class ExtraPermissionsCommand {
                         double y = ((Number) yObj).doubleValue();
                         double z = ((Number) zObj).doubleValue();
 
-                        if (Math.abs(x) > 30000000 || Math.abs(z) > 30000000) {
+                        if (!Double.isFinite(x) || !Double.isFinite(y) || !Double.isFinite(z) || Math.abs(x) > 30000000 || Math.abs(z) > 30000000 || Math.abs(y) > 20000000) {
                             sender.sendMessage("§cCoordinates out of world bounds! Must be between -30,000,000 and 30,000,000");
-                            return;
-                        }
-                        if (y < -64 || y > 320) {
-                            sender.sendMessage("§cY coordinate out of bounds! Must be between -64 and 320");
                             return;
                         }
 
