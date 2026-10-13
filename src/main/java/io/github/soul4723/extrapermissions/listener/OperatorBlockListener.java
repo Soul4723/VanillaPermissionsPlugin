@@ -1,6 +1,7 @@
 package io.github.soul4723.extrapermissions.listener;
 
 import io.github.soul4723.extrapermissions.util.PermissionManager;
+import java.util.Locale;
 import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -18,7 +19,7 @@ public class OperatorBlockListener implements Listener {
             String permission = getOperatorBlockPermission(blockType, "place");
             if (!PermissionManager.hasPermissionOrParent(event.getPlayer(), permission)) {
                 event.setCancelled(true);
-                event.getPlayer().sendMessage("§cYou don't have permission to place " + blockType.name().toLowerCase() + "!");
+                event.getPlayer().sendMessage("§cYou don't have permission to place " + blockType.name().toLowerCase(Locale.ROOT) + "!");
             }
         }
     }
@@ -30,7 +31,7 @@ public class OperatorBlockListener implements Listener {
             String permission = getOperatorBlockPermission(blockType, "break");
             if (!PermissionManager.hasPermissionOrParent(event.getPlayer(), permission)) {
                 event.setCancelled(true);
-                event.getPlayer().sendMessage("§cYou don't have permission to break " + blockType.name().toLowerCase() + "!");
+                event.getPlayer().sendMessage("§cYou don't have permission to break " + blockType.name().toLowerCase(Locale.ROOT) + "!");
             }
         }
     }
@@ -44,7 +45,7 @@ public class OperatorBlockListener implements Listener {
             String viewPermission = getOperatorBlockPermission(blockType, "view");
             if (!PermissionManager.hasPermissionOrParent(event.getPlayer(), viewPermission)) {
                 event.setCancelled(true);
-                event.getPlayer().sendMessage("§cYou don't have permission to view " + blockType.name().toLowerCase() + " contents!");
+                event.getPlayer().sendMessage("§cYou don't have permission to view " + blockType.name().toLowerCase(Locale.ROOT) + " contents!");
             }
         }
     }

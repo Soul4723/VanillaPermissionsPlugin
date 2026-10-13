@@ -1,6 +1,7 @@
 package io.github.soul4723.extrapermissions.command;
 
 import dev.jorel.commandapi.CommandAPICommand;
+import java.util.Locale;
 import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import dev.jorel.commandapi.arguments.DoubleArgument;
 import dev.jorel.commandapi.arguments.EntitySelectorArgument;
@@ -97,7 +98,7 @@ public class ExtraPermissionsCommand {
                         return;
                     }
 
-                    String gamemode = ((String) gmObj).toLowerCase();
+                    String gamemode = ((String) gmObj).toLowerCase(Locale.ROOT);
                     try {
                         org.bukkit.GameMode.valueOf(gamemode.toUpperCase());
                     } catch (IllegalArgumentException e) {

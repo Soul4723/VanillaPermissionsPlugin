@@ -3,14 +3,12 @@ package io.github.soul4723.extrapermissions.util;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 
-import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 
 public class SelectorPathBuilder {
 
-    private static final Set<EntityType> PLAYER_TYPES = new HashSet<>(java.util.Collections.singletonList(
-            EntityType.PLAYER
-    ));
+    private static final Set<EntityType> PLAYER_TYPES = Set.of(EntityType.PLAYER);
 
     public enum SelectorScope {
         PLAYER("minecraft.selector.player"),
@@ -32,8 +30,8 @@ public class SelectorPathBuilder {
     private final SelectorScope scope;
 
     public SelectorPathBuilder(String commandName, String selectorPath, Set<Entity> targetEntities) {
-        this.commandName = commandName.toLowerCase();
-        this.selectorPath = selectorPath != null ? selectorPath.toLowerCase() : "";
+        this.commandName = commandName.toLowerCase(Locale.ROOT);
+        this.selectorPath = selectorPath != null ? selectorPath.toLowerCase(Locale.ROOT) : "";
         this.scope = determineScopeFromEntities(targetEntities);
     }
 

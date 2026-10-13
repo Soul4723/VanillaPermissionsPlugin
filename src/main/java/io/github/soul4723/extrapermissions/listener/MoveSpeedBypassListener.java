@@ -1,6 +1,7 @@
 package io.github.soul4723.extrapermissions.listener;
 
 import io.github.soul4723.extrapermissions.util.PermissionManager;
+import java.util.Locale;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -15,7 +16,7 @@ public class MoveSpeedBypassListener implements Listener {
     @EventHandler
     public void onPlayerKick(PlayerKickEvent event) {
         Player player = event.getPlayer();
-        String kickReason = event.getReason().toLowerCase();
+        String kickReason = event.getReason().toLowerCase(Locale.ROOT);
 
         if (isMovementSpeedKick(kickReason)) {
             if (PermissionManager.hasPermissionOrParent(player, PLAYER_SPEED_PERMISSION)) {
@@ -25,7 +26,7 @@ public class MoveSpeedBypassListener implements Listener {
 
             Entity vehicle = player.getVehicle();
             if (vehicle != null) {
-                String vehicleType = vehicle.getType().toString().toLowerCase();
+                String vehicleType = vehicle.getType().toString().toLowerCase(Locale.ROOT);
                 String vehiclePermission = VEHICLE_SPEED_PREFIX + vehicleType;
                 if (PermissionManager.hasPermissionOrParent(player, vehiclePermission)) {
                     event.setCancelled(true);

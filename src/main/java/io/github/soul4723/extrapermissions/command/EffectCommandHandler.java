@@ -10,12 +10,14 @@ import io.github.soul4723.extrapermissions.util.PermissionManager;
 import io.github.soul4723.extrapermissions.util.SelectorPathBuilder;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Locale;
 
@@ -40,21 +42,22 @@ public class EffectCommandHandler {
                                 new TextArgument("effect"),
                                 new IntegerArgument("seconds", 1, 1_000_000)
                         )
-                        .executesPlayer((player, args) -> {
-                            Entity targetEntity = (Entity) args.get("targets");
+                        .executesNative((proxy, args) -> {
+                            CommandSender sender = proxy.getCaller();
+                            Collection<Entity> targets = targets(args.get("targets"));
                             String effectName = (String) args.get("effect");
                             Integer secondsObj = (Integer) args.get("seconds");
 
-                            if (targetEntity == null) {
-                                player.sendMessage("§cTarget entity not found");
+                            if (targets.isEmpty()) {
+                                sender.sendMessage("§cTarget entity not found");
                                 return;
                             }
                             if (secondsObj == null) {
-                                player.sendMessage("§cInvalid seconds specified");
+                                sender.sendMessage("§cInvalid seconds specified");
                                 return;
                             }
                             if (effectName == null) {
-                                player.sendMessage("§cEffect name is required");
+                                sender.sendMessage("§cEffect name is required");
                                 return;
                             }
 
@@ -62,76 +65,94 @@ public class EffectCommandHandler {
                             NamespacedKey effectKey = NamespacedKey.fromString(effectName.toLowerCase(Locale.ROOT));
                             PotionEffectType effectType = effectKey == null ? null : Registry.EFFECT.get(effectKey);
                             if (effectType == null) {
-                                player.sendMessage("§cUnknown effect: " + effectName);
+                                sender.sendMessage("§cUnknown effect: " + effectName);
                                 return;
                             }
 
-                            HashSet<Entity> targetSet = new HashSet<>();
-                            targetSet.add(targetEntity);
-                            SelectorPathBuilder pathBuilder = new SelectorPathBuilder(COMMAND_NAME, "targets", targetSet);
+                            SelectorPathBuilder pathBuilder = new SelectorPathBuilder(COMMAND_NAME, "targets", new HashSet<>(targets));
                             String selectorPath = pathBuilder.build();
 
-                            if (selectorPermissions && !PermissionManager.hasPermissionOrParent(player, selectorPath)) {
-                                player.sendMessage("§cYou don't have permission to use " + pathBuilder.getScope() + " selectors for this command.");
+                            if (selectorPermissions && !PermissionManager.hasPermissionOrParent(sender, selectorPath)) {
+                                sender.sendMessage("§cYou don't have permission to use " + pathBuilder.getScope() + " selectors for this command.");
                                 return;
                             }
 
-                            if (targetEntity instanceof LivingEntity) {
-                                LivingEntity living = (LivingEntity) targetEntity;
-                                living.addPotionEffect(new PotionEffect(effectType, seconds * 20, 0, true, true));
-                                player.sendMessage("§aApplied " + effectName + " to the target");
+                            int applied = 0;
+                            for (Entity target : targets) {
+                                if (target instanceof LivingEntity
+                                        && ((LivingEntity) target).addPotionEffect(new PotionEffect(effectType, seconds * 20, 0, true, true))) {
+                                    applied++;
+                                }
+                            }
+                            if (applied == 0) {
+                                sender.sendMessage("§cTarget is not a living entity");
                             } else {
-                                player.sendMessage("§cTarget is not a living entity");
+                                sender.sendMessage("§aApplied " + effectName + " to " + applied + " entit" + (applied == 1 ? "y" : "ies"));
                             }
                         })
                 )
                 .withSubcommand(new CommandAPICommand("clear")
                         .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".clear"))
                         .withArguments(
-                                new EntitySelectorArgument.OneEntity("targets"),
+                                new EntitySelectorArgument.ManyEntities("targets"),
                                 new TextArgument("effect").setOptional(true)
                         )
-                        .executesPlayer((player, args) -> {
-                            Entity targetEntity = (Entity) args.get("targets");
+                        .executesNative((proxy, args) -> {
+                            CommandSender sender = proxy.getCaller();
+                            Collection<Entity> targets = targets(args.get("targets"));
                             Object effectArg = args.get(1);
                             String effectName = effectArg != null ? (String) effectArg : null;
 
-                            if (targetEntity == null) {
-                                player.sendMessage("§cTarget entity not found");
+                            if (targets.isEmpty()) {
+                                sender.sendMessage("§cTarget entity not found");
                                 return;
                             }
 
-                            HashSet<Entity> targetSet = new HashSet<>();
-                            targetSet.add(targetEntity);
-                            SelectorPathBuilder pathBuilder = new SelectorPathBuilder(COMMAND_NAME, "targets", targetSet);
+                            SelectorPathBuilder pathBuilder = new SelectorPathBuilder(COMMAND_NAME, "targets", new HashSet<>(targets));
                             String selectorPath = pathBuilder.build();
 
-                            if (selectorPermissions && !PermissionManager.hasPermissionOrParent(player, selectorPath)) {
-                                player.sendMessage("§cYou don't have permission to use " + pathBuilder.getScope() + " selectors for this command.");
+                            if (selectorPermissions && !PermissionManager.hasPermissionOrParent(sender, selectorPath)) {
+                                sender.sendMessage("§cYou don't have permission to use " + pathBuilder.getScope() + " selectors for this command.");
                                 return;
                             }
 
-                            if (targetEntity instanceof LivingEntity) {
-                                LivingEntity living = (LivingEntity) targetEntity;
-                                if (effectName == null) {
-                                    living.clearActivePotionEffects();
-                                    player.sendMessage("§aCleared all effects from the target");
-                                } else {
-                                    NamespacedKey effectKey = NamespacedKey.fromString(effectName.toLowerCase(Locale.ROOT));
-                                    PotionEffectType effectType = effectKey == null ? null : Registry.EFFECT.get(effectKey);
-                                    if (effectType != null) {
-                                        living.removePotionEffect(effectType);
-                                        player.sendMessage("§aCleared " + effectName + " from the target");
-                                    } else {
-                                        player.sendMessage("§cUnknown effect: " + effectName);
+                            PotionEffectType effectType = null;
+                            if (effectName != null) {
+                                NamespacedKey effectKey = NamespacedKey.fromString(effectName.toLowerCase(Locale.ROOT));
+                                effectType = effectKey == null ? null : Registry.EFFECT.get(effectKey);
+                                if (effectType == null) {
+                                    sender.sendMessage("§cUnknown effect: " + effectName);
+                                    return;
+                                }
+                            }
+
+                            int affected = 0;
+                            for (Entity target : targets) {
+                                if (target instanceof LivingEntity) {
+                                    LivingEntity living = (LivingEntity) target;
+                                    if (effectType == null) {
+                                        living.clearActivePotionEffects();
+                                        affected++;
+                                    } else if (living.removePotionEffect(effectType)) {
+                                        affected++;
                                     }
                                 }
+                            }
+                            if (affected == 0) {
+                                sender.sendMessage("§cTarget is not a living entity");
+                            } else if (effectType == null) {
+                                sender.sendMessage("§aCleared all effects from " + affected + " entit" + (affected == 1 ? "y" : "ies"));
                             } else {
-                                player.sendMessage("§cTarget is not a living entity");
+                                sender.sendMessage("§aCleared " + effectName + " from " + affected + " entit" + (affected == 1 ? "y" : "ies"));
                             }
                         })
                 );
 
         effect.register();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Collection<Entity> targets(Object value) {
+        return value instanceof Collection ? (Collection<Entity>) value : java.util.List.of();
     }
 }
