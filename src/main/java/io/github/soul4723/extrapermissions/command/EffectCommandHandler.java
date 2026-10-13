@@ -16,6 +16,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 import java.util.HashSet;
+import java.util.Locale;
 
 public class EffectCommandHandler {
 
@@ -35,7 +36,7 @@ public class EffectCommandHandler {
                         .withArguments(
                                 new EntitySelectorArgument.OneEntity("targets"),
                                 new TextArgument("effect"),
-                                new IntegerArgument("seconds", 0, Integer.MAX_VALUE)
+                                new IntegerArgument("seconds", 1, 1_000_000)
                         )
                         .executesPlayer((player, args) -> {
                             Entity targetEntity = (Entity) args.get("targets");
@@ -56,8 +57,8 @@ public class EffectCommandHandler {
                             }
                             
                             int seconds = secondsObj;
-                            NamespacedKey effectKey = NamespacedKey.minecraft(effectName.toLowerCase());
-                            PotionEffectType effectType = Registry.EFFECT.get(effectKey);
+                            NamespacedKey effectKey = NamespacedKey.fromString(effectName.toLowerCase(Locale.ROOT));
+                            PotionEffectType effectType = effectKey == null ? null : Registry.EFFECT.get(effectKey);
                             if (effectType == null) {
                                 player.sendMessage("§cUnknown effect: " + effectName);
                                 return;
@@ -114,8 +115,8 @@ public class EffectCommandHandler {
                                     living.clearActivePotionEffects();
                                     player.sendMessage("§aCleared all effects from the target");
                                 } else {
-                                    NamespacedKey effectKey = NamespacedKey.minecraft(effectName.toLowerCase());
-                                    PotionEffectType effectType = Registry.EFFECT.get(effectKey);
+                                    NamespacedKey effectKey = NamespacedKey.fromString(effectName.toLowerCase(Locale.ROOT));
+                                    PotionEffectType effectType = effectKey == null ? null : Registry.EFFECT.get(effectKey);
                                     if (effectType != null) {
                                         living.removePotionEffect(effectType);
                                         player.sendMessage("§aCleared " + effectName + " from the target");

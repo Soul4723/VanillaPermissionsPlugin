@@ -62,7 +62,7 @@ public class TimeCommandHandler {
                             if (type.equals("gametime")) {
                                 time = world.getGameTime();
                             } else if (type.equals("day")) {
-                                time = world.getTime() / 24000L;
+                                time = world.getFullTime() / 24000L;
                             } else {
                                 time = world.getTime();
                             }

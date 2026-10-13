@@ -76,19 +76,26 @@ public class GameruleCommandHandler {
     @SuppressWarnings("unchecked")
     private static <T> void setGameRuleValue(org.bukkit.World world, org.bukkit.GameRule<T> gameRule, String value) throws IllegalArgumentException {
         Class<?> type = gameRule.getType();
+        boolean success;
         
         if (type == Boolean.class) {
+            if (!value.equalsIgnoreCase("true") && !value.equalsIgnoreCase("false")) {
+                throw new IllegalArgumentException("Invalid boolean value: " + value + " (expected true or false)");
+            }
             Boolean boolValue = Boolean.parseBoolean(value);
-            world.setGameRule((org.bukkit.GameRule<Boolean>) gameRule, boolValue);
+            success = world.setGameRule((org.bukkit.GameRule<Boolean>) gameRule, boolValue);
         } else if (type == Integer.class) {
             try {
                 Integer intValue = Integer.parseInt(value);
-                world.setGameRule((org.bukkit.GameRule<Integer>) gameRule, intValue);
+                success = world.setGameRule((org.bukkit.GameRule<Integer>) gameRule, intValue);
             } catch (NumberFormatException e) {
                 throw new IllegalArgumentException("Invalid integer value: " + value);
             }
         } else {
             throw new IllegalArgumentException("Unsupported gamerule type: " + type.getName());
+        }
+        if (!success) {
+            throw new IllegalArgumentException("Failed to set gamerule: " + gameRule.getName());
         }
     }
 }
