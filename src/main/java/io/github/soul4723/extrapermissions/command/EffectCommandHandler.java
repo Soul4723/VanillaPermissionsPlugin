@@ -100,7 +100,7 @@ public class EffectCommandHandler {
                         .executesNative((proxy, args) -> {
                             CommandSender sender = proxy.getCaller();
                             Collection<Entity> targetEntities = asEntities(args.get("targets"));
-                            Object effectArg = args.get(1);
+                            Object effectArg = args.get("effect");
                             String effectName = effectArg != null ? (String) effectArg : null;
 
                             if (targetEntities.isEmpty()) {
