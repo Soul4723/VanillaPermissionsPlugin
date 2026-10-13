@@ -9,6 +9,7 @@ import dev.jorel.commandapi.arguments.StringArgument;
 import io.github.soul4723.extrapermissions.ExtraPermissions;
 import io.github.soul4723.extrapermissions.util.PermissionManager;
 import org.bukkit.Location;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
@@ -296,7 +297,8 @@ public class ExtraPermissionsCommand {
                     new FloatArgument("yaw"),
                     new FloatArgument("pitch")
                 )
-                .executes((sender, args) -> {
+                .executesNative((proxy, args) -> {
+                    CommandSender sender = proxy.getCaller();
                     if (!PermissionManager.hasPermissionOrParent(sender, "minecraft.command.teleport.targets.location")) {
                         sender.sendMessage("§cYou don't have permission to teleport entities to coordinates!");
                         return;
@@ -330,12 +332,7 @@ public class ExtraPermissionsCommand {
                             return;
                         }
                         
-                        if (!(sender instanceof Player)) {
-                            sender.sendMessage("§cCould not determine teleport destination world!");
-                            return;
-                        }
-                        
-                        Location location = new Location(((Player) sender).getWorld(), x, y, z);
+                        Location location = new Location(proxy.getWorld(), x, y, z);
                         
                         try {
                             Object yawObj = args.getUnchecked("yaw");
