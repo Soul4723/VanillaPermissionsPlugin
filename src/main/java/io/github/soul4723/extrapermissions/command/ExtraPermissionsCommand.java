@@ -165,8 +165,11 @@ public class ExtraPermissionsCommand {
                             player.sendMessage("§cYou don't have permission to teleport to targets!");
                             return;
                         }
-                        player.teleport(target);
-                        player.sendMessage("§aTeleported to " + target.getName());
+                        if (player.teleport(target)) {
+                            player.sendMessage("§aTeleported to " + target.getName());
+                        } else {
+                            player.sendMessage("§cCould not teleport to " + target.getName());
+                        }
                         return;
                     }
                     
@@ -227,8 +230,11 @@ public class ExtraPermissionsCommand {
                                 }
                             } catch (Exception ignored) {}
                             
-                            player.teleport(location);
-                            player.sendMessage("§aTeleported to " + formatLocation(location));
+                            if (player.teleport(location)) {
+                                player.sendMessage("§aTeleported to " + formatLocation(location));
+                            } else {
+                                player.sendMessage("§cCould not teleport to " + formatLocation(location));
+                            }
                             return;
                         }
                     } catch (Exception ignored) {}
@@ -258,12 +264,21 @@ public class ExtraPermissionsCommand {
                         java.util.Collection<Entity> targets = (java.util.Collection<Entity>) rawTargets;
                         Entity destination = (Entity) rawDestination;
                         
+                        if (targets.isEmpty()) {
+                            sender.sendMessage("§cNo targets found!");
+                            return;
+                        }
+
                         int count = 0;
                         for (Entity target : targets) {
-                            target.teleport(destination);
-                            count++;
+                            if (target.teleport(destination)) count++;
                         }
-                        sender.sendMessage("§aTeleported " + count + " entit" + (count == 1 ? "y" : "ies") + " to " + destination.getName());
+                        if (count == 0) {
+                            sender.sendMessage("§cTeleport failed for all targets!");
+                        } else {
+                            sender.sendMessage("§aTeleported " + count + " entit" + (count == 1 ? "y" : "ies") + " to " + destination.getName()
+                                + (count < targets.size() ? " §c(" + (targets.size() - count) + " failed)" : ""));
+                        }
                     }
                 })
                 .register();
@@ -315,16 +330,12 @@ public class ExtraPermissionsCommand {
                             return;
                         }
                         
-                        // Get world from first target
-                        Entity firstTarget = targets.iterator().next();
-                        org.bukkit.World world = firstTarget != null ? firstTarget.getWorld() : null;
-                        
-                        if (world == null) {
-                            sender.sendMessage("§cCould not determine target world!");
+                        if (!(sender instanceof Player)) {
+                            sender.sendMessage("§cCould not determine teleport destination world!");
                             return;
                         }
                         
-                        Location location = new Location(world, x, y, z);
+                        Location location = new Location(((Player) sender).getWorld(), x, y, z);
                         
                         try {
                             Object yawObj = args.getUnchecked("yaw");
@@ -339,10 +350,14 @@ public class ExtraPermissionsCommand {
                         
                         int count = 0;
                         for (Entity target : targets) {
-                            target.teleport(location);
-                            count++;
+                            if (target.teleport(location)) count++;
                         }
-                        sender.sendMessage("§aTeleported " + count + " entit" + (count == 1 ? "y" : "ies") + " to " + formatLocation(location));
+                        if (count == 0) {
+                            sender.sendMessage("§cTeleport failed for all targets!");
+                        } else {
+                            sender.sendMessage("§aTeleported " + count + " entit" + (count == 1 ? "y" : "ies") + " to " + formatLocation(location)
+                                + (count < targets.size() ? " §c(" + (targets.size() - count) + " failed)" : ""));
+                        }
                     }
                 })
                 .register();
