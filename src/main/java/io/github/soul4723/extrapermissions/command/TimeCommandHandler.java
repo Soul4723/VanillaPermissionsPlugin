@@ -5,6 +5,7 @@ import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.IntegerArgument;
 import io.github.soul4723.extrapermissions.util.PermissionManager;
 import org.bukkit.World;
+import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class TimeCommandHandler {
@@ -22,41 +23,44 @@ public class TimeCommandHandler {
                 .withSubcommand(new CommandAPICommand("set")
                         .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".set"))
                         .withArguments(new IntegerArgument("time"))
-                        .executesPlayer((player, args) -> {
+                        .executesNative((proxy, args) -> {
+                            CommandSender sender = proxy.getCaller();
                             Integer ticksObj = (Integer) args.get("time");
                             if (ticksObj == null) {
-                                player.sendMessage("§cTime is required");
+                                sender.sendMessage("§cTime is required");
                                 return;
                             }
                             int ticks = ticksObj;
-                            World world = player.getWorld();
+                            World world = proxy.getWorld();
                             world.setTime(ticks);
-                            player.sendMessage("§aTime set to " + ticks);
+                            sender.sendMessage("§aTime set to " + ticks);
                         })
                 )
                 .withSubcommand(new CommandAPICommand("add")
                         .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".add"))
                         .withArguments(new IntegerArgument("time"))
-                        .executesPlayer((player, args) -> {
+                        .executesNative((proxy, args) -> {
+                            CommandSender sender = proxy.getCaller();
                             Integer ticksObj = (Integer) args.get("time");
                             if (ticksObj == null) {
-                                player.sendMessage("§cTime is required");
+                                sender.sendMessage("§cTime is required");
                                 return;
                             }
                             int ticks = ticksObj;
-                            World world = player.getWorld();
+                            World world = proxy.getWorld();
                             world.setTime(world.getTime() + ticks);
-                            player.sendMessage("§aAdded " + ticks + " ticks to time");
+                            sender.sendMessage("§aAdded " + ticks + " ticks to time");
                         })
                 )
                 .withSubcommand(new CommandAPICommand("query")
                         .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".query"))
                         .withArguments(new dev.jorel.commandapi.arguments.MultiLiteralArgument("type", "daytime", "gametime", "day"))
-                        .executesPlayer((player, args) -> {
-                            World world = player.getWorld();
+                        .executesNative((proxy, args) -> {
+                            CommandSender sender = proxy.getCaller();
+                            World world = proxy.getWorld();
                             String type = (String) args.get("type");
                             if (type == null) {
-                                player.sendMessage("§cTime type is required");
+                                sender.sendMessage("§cTime type is required");
                                 return;
                             }
                             long time;
@@ -67,7 +71,7 @@ public class TimeCommandHandler {
                             } else {
                                 time = world.getTime();
                             }
-                            player.sendMessage("§aTime: " + time);
+                            sender.sendMessage("§aTime: " + time);
                         })
                 );
 

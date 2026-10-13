@@ -4,6 +4,7 @@ import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import io.github.soul4723.extrapermissions.util.PermissionManager;
 import org.bukkit.World;
+import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class WeatherCommandHandler {
@@ -20,29 +21,32 @@ public class WeatherCommandHandler {
         CommandAPICommand weather = new CommandAPICommand("weather")
                 .withSubcommand(new CommandAPICommand("clear")
                         .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".clear"))
-                        .executesPlayer((player, args) -> {
-                            World world = player.getWorld();
+                        .executesNative((proxy, args) -> {
+                            CommandSender sender = proxy.getCaller();
+                            World world = proxy.getWorld();
                             world.setStorm(false);
                             world.setThundering(false);
-                            player.sendMessage("§aWeather cleared.");
+                            sender.sendMessage("§aWeather cleared.");
                         })
                 )
                 .withSubcommand(new CommandAPICommand("rain")
                         .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".rain"))
-                        .executesPlayer((player, args) -> {
-                            World world = player.getWorld();
+                        .executesNative((proxy, args) -> {
+                            CommandSender sender = proxy.getCaller();
+                            World world = proxy.getWorld();
                             world.setStorm(true);
                             world.setThundering(false);
-                            player.sendMessage("§aRain started.");
+                            sender.sendMessage("§aRain started.");
                         })
                 )
                 .withSubcommand(new CommandAPICommand("thunder")
                         .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".thunder"))
-                        .executesPlayer((player, args) -> {
-                            World world = player.getWorld();
+                        .executesNative((proxy, args) -> {
+                            CommandSender sender = proxy.getCaller();
+                            World world = proxy.getWorld();
                             world.setStorm(true);
                             world.setThundering(true);
-                            player.sendMessage("§aThunderstorm started.");
+                            sender.sendMessage("§aThunderstorm started.");
                         })
                 );
 

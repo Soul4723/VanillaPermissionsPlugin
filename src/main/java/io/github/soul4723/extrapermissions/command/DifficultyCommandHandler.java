@@ -6,6 +6,7 @@ import dev.jorel.commandapi.arguments.MultiLiteralArgument;
 import io.github.soul4723.extrapermissions.util.PermissionManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Difficulty;
+import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class DifficultyCommandHandler {
@@ -22,17 +23,18 @@ public class DifficultyCommandHandler {
         CommandAPICommand difficulty = new CommandAPICommand("difficulty")
                 .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM))
                 .withArguments(new MultiLiteralArgument("difficulty", "peaceful", "easy", "normal", "hard"))
-                .executesPlayer((player, args) -> {
+                .executesNative((proxy, args) -> {
+                    CommandSender sender = proxy.getCaller();
                     String diffStr = (String) args.get("difficulty");
                     if (diffStr == null) {
-                        player.sendMessage("§cInvalid difficulty specified");
+                        sender.sendMessage("§cInvalid difficulty specified");
                         return;
                     }
                     Difficulty diff = Difficulty.valueOf(diffStr.toUpperCase());
                     for (org.bukkit.World world : Bukkit.getWorlds()) {
                         world.setDifficulty(diff);
                     }
-                    player.sendMessage("§aSet difficulty to " + diffStr);
+                    sender.sendMessage("§aSet difficulty to " + diffStr);
                 });
 
         difficulty.register();

@@ -5,6 +5,7 @@ import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.TextArgument;
 import io.github.soul4723.extrapermissions.util.PermissionManager;
 import org.bukkit.World;
+import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class GameruleCommandHandler {
@@ -22,51 +23,53 @@ public class GameruleCommandHandler {
                 .withSubcommand(new CommandAPICommand("query")
                         .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".query"))
                         .withArguments(new TextArgument("rule"))
-                        .executesPlayer((player, args) -> {
+                        .executesNative((proxy, args) -> {
+                            CommandSender sender = proxy.getCaller();
                             String rule = (String) args.get("rule");
                             if (rule == null || rule.isEmpty()) {
-                                player.sendMessage("§cRule name is required");
+                                sender.sendMessage("§cRule name is required");
                                 return;
                             }
-                            World world = player.getWorld();
+                            World world = proxy.getWorld();
                             try {
                                 org.bukkit.GameRule<?> gameRule = org.bukkit.GameRule.getByName(rule);
                                 if (gameRule == null) {
-                                    player.sendMessage("§cUnknown gamerule: " + rule);
+                                    sender.sendMessage("§cUnknown gamerule: " + rule);
                                     return;
                                 }
                                 Object ruleValue = world.getGameRuleValue(gameRule);
-                                player.sendMessage("§a" + rule + " = " + ruleValue);
+                                sender.sendMessage("§a" + rule + " = " + ruleValue);
                             } catch (Exception e) {
-                                player.sendMessage("§cUnknown gamerule: " + rule);
+                                sender.sendMessage("§cUnknown gamerule: " + rule);
                             }
                         })
                 )
                 .withSubcommand(new CommandAPICommand("set")
                         .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".set"))
                         .withArguments(new TextArgument("rule"), new TextArgument("value"))
-                        .executesPlayer((player, args) -> {
+                        .executesNative((proxy, args) -> {
+                            CommandSender sender = proxy.getCaller();
                             String rule = (String) args.get("rule");
                             String value = (String) args.get("value");
                             if (rule == null || rule.isEmpty()) {
-                                player.sendMessage("§cRule name is required");
+                                sender.sendMessage("§cRule name is required");
                                 return;
                             }
                             if (value == null || value.isEmpty()) {
-                                player.sendMessage("§cValue is required");
+                                sender.sendMessage("§cValue is required");
                                 return;
                             }
-                            World world = player.getWorld();
+                            World world = proxy.getWorld();
                             try {
                                 org.bukkit.GameRule<?> gameRule = org.bukkit.GameRule.getByName(rule);
                                 if (gameRule == null) {
-                                    player.sendMessage("§cUnknown gamerule: " + rule);
+                                    sender.sendMessage("§cUnknown gamerule: " + rule);
                                     return;
                                 }
                                 setGameRuleValue(world, gameRule, value);
-                                player.sendMessage("§aSet " + rule + " to " + value);
+                                sender.sendMessage("§aSet " + rule + " to " + value);
                             } catch (Exception e) {
-                                player.sendMessage("§cError setting gamerule: " + e.getMessage());
+                                sender.sendMessage("§cError setting gamerule: " + e.getMessage());
                             }
                         })
                 );
