@@ -32,7 +32,7 @@ Gives you actual control over vanilla commands instead of the usual all-or-nothi
 **Admin controls:**
 - Command blocks, structure blocks, jigsaw blocks (place/view/break)
 - Debug stick usage
-- Command feedback broadcasts
+- Native command feedback permission compatibility alias
 
 ## Quick Examples
 
@@ -102,7 +102,7 @@ features:
   admin_permissions: true      # Command blocks, debug stick, etc.
 
 default_permissions:
-  ops_bypass_all: true         # Set to false to make OPs respect permissions
+  ops_bypass_all: true         # Plugin checks only; native Paper feedback is separate
 ```
 
 ## Commands
@@ -181,14 +181,17 @@ Replace `<action>` with `place`, `view`, or `break`:
 - `minecraft.operator_block.structure_block.<action>`
 
 ### Admin
-- `minecraft.adminbroadcast.receive` - See command feedback
+- `minecraft.admin.command_feedback` - Receive eligible native command feedback (Paper permission)
+- `minecraft.adminbroadcast.receive` - Historical grant-only alias for `minecraft.admin.command_feedback` (default false)
 - `minecraft.debug_stick.use.block` - Use debug stick
 
 ## Notes
 
 **Permission hierarchy:** Parent permissions grant access to children. For example, `minecraft.command.gamemode` gives access to all gamemode subpermissions unless explicitly denied.
 
-**OP behavior:** By default, OPs bypass all ExtraPermissions checks. Set `ops_bypass_all: false` in config to change this.
+**OP behavior:** By default, OPs bypass all ExtraPermissions checks. Set `ops_bypass_all: false` in config to change this. This setting does not override Paper's native command feedback permission or OP defaults.
+
+**Command feedback:** Paper controls eligible native feedback through `minecraft.admin.command_feedback` (granted to OPs by default) and native gamerules: `sendCommandFeedback` controls player feedback broadcasts, while `logAdminCommands` controls console logging. The historical alias grants the native permission; setting the alias to false does not revoke an independently granted native permission. Native feedback and the descriptor alias are independent of `features.admin_permissions`. ExtraPermissions does not broadcast raw command input. Its existing replacement executors still send custom sender/target messages, not native feedback broadcasts.
 
 **Selectors:** Only affects vanilla entity selectors in commands. Custom plugin commands might not respect these.
 
