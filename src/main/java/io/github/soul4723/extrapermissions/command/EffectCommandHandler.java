@@ -85,7 +85,7 @@ public class EffectCommandHandler {
                                 }
                             }
                             if (applied == 0) {
-                                sender.sendMessage("§cTarget is not a living entity");
+                                sender.sendMessage("§cNo target effects changed");
                             } else {
                                 sender.sendMessage("§aApplied " + effectName + " to " + applied + " entit" + (applied == 1 ? "y" : "ies"));
                             }
@@ -139,7 +139,7 @@ public class EffectCommandHandler {
                                 }
                             }
                             if (affected == 0) {
-                                sender.sendMessage("§cTarget is not a living entity");
+                                sender.sendMessage("§cNo target effects changed");
                             } else if (effectType == null) {
                                 sender.sendMessage("§aCleared all effects from " + affected + " entit" + (affected == 1 ? "y" : "ies"));
                             } else {

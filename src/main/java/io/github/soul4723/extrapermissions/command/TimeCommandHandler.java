@@ -3,6 +3,7 @@ package io.github.soul4723.extrapermissions.command;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.IntegerArgument;
+import dev.jorel.commandapi.wrappers.NativeProxyCommandSender;
 import io.github.soul4723.extrapermissions.util.PermissionManager;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
@@ -19,26 +20,30 @@ public class TimeCommandHandler {
             plugin.getLogger().fine("Time command not previously registered");
         }
 
-        CommandAPICommand timeCmd = new CommandAPICommand("time")
-                .withSubcommand(new CommandAPICommand("set")
+        CommandAPICommand set = new CommandAPICommand("set")
                         .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".set"))
-                        .withArguments(new IntegerArgument("time"))
+                        .withArguments(new IntegerArgument("time", 0))
                         .executesNative((proxy, args) -> {
-                            CommandSender sender = proxy.getCaller();
                             Integer ticksObj = (Integer) args.get("time");
                             if (ticksObj == null) {
-                                sender.sendMessage("§cTime is required");
+                                proxy.getCaller().sendMessage("§cTime is required");
                                 return;
                             }
-                            int ticks = ticksObj;
-                            World world = proxy.getWorld();
-                            world.setTime(ticks);
-                            sender.sendMessage("§aTime set to " + ticks);
-                        })
-                )
+                            setTime(proxy, ticksObj);
+                        });
+
+        set.withSubcommands(
+                timeAlias("day", 1_000),
+                timeAlias("noon", 6_000),
+                timeAlias("night", 13_000),
+                timeAlias("midnight", 18_000)
+        );
+
+        CommandAPICommand timeCmd = new CommandAPICommand("time")
+                .withSubcommand(set)
                 .withSubcommand(new CommandAPICommand("add")
                         .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".add"))
-                        .withArguments(new IntegerArgument("time"))
+                        .withArguments(new IntegerArgument("time", 0))
                         .executesNative((proxy, args) -> {
                             CommandSender sender = proxy.getCaller();
                             Integer ticksObj = (Integer) args.get("time");
@@ -76,5 +81,17 @@ public class TimeCommandHandler {
                 );
 
         timeCmd.register();
+    }
+
+    private static CommandAPICommand timeAlias(String name, int ticks) {
+        return new CommandAPICommand(name)
+                .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".set"))
+                .executesNative((proxy, args) -> setTime(proxy, ticks));
+    }
+
+    private static void setTime(NativeProxyCommandSender proxy, int ticks) {
+        World world = proxy.getWorld();
+        world.setTime(ticks);
+        proxy.getCaller().sendMessage("§aTime set to " + ticks);
     }
 }
