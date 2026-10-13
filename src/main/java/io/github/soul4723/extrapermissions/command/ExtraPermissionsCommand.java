@@ -52,7 +52,6 @@ public class ExtraPermissionsCommand {
                             "minecraft.command.gamemode",
                             "minecraft.command.teleport",
                             "minecraft.selector.self.s",
-                            "minecraft.bypass.chat-speed",
                             "minecraft.operator_block.command_block.place"
                         };
                         
