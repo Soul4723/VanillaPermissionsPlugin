@@ -2,11 +2,13 @@ package io.github.soul4723.extrapermissions.command;
 
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
-import dev.jorel.commandapi.arguments.EntitySelectorArgument;
-import dev.jorel.commandapi.arguments.TextArgument;
+import com.destroystokyo.paper.profile.PlayerProfile;
+import dev.jorel.commandapi.arguments.PlayerProfileArgument;
 import io.github.soul4723.extrapermissions.util.PermissionManager;
 import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
+import org.bukkit.OfflinePlayer;
+
+import java.util.List;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class WhitelistCommandHandler {
@@ -23,43 +25,72 @@ public class WhitelistCommandHandler {
         CommandAPICommand whitelist = new CommandAPICommand("whitelist")
                 .withSubcommand(new CommandAPICommand("add")
                         .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".add"))
-                        .withArguments(new EntitySelectorArgument.OnePlayer("player"))
-                        .executesPlayer((player, args) -> {
-                            Player target = (Player) args.get("player");
-                            if (target == null) {
-                                player.sendMessage("§cPlayer not found");
-                                return;
+                        .withArguments(new PlayerProfileArgument("player"))
+                        .executes((sender, args) -> {
+                            @SuppressWarnings("unchecked")
+                            List<PlayerProfile> profiles = (List<PlayerProfile>) args.get("player");
+                            for (PlayerProfile profile : profiles) {
+                                if (profile == null || profile.getId() == null || profile.getName() == null || profile.getName().isBlank()) {
+                                    sender.sendMessage("§cInvalid player identity");
+                                    continue;
+                                }
+                                String name = profile.getName();
+                                try {
+                                    OfflinePlayer target = Bukkit.getOfflinePlayer(profile.getId());
+                                    if (target.isWhitelisted()) {
+                                        sender.sendMessage("§c" + name + " is already whitelisted.");
+                                        continue;
+                                    }
+                                    target.setWhitelisted(true);
+                                    sender.sendMessage(target.isWhitelisted()
+                                            ? "§a" + name + " added to whitelist."
+                                            : "§cCould not add " + name + " to whitelist.");
+                                } catch (RuntimeException e) {
+                                    sender.sendMessage("§cCould not add " + name + " to whitelist.");
+                                }
                             }
-                            target.setWhitelisted(true);
-                            player.sendMessage("§a" + target.getName() + " added to whitelist.");
                         })
                 )
                 .withSubcommand(new CommandAPICommand("remove")
                         .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".remove"))
-                        .withArguments(new TextArgument("player"))
-                        .executesPlayer((player, args) -> {
-                            String targetName = (String) args.get("player");
-                            if (targetName == null || targetName.isEmpty()) {
-                                player.sendMessage("§cPlayer name is required");
-                                return;
+                        .withArguments(new PlayerProfileArgument("player"))
+                        .executes((sender, args) -> {
+                            @SuppressWarnings("unchecked")
+                            List<PlayerProfile> profiles = (List<PlayerProfile>) args.get("player");
+                            for (PlayerProfile profile : profiles) {
+                                if (profile == null || profile.getId() == null || profile.getName() == null || profile.getName().isBlank()) {
+                                    sender.sendMessage("§cInvalid player identity");
+                                    continue;
+                                }
+                                String name = profile.getName();
+                                try {
+                                    OfflinePlayer target = Bukkit.getOfflinePlayer(profile.getId());
+                                    if (!target.isWhitelisted()) {
+                                        sender.sendMessage("§c" + name + " is not whitelisted.");
+                                        continue;
+                                    }
+                                    target.setWhitelisted(false);
+                                    sender.sendMessage(!target.isWhitelisted()
+                                            ? "§a" + name + " removed from whitelist."
+                                            : "§cCould not remove " + name + " from whitelist.");
+                                } catch (RuntimeException e) {
+                                    sender.sendMessage("§cCould not remove " + name + " from whitelist.");
+                                }
                             }
-                            org.bukkit.OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
-                            target.setWhitelisted(false);
-                            player.sendMessage("§a" + targetName + " removed from whitelist.");
                         })
                 )
                 .withSubcommand(new CommandAPICommand("on")
                         .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".on"))
-                        .executesPlayer((player, args) -> {
+                        .executes((sender, args) -> {
                             Bukkit.setWhitelist(true);
-                            player.sendMessage("§aWhitelist enabled.");
+                            sender.sendMessage("§aWhitelist enabled.");
                         })
                 )
                 .withSubcommand(new CommandAPICommand("off")
                         .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".off"))
-                        .executesPlayer((player, args) -> {
+                        .executes((sender, args) -> {
                             Bukkit.setWhitelist(false);
-                            player.sendMessage("§aWhitelist disabled.");
+                            sender.sendMessage("§aWhitelist disabled.");
                         })
                 );
 
