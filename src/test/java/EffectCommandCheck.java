@@ -19,7 +19,7 @@ public class EffectCommandCheck {
         Entity zombie = entity(EntityType.ZOMBIE);
         Collection<?> targets = (Collection<?>) asEntities.invoke(null, List.of(player, zombie));
         assert targets.size() == 2 : targets;
-        assert ((Collection<?>) asEntities.invoke(null, null)).isEmpty() : "Missing targets accepted";
+        assert ((Collection<?>) asEntities.invoke(null, (Object) null)).isEmpty() : "Missing targets accepted";
 
         assert new SelectorPathBuilder("EFFECT", "TARGETS", Set.of(player)).build()
                 .equals("minecraft.selector.player.effect.targets");
@@ -30,9 +30,12 @@ public class EffectCommandCheck {
 
     private static Entity entity(EntityType type) {
         return (Entity) Proxy.newProxyInstance(Entity.class.getClassLoader(), new Class<?>[]{Entity.class},
-                (proxy, method, values) -> method.getName().equals("getType")
-                        ? type
-                        : throwUnexpected(method));
+                (proxy, method, values) -> switch (method.getName()) {
+                    case "getType" -> type;
+                    case "hashCode" -> System.identityHashCode(proxy);
+                    case "equals" -> proxy == values[0];
+                    default -> throwUnexpected(method);
+                });
     }
 
     private static Object throwUnexpected(java.lang.reflect.Method method) {
