@@ -1,12 +1,8 @@
 package io.github.soul4723.vanillapermissions.util;
 
-import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.LiteralMessage;
-import com.mojang.brigadier.tree.CommandNode;
-import com.mojang.brigadier.tree.RootCommandNode;
-import io.github.soul4723.vanillapermissions.agent.NativeAgentBridge;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
@@ -40,61 +36,17 @@ public final class SelectorNativePermissions {
 
     private SelectorNativePermissions() {}
 
-    public static void register() {
-        NativeAgentBridge.registerSelectorCheck(SelectorNativePermissions::validate);
-    }
-
-    public static void clear() {
-        NativeAgentBridge.clearSelectorCheck();
-    }
-
-    private static void validate(Object contextValue, String argumentName, Object result) throws Throwable {
-        if (!(contextValue instanceof CommandContext<?> context)) {
-            throw new IllegalStateException("Selector hook received an invalid command context");
-        }
-
-        Object source = context.getSource();
-        Object rawSender = invoke(source, "getBukkitSender");
-        if (!(rawSender instanceof Player sender) || !isOriginalPlayerSource(source)) return;
-
-        List<String> parsedPath = commandPath(context, source);
-        SelectorPolicy.validate(sender, parsedPath, argumentName, targets(result), PERMISSIONS);
-    }
-
-    private static List<String> commandPath(CommandContext<?> context, Object source)
-            throws ReflectiveOperationException {
-        if (context.getRootNode() instanceof RootCommandNode<?>) {
-            return context.getNodes().stream().map(node -> node.getNode().getName()).toList();
-        }
-
-        List<?> nodes = context.getNodes();
-        if (nodes.isEmpty()) throw new IllegalStateException("Selector hook received an empty command path");
-        Object lastNode = invoke(nodes.get(nodes.size() - 1), "getNode");
-        Object server = invoke(source, "getServer");
-        Object commands = invoke(server, "getCommands");
-        Object dispatcher = invoke(commands, "getDispatcher");
-        return invokePath(dispatcher, lastNode);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static List<String> invokePath(Object dispatcher, Object node) throws ReflectiveOperationException {
-        try {
-            Method method = dispatcher.getClass().getMethod("getPath", CommandNode.class);
-            return (List<String>) method.invoke(dispatcher, node);
-        } catch (InvocationTargetException error) {
-            Throwable cause = error.getCause();
-            if (cause instanceof ReflectiveOperationException reflective) throw reflective;
-            throw new IllegalStateException(cause);
-        }
-    }
-
-    private static boolean isOriginalPlayerSource(Object source) throws ReflectiveOperationException {
-        var sourceField = source.getClass().getField("source");
-        Object originalSource = sourceField.get(source);
-        for (Class<?> type = originalSource == null ? null : originalSource.getClass(); type != null; type = type.getSuperclass()) {
-            if (type.getName().equals("net.minecraft.server.level.ServerPlayer")) return true;
-        }
-        return false;
+    /**
+     * Applies selector permissions to one already-resolved native argument.
+     * Native command adapters provide the original Bukkit sender, dispatcher path,
+     * argument node name, and resolver return value.
+     */
+    public static void validate(
+            CommandSender sender,
+            List<String> parsedNodePath,
+            String argumentName,
+            Object result) throws CommandSyntaxException {
+        SelectorPolicy.validate(sender, parsedNodePath, argumentName, targets(result), PERMISSIONS);
     }
 
     static Collection<SelectorPolicy.Target> targets(Object result) throws CommandSyntaxException {
