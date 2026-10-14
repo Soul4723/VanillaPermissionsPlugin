@@ -75,10 +75,6 @@ public final class SelectorNativePermissions {
         }
 
         String type = value.getClass().getName();
-        if (type.equals("net.minecraft.world.scores.ScoreHolder")
-                || invokeOrNull(value, "getScoreboardName") instanceof String) {
-            return new SelectorPolicy.Target(SelectorPolicy.Target.Kind.SCORE_HOLDER, null, null);
-        }
         if (type.equals("com.mojang.authlib.GameProfile")) {
             Object id = invokeOrNull(value, "getId");
             if (id instanceof UUID uuid) return playerTarget(uuid);
@@ -86,6 +82,10 @@ public final class SelectorNativePermissions {
         }
         Object bukkitEntity = invokeOrNull(value, "getBukkitEntity");
         if (bukkitEntity instanceof Entity entity) return entityTarget(entity);
+        if (type.equals("net.minecraft.world.scores.ScoreHolder")
+                || invokeOrNull(value, "getScoreboardName") instanceof String) {
+            return new SelectorPolicy.Target(SelectorPolicy.Target.Kind.SCORE_HOLDER, null, null);
+        }
         return unsupportedTarget();
     }
 

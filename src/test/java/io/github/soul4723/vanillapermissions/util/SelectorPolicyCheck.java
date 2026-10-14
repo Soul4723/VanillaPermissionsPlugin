@@ -24,6 +24,8 @@ public final class SelectorPolicyCheck {
         assert SelectorNativePermissions.target(null).kind() == SelectorPolicy.Target.Kind.UNSUPPORTED;
         assert SelectorNativePermissions.target(player(SOURCE_ID)).kind() == SelectorPolicy.Target.Kind.PLAYER;
         assert SelectorNativePermissions.target(entity(OTHER_ID)).kind() == SelectorPolicy.Target.Kind.ENTITY;
+        SelectorPolicy.Target nativePlayer = SelectorNativePermissions.target(new NativeEntityLike(player(SOURCE_ID)));
+        assert nativePlayer.kind() == SelectorPolicy.Target.Kind.PLAYER && nativePlayer.id().equals(SOURCE_ID);
 
         assert SelectorPolicy.selectorPath(List.of("teleport", "targets", "destination"), "targets")
                 .equals(PERMISSION_PATH);
@@ -93,6 +95,22 @@ public final class SelectorPolicyCheck {
     private static Entity entity(UUID id) {
         return (Entity) Proxy.newProxyInstance(Entity.class.getClassLoader(), new Class<?>[]{Entity.class},
                 (proxy, method, args) -> method.getName().equals("getUniqueId") ? id : null);
+    }
+
+    public static final class NativeEntityLike {
+        private final Entity bukkitEntity;
+
+        public NativeEntityLike(Entity bukkitEntity) {
+            this.bukkitEntity = bukkitEntity;
+        }
+
+        public Entity getBukkitEntity() {
+            return bukkitEntity;
+        }
+
+        public String getScoreboardName() {
+            return "native-player";
+        }
     }
 
     private static void expectDenied(ThrowingRunnable action) throws Exception {
