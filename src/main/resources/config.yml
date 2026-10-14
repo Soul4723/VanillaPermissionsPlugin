@@ -4,14 +4,6 @@
 
 features:
   command_permissions: true
-  selector_permissions: true
   bypass_permissions: true
   # Plugin admin checks only; native command feedback/alias are independent
   admin_permissions: true
-
-# Default permission behavior
-default_permissions:
-  # Whether OP players automatically bypass all VanillaPermissionsPlugin checks
-  # Set false to make OPs respect VanillaPermissionsPlugin like regular players
-  # Does not override Paper native command feedback permission/OP defaults/gamerules
-  ops_bypass_all: true

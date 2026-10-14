@@ -36,8 +36,8 @@ class MoveSpeedBypassCheck {
         assert check(listener, player, PlayerFailMoveEvent.FailReason.MOVED_WRONGLY);
         grants.clear();
         grants.add("minecraft.bypass.move-speed");
-        assert check(listener, player, PlayerFailMoveEvent.FailReason.MOVED_TOO_QUICKLY)
-                : "Parent permission did not apply";
+        assert !check(listener, player, PlayerFailMoveEvent.FailReason.MOVED_TOO_QUICKLY)
+                : "Bare parent permission allowed child";
 
         int beforeUnrelated = permissionChecks[0];
         assert !check(listener, player, PlayerFailMoveEvent.FailReason.CLIPPED_INTO_BLOCK);

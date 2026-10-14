@@ -4,11 +4,9 @@ import io.github.soul4723.vanillapermissions.util.PermissionManager;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.cacheddata.CachedDataManager;
 import net.luckperms.api.cacheddata.CachedPermissionData;
-import net.luckperms.api.cacheddata.Result;
 import net.luckperms.api.context.ContextManager;
 import net.luckperms.api.model.user.User;
 import net.luckperms.api.model.user.UserManager;
-import net.luckperms.api.node.Node;
 import net.luckperms.api.query.QueryOptions;
 import net.luckperms.api.util.Tristate;
 import org.bukkit.GameMode;
@@ -30,7 +28,7 @@ public class ForceGamemodeContextCheck {
     public static void main(String[] args) throws Exception {
         UUID id = UUID.randomUUID();
         boolean[] op = {false}, bukkitGrant = {false}, missingUser = {false}, contextFailure = {false};
-        int[] contexts = {0}, checks = {0}, denials = {0};
+        int[] contexts = {0}, checks = {0};
         QueryOptions[] options = {proxy(QueryOptions.class, (p, m, a) -> { throw new AssertionError(m); })};
         Map<String, Tristate> nodes = new HashMap<>();
         Player player = proxy(Player.class, (p, m, a) -> switch (m.getName()) {
@@ -41,17 +39,11 @@ public class ForceGamemodeContextCheck {
         });
         CachedPermissionData data = proxy(CachedPermissionData.class, (p, m, a) -> {
             Tristate value = nodes.getOrDefault((String) a[0], Tristate.UNDEFINED);
-            return switch (m.getName()) {
-                case "checkPermission" -> { checks[0]++; yield value; }
-                case "queryPermission" -> {
-                    denials[0]++;
-                    yield new Result<Tristate, Node>() {
-                        public Tristate result() { return value; }
-                        public Node node() { return null; }
-                    };
-                }
-                default -> throw new AssertionError(m);
-            };
+            if (m.getName().equals("checkPermission")) {
+                checks[0]++;
+                return value;
+            }
+            throw new AssertionError(m);
         });
         CachedDataManager cached = proxy(CachedDataManager.class, (p, m, a) -> {
             assert m.getName().equals("getPermissionData") && a != null && a.length == 1
@@ -104,32 +96,32 @@ public class ForceGamemodeContextCheck {
                     : "Explicit leaf denial lost to parent";
             nodes.remove(LEAF);
             int parentContexts = contexts[0];
-            assert cancelled(listener, player, PlayerGameModeChangeEvent.Cause.DEFAULT_GAMEMODE)
-                    : "Exact parent grant lost";
+            assert !cancelled(listener, player, PlayerGameModeChangeEvent.Cause.DEFAULT_GAMEMODE)
+                    : "Bare parent grant allowed child";
             assert contexts[0] == parentContexts + 1 : "Repeated context lookup within one permission check";
             nodes.put("minecraft.bypass", Tristate.FALSE);
             nodes.put("minecraft", Tristate.TRUE);
-            assert !PermissionManager.hasPermissionOrParent(player, LEAF) : "Parent denial ignored";
+            assert !PermissionManager.hasPermission(player, LEAF) : "Bare ancestor grant allowed child";
             nodes.put(LEAF, Tristate.TRUE);
-            assert PermissionManager.hasPermissionOrParent(player, LEAF) : "Leaf grant lost to parent denial";
+            assert PermissionManager.hasPermission(player, LEAF) : "Leaf grant lost to parent denial";
             nodes.clear();
             assert !cancelled(listener, player, PlayerGameModeChangeEvent.Cause.DEFAULT_GAMEMODE);
-            assert contexts[0] > 0 && checks[0] > 0 && denials[0] > 0 : "LP paths untested";
+            assert contexts[0] > 0 && checks[0] > 0 : "LuckPerms checks were not exercised";
             op[0] = true;
             nodes.put(LEAF, Tristate.FALSE);
-            assert PermissionManager.hasPermissionOrParent(player, LEAF) : "Default OP bypass lost";
+            assert !PermissionManager.hasPermission(player, LEAF) : "Explicit LP denial lost to OP status";
             op[0] = false;
             bukkitGrant[0] = true;
             missingUser[0] = true;
-            assert !PermissionManager.hasPermissionOrParent(player, LEAF) : "Missing LP user changed fallback policy";
+            assert !PermissionManager.hasPermission(player, LEAF) : "Missing LP user changed fallback policy";
             missingUser[0] = false;
             contextFailure[0] = true;
-            assert PermissionManager.hasPermissionOrParent(player, LEAF) : "Exception Bukkit fallback lost";
+            assert PermissionManager.hasPermission(player, LEAF) : "Exception Bukkit fallback lost";
             hookField.set(null, null);
             assert cancelled(listener, player, PlayerGameModeChangeEvent.Cause.DEFAULT_GAMEMODE);
             bukkitGrant[0] = false;
             assert !cancelled(listener, player, PlayerGameModeChangeEvent.Cause.DEFAULT_GAMEMODE);
-            System.out.println("Force-gamemode causes, player-context grants/denials, fresh lookups, parent/OP/fallback checks passed");
+            System.out.println("Force-gamemode causes, player-context grants/denials, fresh lookups, and fallback checks passed");
         } finally {
             hookField.set(null, previous);
         }

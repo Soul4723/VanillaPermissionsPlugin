@@ -9,12 +9,10 @@ import java.util.Set;
 public class CommandPermissionsCheck {
     public static void main(String[] args) {
         Set<String> grants = new HashSet<>();
-        boolean[] op = {false};
         boolean[] fail = {false};
         CommandSender sender = (CommandSender) Proxy.newProxyInstance(
                 CommandSender.class.getClassLoader(), new Class<?>[]{CommandSender.class},
                 (proxy, method, values) -> switch (method.getName()) {
-                    case "isOp" -> op[0];
                     case "hasPermission" -> {
                         if (fail[0]) throw new IllegalStateException("Permission provider unavailable");
                         yield grants.contains(values[0]);
@@ -23,24 +21,17 @@ public class CommandPermissionsCheck {
                 });
 
         String leaf = "minecraft.command.time.set";
-        assert !PermissionManager.hasPermissionOrParent(sender, leaf) : "Unset allowed";
+        assert !PermissionManager.hasPermission(sender, leaf) : "Unset allowed";
         grants.add("minecraft.command.time");
-        assert !PermissionManager.hasPermission(sender, leaf) : "Fixture grants leaf";
-        assert PermissionManager.hasPermissionOrParent(sender, leaf) : "Parent denied";
-        assert !PermissionManager.hasPermissionOrParent(sender, "minecraft.command.weather.rain")
+        assert !PermissionManager.hasPermission(sender, leaf) : "Bare parent grant allowed child";
+        assert !PermissionManager.hasPermission(sender, "minecraft.command.weather.rain")
                 : "Unrelated parent allowed";
         grants.clear();
         grants.add(leaf);
-        assert PermissionManager.hasPermissionOrParent(sender, leaf) : "Leaf denied";
-        grants.clear();
-        grants.add("minecraft.selector.player");
-        assert PermissionManager.hasPermissionOrParent(sender, "minecraft.selector.player.effect.targets")
-                : "Selector parent denied";
+        assert PermissionManager.hasPermission(sender, leaf) : "Leaf denied";
         grants.clear();
         fail[0] = true;
-        assert !PermissionManager.hasPermissionOrParent(sender, leaf) : "Provider failure allowed";
-        op[0] = true;
-        assert PermissionManager.hasPermissionOrParent(sender, leaf) : "Default OP bypass denied";
-        System.out.println("Permission helper parent, leaf, unset, failure, and default OP checks passed");
+        assert !PermissionManager.hasPermission(sender, leaf) : "Provider failure allowed";
+        System.out.println("Exact permission, unset, and provider-failure checks passed");
     }
 }

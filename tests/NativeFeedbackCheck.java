@@ -12,14 +12,16 @@ class NativeFeedbackCheck {
         if (!NativeFeedbackCheck.class.desiredAssertionStatus()) {
             throw new IllegalStateException("Run with -ea");
         }
-        String oldAliasName = "minecraft.adminbroadcast.receive";
         String nativeName = "minecraft.admin.command_feedback";
         Path resources = Path.of("src/main/resources");
         try (var jar = new ZipFile("target/VanillaPermissionsPlugin-2.1.0.jar")) {
             byte[] packaged = jar.getInputStream(jar.getEntry("plugin.yml")).readAllBytes();
             assert java.util.Arrays.equals(packaged, Files.readAllBytes(resources.resolve("plugin.yml")));
             var descriptor = new PluginDescriptionFile(new java.io.ByteArrayInputStream(packaged));
-            assert descriptor.getPermissions().stream().noneMatch(p -> p.getName().equals(oldAliasName));
+            assert descriptor.getPermissions().stream().noneMatch(p -> p.getName().startsWith("minecraft.command."))
+                : "Plugin must not redefine native command permissions";
+            assert descriptor.getPermissions().stream().noneMatch(p -> p.getName().startsWith("minecraft.selector."))
+                : "Unused selector permissions must not be registered";
             assert descriptor.getPermissions().stream().noneMatch(p -> p.getName().equals(nativeName))
                 : "Plugin must not redefine Paper's native permission/default";
             assert jar.getEntry("io/github/soul4723/vanillapermissions/listener/AdminBroadcastListener.class") == null;

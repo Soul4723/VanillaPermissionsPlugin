@@ -21,15 +21,9 @@ jobs:
           set -euo pipefail
           check_cp="target/classes:target/test-classes:$(cat target/test-classpath.txt)"
           for check in \
-            CommandCorrectnessCheck \
             CommandPermissionsCheck \
-            EffectCommandCheck \
             ForceGamemodeContextCheck \
-            GamemodePermissionsCheck \
-            io.github.soul4723.vanillapermissions.util.SelectorPermissionMappingCheck \
-            TeleportCorrectnessCheck \
-            WhitelistCorrectnessCheck \
-            WorldCommandSendersCheck
+            io.github.soul4723.vanillapermissions.util.NativeCommandPermissionsCheck
           do
             java -ea -cp "$check_cp" "$check"
           done

@@ -11,13 +11,13 @@ public class WhitelistBypassListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerLogin(PlayerLoginEvent event) {
         if (event.getResult() == PlayerLoginEvent.Result.KICK_WHITELIST) {
-            if (PermissionManager.hasPermissionOrParent(event.getPlayer(), "minecraft.bypass.whitelist")) {
+            if (PermissionManager.hasPermission(event.getPlayer(), "minecraft.bypass.whitelist")) {
                 event.setResult(PlayerLoginEvent.Result.ALLOWED);
             }
         }
 
         if (event.getResult() == PlayerLoginEvent.Result.KICK_FULL) {
-            if (PermissionManager.hasPermissionOrParent(event.getPlayer(), "minecraft.bypass.player-limit")) {
+            if (PermissionManager.hasPermission(event.getPlayer(), "minecraft.bypass.player-limit")) {
                 event.setResult(PlayerLoginEvent.Result.ALLOWED);
             }
         }

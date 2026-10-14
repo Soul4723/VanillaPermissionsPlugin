@@ -16,7 +16,7 @@ public class DebugStickListener implements Listener {
         if (item.getType() != Material.DEBUG_STICK) return;
 
         if (event.getClickedBlock() != null) {
-            if (!PermissionManager.hasPermissionOrParent(event.getPlayer(), "minecraft.debug_stick.use.block")) {
+            if (!PermissionManager.hasPermission(event.getPlayer(), "minecraft.debug_stick.use.block")) {
                 event.setCancelled(true);
                 event.getPlayer().sendMessage("§cYou don't have permission to use debug stick!");
             }

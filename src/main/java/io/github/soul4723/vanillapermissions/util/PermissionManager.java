@@ -1,23 +1,102 @@
 package io.github.soul4723.vanillapermissions.util;
 
 import net.luckperms.api.LuckPerms;
-import net.luckperms.api.cacheddata.CachedPermissionData;
+import net.luckperms.api.cacheddata.CachedMetaData;
 import net.luckperms.api.model.user.User;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import net.luckperms.api.util.Tristate;
 
 import java.util.logging.Logger;
+import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.UUID;
 
 public class PermissionManager {
 
     private static LuckPermsHook luckPermsHook;
     private static Logger logger;
-    private static JavaPlugin plugin;
     public static void initialize(LuckPermsHook luckPermsHook, JavaPlugin plugin) {
         PermissionManager.luckPermsHook = luckPermsHook;
         PermissionManager.logger = plugin.getLogger();
-        PermissionManager.plugin = plugin;
+    }
+
+    public static Tristate queryPermission(CommandSender sender, String permission) {
+        User user = getUser(sender);
+        if (user == null) return Tristate.UNDEFINED;
+
+        try {
+            LuckPerms luckPerms = luckPermsHook.getLuckPerms();
+            return user.getCachedData().getPermissionData(
+                luckPerms.getContextManager().getQueryOptions((Player) sender)
+            ).queryPermission(permission).result();
+        } catch (Exception e) {
+            if (logger != null) {
+                logger.warning("LuckPerms permission query failed, using vanilla fallback: " + e.getMessage());
+            }
+            return Tristate.UNDEFINED;
+        }
+    }
+
+    public static boolean hasPermissionOrFallback(CommandSender sender, String permission, boolean fallback) {
+        return switch (queryPermission(sender, permission)) {
+            case TRUE -> true;
+            case FALSE -> false;
+            case UNDEFINED -> fallback;
+        };
+    }
+
+    public static Optional<String> getMetaValue(CommandSender sender, String key) {
+        User user = getUser(sender);
+        if (user == null) return Optional.empty();
+
+        try {
+            LuckPerms luckPerms = luckPermsHook.getLuckPerms();
+            CachedMetaData metaData = user.getCachedData().getMetaData(
+                luckPerms.getContextManager().getQueryOptions((Player) sender)
+            );
+            return Optional.ofNullable(metaData.getMetaValue(key));
+        } catch (Exception e) {
+            if (logger != null) {
+                logger.warning("LuckPerms metadata query failed: " + e.getMessage());
+            }
+            return Optional.empty();
+        }
+    }
+
+    public static OptionalInt getIntegerMeta(UUID subjectId, CommandSender onlineSubject, String key) {
+        if (luckPermsHook == null || !luckPermsHook.isEnabled()) return OptionalInt.empty();
+        try {
+            LuckPerms luckPerms = luckPermsHook.getLuckPerms();
+            User user = luckPerms.getUserManager().getUser(subjectId);
+            if (user == null) return OptionalInt.empty();
+
+            CachedMetaData metaData;
+            if (onlineSubject instanceof Player player && player.getUniqueId().equals(subjectId)) {
+                metaData = user.getCachedData().getMetaData(luckPerms.getContextManager().getQueryOptions(player));
+            } else {
+                metaData = user.getCachedData().getMetaData(user.getQueryOptions());
+            }
+            return metaData.getMetaValue(key, Integer::parseInt).map(OptionalInt::of).orElseGet(OptionalInt::empty);
+        } catch (Exception e) {
+            if (logger != null) logger.warning("LuckPerms integer metadata query failed: " + e.getMessage());
+            return OptionalInt.empty();
+        }
+    }
+
+    private static User getUser(CommandSender sender) {
+        if (!(sender instanceof Player player) || luckPermsHook == null || !luckPermsHook.isEnabled()) {
+            return null;
+        }
+        try {
+            return luckPermsHook.getLuckPerms().getUserManager().getUser(player.getUniqueId());
+        } catch (Exception e) {
+            if (logger != null) {
+                logger.warning("LuckPerms user lookup failed: " + e.getMessage());
+            }
+            return null;
+        }
     }
 
     public static boolean hasPermission(CommandSender sender, String permission) {
@@ -62,69 +141,4 @@ public class PermissionManager {
         return luckPermsHook;
     }
 
-    public static boolean hasPermissionOrParent(CommandSender sender, String permission) {
-        if (shouldOpBypass(sender)) return true;
-
-        CachedPermissionData data = null;
-        if (sender instanceof Player player && luckPermsHook != null && luckPermsHook.isEnabled()) {
-            try {
-                LuckPerms luckPerms = luckPermsHook.getLuckPerms();
-                User user = luckPerms.getUserManager().getUser(player.getUniqueId());
-                if (user == null) return false;
-                data = user.getCachedData().getPermissionData(
-                        luckPerms.getContextManager().getQueryOptions(player));
-            } catch (Exception e) {
-                if (logger != null) {
-                    logger.warning("LuckPerms permission check failed, falling back to Bukkit: " + e.getMessage());
-                }
-            }
-        }
-
-        for (int end = permission.length(); end > 0;) {
-            String current = permission.substring(0, end);
-            if (data != null) {
-                try {
-                    if (data.checkPermission(current).asBoolean()) return true;
-                    if (data.queryPermission(current).result() != net.luckperms.api.util.Tristate.UNDEFINED) return false;
-                } catch (Exception e) {
-                    if (logger != null) {
-                        logger.warning("LuckPerms permission check failed, falling back to Bukkit: " + e.getMessage());
-                    }
-                    if (hasBukkitPermission(sender, current)) return true;
-                }
-            } else if (hasBukkitPermission(sender, current)) {
-                return true;
-            }
-
-            int dot = permission.lastIndexOf('.', end - 1);
-            if (dot < 0) return false;
-            end = dot;
-        }
-
-        return false;
-    }
-
-    private static boolean shouldOpBypass(CommandSender sender) {
-        if (!sender.isOp()) return false;
-
-        if (plugin instanceof io.github.soul4723.vanillapermissions.VanillaPermissionsPlugin) {
-            io.github.soul4723.vanillapermissions.VanillaPermissionsPlugin ep =
-                (io.github.soul4723.vanillapermissions.VanillaPermissionsPlugin) plugin;
-
-            return ep.isOpsBypassAll();
-        }
-
-        return true;
-    }
-
-    private static boolean hasBukkitPermission(CommandSender sender, String permission) {
-        try {
-            return sender.hasPermission(permission);
-        } catch (Exception e) {
-            if (logger != null) {
-                logger.warning("Permission check failed for sender: " + e.getMessage());
-            }
-            return false;
-        }
-    }
 }

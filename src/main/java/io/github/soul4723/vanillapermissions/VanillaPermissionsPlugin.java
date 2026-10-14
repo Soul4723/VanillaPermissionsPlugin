@@ -1,19 +1,13 @@
 package io.github.soul4723.vanillapermissions;
 
-import io.github.soul4723.vanillapermissions.command.DifficultyCommandHandler;
-import io.github.soul4723.vanillapermissions.command.EffectCommandHandler;
-import io.github.soul4723.vanillapermissions.command.GameModeCommandHandler;
 import io.github.soul4723.vanillapermissions.command.VanillaPermissionsPluginCommand;
-import io.github.soul4723.vanillapermissions.command.GameruleCommandHandler;
-import io.github.soul4723.vanillapermissions.command.TimeCommandHandler;
-import io.github.soul4723.vanillapermissions.command.WeatherCommandHandler;
-import io.github.soul4723.vanillapermissions.command.WhitelistCommandHandler;
 import io.github.soul4723.vanillapermissions.listener.DebugStickListener;
 import io.github.soul4723.vanillapermissions.listener.ForceGamemodeBypassListener;
 import io.github.soul4723.vanillapermissions.listener.MoveSpeedBypassListener;
 import io.github.soul4723.vanillapermissions.listener.OperatorBlockListener;
 import io.github.soul4723.vanillapermissions.listener.WhitelistBypassListener;
 import io.github.soul4723.vanillapermissions.util.LuckPermsHook;
+import io.github.soul4723.vanillapermissions.util.NativeCommandPermissions;
 import io.github.soul4723.vanillapermissions.util.PermissionManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -43,28 +37,13 @@ public class VanillaPermissionsPlugin extends JavaPlugin {
         PermissionManager.initialize(luckPermsHook, this);
 
         VanillaPermissionsPluginCommand.registerCommands(this);
-        registerGranularCommands();
         registerListeners();
+        if (isFeatureEnabled("command_permissions")) {
+            NativeCommandPermissions.register(this);
+        }
 
         getLogger().info("VanillaPermissionsPlugin v" + getDescription().getVersion()
             + " enabled (Paper port inspired by DrexHD's VanillaPermissions)");
-    }
-
-    private void registerGranularCommands() {
-        if (isFeatureEnabled("command_permissions")) {
-            try {
-                GameModeCommandHandler.registerCommands(this);
-                WhitelistCommandHandler.registerCommands(this);
-                TimeCommandHandler.registerCommands(this);
-                WeatherCommandHandler.registerCommands(this);
-                GameruleCommandHandler.registerCommands(this);
-                DifficultyCommandHandler.registerCommands(this);
-                EffectCommandHandler.registerCommands(this);
-                getLogger().info("Granular commands registered successfully");
-            } catch (Exception e) {
-                getLogger().warning("Failed to register granular commands: " + e.getMessage());
-            }
-        }
     }
 
     private void registerListeners() {
@@ -84,28 +63,17 @@ public class VanillaPermissionsPlugin extends JavaPlugin {
         return getConfig().getBoolean("features." + feature, true);
     }
 
-    public boolean isOpsBypassAll() {
-        return getConfig().getBoolean("default_permissions.ops_bypass_all", true);
-    }
-
     private boolean validateConfiguration() {
         if (!getConfig().isConfigurationSection("features")) {
             getLogger().warning("Missing or invalid 'features' section in config.yml");
             return false;
         }
 
-        String[] features = {"command_permissions", "selector_permissions", "bypass_permissions", "admin_permissions"};
+        String[] features = {"command_permissions", "bypass_permissions", "admin_permissions"};
         for (String feature : features) {
             String path = "features." + feature;
             if (getConfig().contains(path) && !(getConfig().get(path) instanceof Boolean)) {
                 getLogger().warning("Feature '" + feature + "' must be true or false");
-                return false;
-            }
-        }
-
-        if (getConfig().contains("default_permissions.ops_bypass_all")) {
-            if (!(getConfig().get("default_permissions.ops_bypass_all") instanceof Boolean)) {
-                getLogger().warning("default_permissions.ops_bypass_all must be true or false");
                 return false;
             }
         }
@@ -120,6 +88,7 @@ public class VanillaPermissionsPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        NativeCommandPermissions.uninstall();
         getLogger().info("VanillaPermissionsPlugin disabled");
     }
 }

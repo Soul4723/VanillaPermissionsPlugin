@@ -14,7 +14,7 @@ public class ForceGamemodeBypassListener implements Listener {
     public void onGameModeChange(PlayerGameModeChangeEvent event) {
         if (event.getCause() != PlayerGameModeChangeEvent.Cause.DEFAULT_GAMEMODE) return;
 
-        if (PermissionManager.hasPermissionOrParent(event.getPlayer(), BYPASS_PERMISSION)) {
+        if (PermissionManager.hasPermission(event.getPlayer(), BYPASS_PERMISSION)) {
             event.setCancelled(true);
         }
     }

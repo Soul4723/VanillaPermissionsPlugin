@@ -14,7 +14,7 @@ public class MoveSpeedBypassListener implements Listener {
         PlayerFailMoveEvent.FailReason reason = event.getFailReason();
         if ((reason == PlayerFailMoveEvent.FailReason.MOVED_TOO_QUICKLY ||
                 reason == PlayerFailMoveEvent.FailReason.MOVED_WRONGLY) &&
-                PermissionManager.hasPermissionOrParent(event.getPlayer(), PLAYER_SPEED_PERMISSION)) {
+                PermissionManager.hasPermission(event.getPlayer(), PLAYER_SPEED_PERMISSION)) {
             event.setAllowed(true);
         }
     }
