@@ -46,6 +46,7 @@ public final class SelectorNativePermissions {
             List<String> parsedNodePath,
             String argumentName,
             Object result) throws CommandSyntaxException {
+        if (!(sender instanceof Player)) return;
         SelectorPolicy.validate(sender, parsedNodePath, argumentName, targets(result), PERMISSIONS);
     }
 
