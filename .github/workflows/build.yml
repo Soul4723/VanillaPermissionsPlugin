@@ -14,4 +14,22 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
-      - run: mvn -B -ntp verify
+      - run: mvn -B -ntp verify org.apache.maven.plugins:maven-dependency-plugin:3.8.1:build-classpath -DincludeScope=test -Dmdep.outputFile=target/test-classpath.txt
+      - name: Run regression checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          check_cp="target/classes:target/test-classes:$(cat target/test-classpath.txt)"
+          for check in \
+            CommandCorrectnessCheck \
+            CommandPermissionsCheck \
+            EffectCommandCheck \
+            ForceGamemodeContextCheck \
+            TeleportCorrectnessCheck \
+            WhitelistCorrectnessCheck \
+            WorldCommandSendersCheck
+          do
+            java -ea -cp "$check_cp" "$check"
+          done
+          javac --release 21 -cp "$check_cp" -d target/test-classes tests/NativeFeedbackCheck.java
+          java -ea -cp "$check_cp" NativeFeedbackCheck
