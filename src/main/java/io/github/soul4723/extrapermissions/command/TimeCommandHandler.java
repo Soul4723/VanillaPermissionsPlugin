@@ -43,7 +43,7 @@ public class TimeCommandHandler {
                 .withSubcommand(set)
                 .withSubcommand(new CommandAPICommand("add")
                         .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".add"))
-                        .withArguments(new IntegerArgument("time", 0))
+                        .withArguments(new IntegerArgument("time"))
                         .executesNative((proxy, args) -> {
                             CommandSender sender = proxy.getCaller();
                             Integer ticksObj = (Integer) args.get("time");
