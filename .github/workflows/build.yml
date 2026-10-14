@@ -23,7 +23,8 @@ jobs:
           for check in \
             CommandPermissionsCheck \
             ForceGamemodeContextCheck \
-            io.github.soul4723.vanillapermissions.util.NativeCommandPermissionsCheck
+            io.github.soul4723.vanillapermissions.util.NativeCommandPermissionsCheck \
+            io.github.soul4723.vanillapermissions.util.SelectorPolicyCheck
           do
             java -ea -cp "$check_cp" "$check"
           done

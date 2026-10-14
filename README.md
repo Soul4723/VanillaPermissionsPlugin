@@ -19,6 +19,8 @@ Gamemode has separate mode nodes. For example, grant `minecraft.command.gamemode
 
 The native `/execute` tree adds Drex-style `if permission`, `feedback`, and `oplevel` paths.
 
+Score-holder arguments enforce `minecraft.selector.limit.<command>.<argument>`. The upstream README documents only this limit for score holders; its current validator rejects their resolved string values during scope checks, so this port follows the documented behavior.
+
 ## Other controls
 
 - `minecraft.bypass.whitelist`, `minecraft.bypass.player-limit`, `minecraft.bypass.force-gamemode`, `minecraft.bypass.move-speed.player`
