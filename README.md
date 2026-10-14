@@ -26,6 +26,8 @@ Gamemode has separate mode nodes, including `minecraft.command.gamemode.survival
 - `minecraft.bypass.whitelist`, `minecraft.bypass.player-limit`, `minecraft.bypass.force-gamemode`, `minecraft.bypass.move-speed.player`
 - `minecraft.operator_block.<block>.<place|view|break>` and `minecraft.debug_stick.use.block` through Paper listeners
 
+Paper's drop-in API does not expose Drex's native spawn-protection, chat-spam, admin-feedback recipient, NBT packet, command-block-minecart, debug-chart, or selector-result hooks. Those internals are outside this build's supported surface.
+
 Plugin commands: `/vanillapermissions check <player>` and `/vanillapermissions debug`.
 
 ## License
