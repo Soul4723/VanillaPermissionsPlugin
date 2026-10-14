@@ -91,6 +91,7 @@ public class TeleportCorrectnessCheck {
 
     static void teleportToLocation(Fixture caller, Fixture executor, World world) throws Exception {
         caller.permissions.add("minecraft.command.teleport");
+        executor.accepted = true;
         Location parsed = location(world, 10, 64, 20);
         run("teleportToLocation", new Class<?>[]{NativeProxyCommandSender.class, CommandArguments.class},
             nativeSource(caller.player, executor.player), arguments("location", parsed, "rotation", new Rotation(90, 30)));
