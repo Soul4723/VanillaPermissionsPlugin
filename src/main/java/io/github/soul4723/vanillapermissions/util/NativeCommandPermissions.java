@@ -241,33 +241,37 @@ public final class NativeCommandPermissions {
     private static void validateSelectors(CommandContext<?> context) throws CommandSyntaxException {
         Object rawSource = context.getSource();
         CommandSender sender;
+        Method getSender;
         try {
-            Method getSender = rawSource.getClass().getMethod("getBukkitSender");
-            Object value = getSender.invoke(rawSource);
-            if (!(value instanceof CommandSender commandSender)) return;
-            sender = commandSender;
-            List<String> path = context.getNodes().stream().map(ParsedCommandNode::getNode)
-                .map(CommandNode::getName).toList();
-            for (ParsedCommandNode<?> parsed : context.getNodes()) {
-                if (!(parsed.getNode() instanceof ArgumentCommandNode<?, ?> argument)) continue;
-                Method resolver = selectorResolver(argument.getType());
-                if (resolver == null) continue;
-                Object result;
-                try {
-                    result = resolver.invoke(null, context, argument.getName());
-                } catch (InvocationTargetException error) {
-                    Throwable cause = error.getCause();
-                    if (cause instanceof CommandSyntaxException syntax) throw syntax;
-                    throw new IllegalStateException("Native selector resolver failed", cause);
-                } catch (ReflectiveOperationException error) {
-                    throw new IllegalStateException("Native selector resolver failed", error);
-                }
-                SelectorNativePermissions.validate(sender, path, argument.getName(), result);
-            }
-        } catch (CommandSyntaxException error) {
-            throw error;
+            getSender = rawSource.getClass().getMethod("getBukkitSender");
+        } catch (NoSuchMethodException error) {
+            return;
+        }
+        Object value;
+        try {
+            value = getSender.invoke(rawSource);
         } catch (ReflectiveOperationException error) {
-            throw new IllegalStateException("Could not resolve native command sender", error);
+            return;
+        }
+        if (!(value instanceof CommandSender commandSender)) return;
+        sender = commandSender;
+        List<String> path = context.getNodes().stream().map(ParsedCommandNode::getNode)
+            .map(CommandNode::getName).toList();
+        for (ParsedCommandNode<?> parsed : context.getNodes()) {
+            if (!(parsed.getNode() instanceof ArgumentCommandNode<?, ?> argument)) continue;
+            Method resolver = selectorResolver(argument.getType());
+            if (resolver == null) continue;
+            Object result;
+            try {
+                result = resolver.invoke(null, context, argument.getName());
+            } catch (InvocationTargetException error) {
+                Throwable cause = error.getCause();
+                if (cause instanceof CommandSyntaxException syntax) throw syntax;
+                throw new IllegalStateException("Native selector resolver failed", cause);
+            } catch (ReflectiveOperationException error) {
+                throw new IllegalStateException("Native selector resolver failed", error);
+            }
+            SelectorNativePermissions.validate(sender, path, argument.getName(), result);
         }
     }
 
