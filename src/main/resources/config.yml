@@ -1,4 +1,4 @@
-# ExtraPermissions Configuration
+# VanillaPermissionsPlugin Configuration
 # Influenced by VanillaPermissions (https://github.com/DrexHD/VanillaPermissions)
 # Toggle different permission enforcement features
 
@@ -11,7 +11,7 @@ features:
 
 # Default permission behavior
 default_permissions:
-  # Whether OP players automatically bypass all ExtraPermissions checks
-  # Set false to make OPs respect ExtraPermissions like regular players
+  # Whether OP players automatically bypass all VanillaPermissionsPlugin checks
+  # Set false to make OPs respect VanillaPermissionsPlugin like regular players
   # Does not override Paper native command feedback permission/OP defaults/gamerules
   ops_bypass_all: true

@@ -1,6 +1,6 @@
-package io.github.soul4723.extrapermissions.listener;
+package io.github.soul4723.vanillapermissions.listener;
 
-import io.github.soul4723.extrapermissions.util.PermissionManager;
+import io.github.soul4723.vanillapermissions.util.PermissionManager;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;

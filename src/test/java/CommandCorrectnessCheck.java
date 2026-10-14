@@ -1,4 +1,4 @@
-import io.github.soul4723.extrapermissions.command.GameruleCommandHandler;
+import io.github.soul4723.vanillapermissions.command.GameruleCommandHandler;
 import org.bukkit.GameRule;
 import org.bukkit.World;
 

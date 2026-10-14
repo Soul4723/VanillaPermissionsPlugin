@@ -1,6 +1,6 @@
 import dev.jorel.commandapi.executors.CommandArguments;
 import dev.jorel.commandapi.wrappers.NativeProxyCommandSender;
-import io.github.soul4723.extrapermissions.command.ExtraPermissionsCommand;
+import io.github.soul4723.vanillapermissions.command.VanillaPermissionsPluginCommand;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
@@ -55,7 +55,7 @@ public class TeleportCorrectnessCheck {
             });
     }
     static void run(int index, CommandSender sender, Map<String, Object> args) throws Exception {
-        Method executor = ExtraPermissionsCommand.class.getDeclaredMethod(
+        Method executor = VanillaPermissionsPluginCommand.class.getDeclaredMethod(
             "lambda$registerVanillaCommands$" + index, index == 16 ? NativeProxyCommandSender.class : CommandSender.class, CommandArguments.class);
         executor.setAccessible(true);
         executor.invoke(null, sender, new CommandArguments(args.values().toArray(), args,

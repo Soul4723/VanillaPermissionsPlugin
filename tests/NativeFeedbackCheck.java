@@ -17,7 +17,7 @@ class NativeFeedbackCheck {
         String aliasName = "minecraft.adminbroadcast.receive";
         String nativeName = "minecraft.admin.command_feedback";
         Path resources = Path.of("src/main/resources");
-        try (var jar = new ZipFile("target/ExtraPermissions-2.1.0.jar")) {
+        try (var jar = new ZipFile("target/VanillaPermissionsPlugin-2.1.0.jar")) {
             byte[] packaged = jar.getInputStream(jar.getEntry("plugin.yml")).readAllBytes();
             assert java.util.Arrays.equals(packaged, Files.readAllBytes(resources.resolve("plugin.yml")));
             var descriptor = new PluginDescriptionFile(new java.io.ByteArrayInputStream(packaged));
@@ -27,13 +27,13 @@ class NativeFeedbackCheck {
             assert alias.getChildren().equals(Map.of(nativeName, true));
             assert descriptor.getPermissions().stream().noneMatch(p -> p.getName().equals(nativeName))
                 : "Plugin must not redefine Paper's native permission/default";
-            assert jar.getEntry("io/github/soul4723/extrapermissions/listener/AdminBroadcastListener.class") == null;
-            byte[] main = jar.getInputStream(jar.getEntry("io/github/soul4723/extrapermissions/ExtraPermissions.class")).readAllBytes();
+            assert jar.getEntry("io/github/soul4723/vanillapermissions/listener/AdminBroadcastListener.class") == null;
+            byte[] main = jar.getInputStream(jar.getEntry("io/github/soul4723/vanillapermissions/VanillaPermissionsPlugin.class")).readAllBytes();
             assert !new String(main, StandardCharsets.ISO_8859_1).contains("AdminBroadcastListener");
         }
-        Path sources = Path.of("src/main/java/io/github/soul4723/extrapermissions");
+        Path sources = Path.of("src/main/java/io/github/soul4723/vanillapermissions");
         assert !Files.exists(sources.resolve("listener/AdminBroadcastListener.java"));
-        assert !Files.readString(sources.resolve("ExtraPermissions.java")).contains("AdminBroadcastListener");
+        assert !Files.readString(sources.resolve("VanillaPermissionsPlugin.java")).contains("AdminBroadcastListener");
         System.out.println("PASS: Bukkit descriptor Permission objects/children/defaults, packaged descriptor, listener removal");
         System.out.println("NOT TESTED: registered Paper/LuckPerms resolution or live feedback/gamerules");
     }

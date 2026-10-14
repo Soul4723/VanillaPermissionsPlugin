@@ -1,9 +1,9 @@
 import dev.jorel.commandapi.executors.CommandArguments;
 import dev.jorel.commandapi.wrappers.NativeProxyCommandSender;
-import io.github.soul4723.extrapermissions.command.DifficultyCommandHandler;
-import io.github.soul4723.extrapermissions.command.GameruleCommandHandler;
-import io.github.soul4723.extrapermissions.command.TimeCommandHandler;
-import io.github.soul4723.extrapermissions.command.WeatherCommandHandler;
+import io.github.soul4723.vanillapermissions.command.DifficultyCommandHandler;
+import io.github.soul4723.vanillapermissions.command.GameruleCommandHandler;
+import io.github.soul4723.vanillapermissions.command.TimeCommandHandler;
+import io.github.soul4723.vanillapermissions.command.WeatherCommandHandler;
 import org.bukkit.Bukkit;
 import org.bukkit.Difficulty;
 import org.bukkit.Server;

@@ -1,4 +1,4 @@
-import io.github.soul4723.extrapermissions.util.PermissionManager;
+import io.github.soul4723.vanillapermissions.util.PermissionManager;
 import org.bukkit.command.CommandSender;
 
 import java.lang.reflect.Proxy;

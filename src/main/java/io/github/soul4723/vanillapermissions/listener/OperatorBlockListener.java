@@ -1,6 +1,6 @@
-package io.github.soul4723.extrapermissions.listener;
+package io.github.soul4723.vanillapermissions.listener;
 
-import io.github.soul4723.extrapermissions.util.PermissionManager;
+import io.github.soul4723.vanillapermissions.util.PermissionManager;
 import java.util.Locale;
 import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
@@ -9,6 +9,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.block.Action;
 
 public class OperatorBlockListener implements Listener {
 
@@ -38,7 +39,7 @@ public class OperatorBlockListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPlayerInteract(PlayerInteractEvent event) {
-        if (event.getClickedBlock() == null) return;
+        if (event.getAction() != Action.RIGHT_CLICK_BLOCK || event.getClickedBlock() == null) return;
 
         Material blockType = event.getClickedBlock().getType();
         if (isOperatorBlock(blockType)) {

@@ -1,13 +1,13 @@
-package io.github.soul4723.extrapermissions.command;
+package io.github.soul4723.vanillapermissions.command;
 
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.EntitySelectorArgument;
 import dev.jorel.commandapi.arguments.IntegerArgument;
 import dev.jorel.commandapi.arguments.TextArgument;
-import io.github.soul4723.extrapermissions.ExtraPermissions;
-import io.github.soul4723.extrapermissions.util.PermissionManager;
-import io.github.soul4723.extrapermissions.util.SelectorPathBuilder;
+import io.github.soul4723.vanillapermissions.VanillaPermissionsPlugin;
+import io.github.soul4723.vanillapermissions.util.PermissionManager;
+import io.github.soul4723.vanillapermissions.util.SelectorPathBuilder;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.command.CommandSender;
@@ -27,7 +27,7 @@ public class EffectCommandHandler {
     private static final String COMMAND_NAME = "effect";
 
     public static void registerCommands(JavaPlugin plugin) {
-        boolean selectorPermissions = ((ExtraPermissions) plugin).isFeatureEnabled("selector_permissions");
+        boolean selectorPermissions = ((VanillaPermissionsPlugin) plugin).isFeatureEnabled("selector_permissions");
         try {
             CommandAPI.unregister("effect");
         } catch (Exception e) {

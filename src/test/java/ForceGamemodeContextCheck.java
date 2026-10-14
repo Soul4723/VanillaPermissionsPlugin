@@ -1,6 +1,6 @@
-import io.github.soul4723.extrapermissions.listener.ForceGamemodeBypassListener;
-import io.github.soul4723.extrapermissions.util.LuckPermsHook;
-import io.github.soul4723.extrapermissions.util.PermissionManager;
+import io.github.soul4723.vanillapermissions.listener.ForceGamemodeBypassListener;
+import io.github.soul4723.vanillapermissions.util.LuckPermsHook;
+import io.github.soul4723.vanillapermissions.util.PermissionManager;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.cacheddata.CachedDataManager;
 import net.luckperms.api.cacheddata.CachedPermissionData;

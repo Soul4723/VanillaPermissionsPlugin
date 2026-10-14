@@ -1,10 +1,10 @@
-package io.github.soul4723.extrapermissions.command;
+package io.github.soul4723.vanillapermissions.command;
 
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import dev.jorel.commandapi.arguments.PlayerProfileArgument;
-import io.github.soul4723.extrapermissions.util.PermissionManager;
+import io.github.soul4723.vanillapermissions.util.PermissionManager;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 

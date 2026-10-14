@@ -1,5 +1,6 @@
-package io.github.soul4723.extrapermissions.command;
+package io.github.soul4723.vanillapermissions.command;
 
+import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import java.util.Locale;
 import dev.jorel.commandapi.arguments.ArgumentSuggestions;
@@ -7,36 +8,36 @@ import dev.jorel.commandapi.arguments.DoubleArgument;
 import dev.jorel.commandapi.arguments.EntitySelectorArgument;
 import dev.jorel.commandapi.arguments.FloatArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
-import io.github.soul4723.extrapermissions.ExtraPermissions;
-import io.github.soul4723.extrapermissions.util.PermissionManager;
+import io.github.soul4723.vanillapermissions.VanillaPermissionsPlugin;
+import io.github.soul4723.vanillapermissions.util.PermissionManager;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
-public class ExtraPermissionsCommand {
+public class VanillaPermissionsPluginCommand {
 
-    public static void registerCommands(ExtraPermissions plugin) {
+    public static void registerCommands(VanillaPermissionsPlugin plugin) {
         registerAdminCommands(plugin);
         if (plugin.isFeatureEnabled("command_permissions")) {
             registerVanillaCommands();
         }
     }
 
-    private static void registerAdminCommands(ExtraPermissions plugin) {
+    private static void registerAdminCommands(VanillaPermissionsPlugin plugin) {
         try {
-            new CommandAPICommand("extrapermissions")
-                .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "extrapermissions.use"))
+            new CommandAPICommand("vanillapermissions")
+                .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "vanillapermissions.use"))
                 .withAliases("eperm", "ep")
                 .withSubcommand(new CommandAPICommand("reload")
-                    .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "extrapermissions.reload"))
+                    .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "vanillapermissions.reload"))
                     .executes((sender, args) -> {
                         plugin.reloadPluginConfig();
-                        sender.sendMessage("§aExtraPermissions configuration reloaded!");
+                        sender.sendMessage("§aVanillaPermissionsPlugin configuration reloaded!");
                         sender.sendMessage("§7Note: Some changes may require a full plugin restart to take effect.");
                     }))
                 .withSubcommand(new CommandAPICommand("check")
-                    .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "extrapermissions.admin"))
+                    .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "vanillapermissions.admin"))
                     .withArguments(new EntitySelectorArgument.OnePlayer("player"))
                     .executes((sender, args) -> {
                         Object raw = args.getUnchecked("player");
@@ -48,9 +49,9 @@ public class ExtraPermissionsCommand {
 
                         sender.sendMessage("§6Permissions for " + target.getName() + ":");
                         String[] keyPermissions = {
-                            "extrapermissions.use",
-                            "extrapermissions.reload",
-                            "extrapermissions.admin",
+                            "vanillapermissions.use",
+                            "vanillapermissions.reload",
+                            "vanillapermissions.admin",
                             "minecraft.command.gamemode",
                             "minecraft.command.teleport",
                             "minecraft.selector.self.s",
@@ -64,9 +65,9 @@ public class ExtraPermissionsCommand {
                         }
                     }))
                 .withSubcommand(new CommandAPICommand("debug")
-                    .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "extrapermissions.admin"))
+                    .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "vanillapermissions.admin"))
                     .executes((sender, args) -> {
-                        sender.sendMessage("§6=== ExtraPermissions Debug Info ===");
+                        sender.sendMessage("§6=== VanillaPermissionsPlugin Debug Info ===");
                         sender.sendMessage("§7Plugin Version: §f" + plugin.getDescription().getVersion());
 
                         var hook = PermissionManager.getLuckPermsHook();
@@ -80,12 +81,21 @@ public class ExtraPermissionsCommand {
                     }))
                 .register();
         } catch (Exception e) {
-            plugin.getLogger().severe("Failed to register ExtraPermissions admin commands: " + e.getMessage());
+            plugin.getLogger().severe("Failed to register VanillaPermissionsPlugin admin commands: " + e.getMessage());
         }
     }
 
     private static void registerVanillaCommands() {
         try {
+            try {
+                CommandAPI.unregister("tp");
+            } catch (Exception ignored) {
+            }
+            try {
+                CommandAPI.unregister("teleport");
+            } catch (Exception ignored) {
+            }
+
             new CommandAPICommand("gamemode")
                 .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "minecraft.command.gamemode"))
                 .withArguments(new StringArgument("gamemode")
@@ -143,6 +153,7 @@ public class ExtraPermissionsCommand {
                 .register();
 
             new CommandAPICommand("tp")
+                .withAliases("teleport")
                 .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "minecraft.command.teleport"))
                 .withArguments(new EntitySelectorArgument.OneEntity("target"))
                 .executes((sender, args) -> {
@@ -172,6 +183,7 @@ public class ExtraPermissionsCommand {
                 .register();
 
             new CommandAPICommand("tp")
+                .withAliases("teleport")
                 .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "minecraft.command.teleport"))
                 .withArguments(
                     new DoubleArgument("x"),
@@ -235,6 +247,7 @@ public class ExtraPermissionsCommand {
 
             // /tp <target> <destination> - Teleport entity TO another entity
             new CommandAPICommand("tp")
+                .withAliases("teleport")
                 .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "minecraft.command.teleport"))
                 .withArguments(
                     new EntitySelectorArgument.ManyEntities("targets"),
@@ -275,6 +288,7 @@ public class ExtraPermissionsCommand {
 
             // /tp <target> <x> <y> <z> - Teleport entity TO coordinates
             new CommandAPICommand("tp")
+                .withAliases("teleport")
                 .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "minecraft.command.teleport"))
                 .withArguments(
                     new EntitySelectorArgument.ManyEntities("targets"),

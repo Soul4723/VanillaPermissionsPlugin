@@ -10,4 +10,4 @@ mvnw.cmd
 *.test
 *.log
 opencode.md
-ExtraPermissions.iml
+VanillaPermissionsPlugin.iml

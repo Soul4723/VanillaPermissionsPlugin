@@ -1,6 +1,6 @@
 import com.destroystokyo.paper.profile.PlayerProfile;
 import dev.jorel.commandapi.executors.CommandArguments;
-import io.github.soul4723.extrapermissions.command.WhitelistCommandHandler;
+import io.github.soul4723.vanillapermissions.command.WhitelistCommandHandler;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Server;

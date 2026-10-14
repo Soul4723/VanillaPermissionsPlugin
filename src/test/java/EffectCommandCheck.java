@@ -1,5 +1,5 @@
-import io.github.soul4723.extrapermissions.command.EffectCommandHandler;
-import io.github.soul4723.extrapermissions.util.SelectorPathBuilder;
+import io.github.soul4723.vanillapermissions.command.EffectCommandHandler;
+import io.github.soul4723.vanillapermissions.util.SelectorPathBuilder;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 

@@ -1,23 +1,23 @@
-package io.github.soul4723.extrapermissions;
+package io.github.soul4723.vanillapermissions;
 
-import io.github.soul4723.extrapermissions.command.DifficultyCommandHandler;
-import io.github.soul4723.extrapermissions.command.EffectCommandHandler;
-import io.github.soul4723.extrapermissions.command.ExtraPermissionsCommand;
-import io.github.soul4723.extrapermissions.command.GameruleCommandHandler;
-import io.github.soul4723.extrapermissions.command.TimeCommandHandler;
-import io.github.soul4723.extrapermissions.command.WeatherCommandHandler;
-import io.github.soul4723.extrapermissions.command.WhitelistCommandHandler;
-import io.github.soul4723.extrapermissions.listener.DebugStickListener;
-import io.github.soul4723.extrapermissions.listener.ForceGamemodeBypassListener;
-import io.github.soul4723.extrapermissions.listener.MoveSpeedBypassListener;
-import io.github.soul4723.extrapermissions.listener.OperatorBlockListener;
-import io.github.soul4723.extrapermissions.listener.SelectorPermissionListener;
-import io.github.soul4723.extrapermissions.listener.WhitelistBypassListener;
-import io.github.soul4723.extrapermissions.util.LuckPermsHook;
-import io.github.soul4723.extrapermissions.util.PermissionManager;
+import io.github.soul4723.vanillapermissions.command.DifficultyCommandHandler;
+import io.github.soul4723.vanillapermissions.command.EffectCommandHandler;
+import io.github.soul4723.vanillapermissions.command.VanillaPermissionsPluginCommand;
+import io.github.soul4723.vanillapermissions.command.GameruleCommandHandler;
+import io.github.soul4723.vanillapermissions.command.TimeCommandHandler;
+import io.github.soul4723.vanillapermissions.command.WeatherCommandHandler;
+import io.github.soul4723.vanillapermissions.command.WhitelistCommandHandler;
+import io.github.soul4723.vanillapermissions.listener.DebugStickListener;
+import io.github.soul4723.vanillapermissions.listener.ForceGamemodeBypassListener;
+import io.github.soul4723.vanillapermissions.listener.MoveSpeedBypassListener;
+import io.github.soul4723.vanillapermissions.listener.OperatorBlockListener;
+import io.github.soul4723.vanillapermissions.listener.SelectorPermissionListener;
+import io.github.soul4723.vanillapermissions.listener.WhitelistBypassListener;
+import io.github.soul4723.vanillapermissions.util.LuckPermsHook;
+import io.github.soul4723.vanillapermissions.util.PermissionManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public class ExtraPermissions extends JavaPlugin {
+public class VanillaPermissionsPlugin extends JavaPlugin {
 
     private LuckPermsHook luckPermsHook;
 
@@ -25,13 +25,13 @@ public class ExtraPermissions extends JavaPlugin {
         boolean hasAll = true;
 
         if (getServer().getPluginManager().getPlugin("CommandAPI") == null) {
-            getLogger().severe("ExtraPermissions requires CommandAPI to function!");
+            getLogger().severe("VanillaPermissionsPlugin requires CommandAPI to function!");
             getLogger().severe("Download: https://github.com/CommandAPI/CommandAPI/releases");
             hasAll = false;
         }
 
         if (getServer().getPluginManager().getPlugin("LuckPerms") == null) {
-            getLogger().severe("ExtraPermissions requires LuckPerms to function!");
+            getLogger().severe("VanillaPermissionsPlugin requires LuckPerms to function!");
             getLogger().severe("Download: https://luckperms.net/download");
             hasAll = false;
         }
@@ -66,11 +66,11 @@ public class ExtraPermissions extends JavaPlugin {
 
         PermissionManager.initialize(luckPermsHook, this);
 
-        ExtraPermissionsCommand.registerCommands(this);
+        VanillaPermissionsPluginCommand.registerCommands(this);
         registerGranularCommands();
         registerListeners();
 
-        getLogger().info("ExtraPermissions v" + getDescription().getVersion() + " enabled (inspired by VanillaPermissions)");
+        getLogger().info("VanillaPermissionsPlugin v" + getDescription().getVersion() + " enabled (inspired by VanillaPermissions)");
     }
 
     private void registerGranularCommands() {
@@ -146,6 +146,6 @@ public class ExtraPermissions extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        getLogger().info("ExtraPermissions disabled");
+        getLogger().info("VanillaPermissionsPlugin disabled");
     }
 }

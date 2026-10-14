@@ -1,22 +1,22 @@
-name: ExtraPermissions
+name: VanillaPermissionsPlugin
 version: 2.1.0
-main: io.github.soul4723.extrapermissions.ExtraPermissions
+main: io.github.soul4723.vanillapermissions.VanillaPermissionsPlugin
 api-version: '1.20'
 author: Soul4723
 description: Granular permission control for vanilla Minecraft commands and features
-website: https://github.com/Soul4723
+website: https://github.com/Soul4723/VanillaPermissionsPlugin
 
 depend: [CommandAPI, LuckPerms]
 
 permissions:
-  extrapermissions.use:
-    description: Use ExtraPermissions commands
+  vanillapermissions.use:
+    description: Use VanillaPermissionsPlugin commands
     default: op
-  extrapermissions.reload:
-    description: Reload ExtraPermissions configuration
+  vanillapermissions.reload:
+    description: Reload VanillaPermissionsPlugin configuration
     default: op
-  extrapermissions.admin:
-    description: Access ExtraPermissions admin features
+  vanillapermissions.admin:
+    description: Access VanillaPermissionsPlugin admin features
     default: op
 
   # Command permissions

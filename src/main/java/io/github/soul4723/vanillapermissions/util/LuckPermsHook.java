@@ -1,4 +1,4 @@
-package io.github.soul4723.extrapermissions.util;
+package io.github.soul4723.vanillapermissions.util;
 
 import net.luckperms.api.LuckPerms;
 import org.bukkit.Bukkit;

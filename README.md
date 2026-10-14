@@ -1,4 +1,4 @@
-# ExtraPermissions
+# VanillaPermissionsPlugin
 
 Adds granular permission control for vanilla Minecraft commands on Paper servers. Lets you control specific gamemode types, teleport options, entity selectors, and more.
 
@@ -106,9 +106,9 @@ default_permissions:
 ## Commands
 
 **Plugin commands:**
-- `/extrapermissions reload` (or `/ep reload`) - Reload config
-- `/extrapermissions check <player>` - Check a player's key permissions
-- `/extrapermissions debug` - View plugin status and info
+- `/vanillapermissions reload` (or `/ep reload`) - Reload config
+- `/vanillapermissions check <player>` - Check a player's key permissions
+- `/vanillapermissions debug` - View plugin status and info
 
 **Overridden vanilla commands:**
 - `/gamemode <mode> [player]`
@@ -185,9 +185,9 @@ Replace `<action>` with `place`, `view`, or `break`:
 
 **Permission hierarchy:** Parent permissions grant access to children. For example, `minecraft.command.gamemode` gives access to all gamemode subpermissions unless explicitly denied.
 
-**OP behavior:** By default, OPs bypass all ExtraPermissions checks. Set `ops_bypass_all: false` in config to change this. This setting does not override Paper's native command feedback permission or OP defaults.
+**OP behavior:** By default, OPs bypass all VanillaPermissionsPlugin checks. Set `ops_bypass_all: false` in config to change this. This setting does not override Paper's native command feedback permission or OP defaults.
 
-**Command feedback:** Paper controls eligible native feedback through `minecraft.admin.command_feedback` (granted to OPs by default) and native gamerules: `sendCommandFeedback` controls player feedback broadcasts, while `logAdminCommands` controls console logging. The historical alias grants the native permission; setting the alias to false does not revoke an independently granted native permission. Native feedback and the descriptor alias are independent of `features.admin_permissions`. ExtraPermissions does not broadcast raw command input. Its existing replacement executors still send custom sender/target messages, not native feedback broadcasts.
+**Command feedback:** Paper controls eligible native feedback through `minecraft.admin.command_feedback` (granted to OPs by default) and native gamerules: `sendCommandFeedback` controls player feedback broadcasts, while `logAdminCommands` controls console logging. The historical alias grants the native permission; setting the alias to false does not revoke an independently granted native permission. Native feedback and the descriptor alias are independent of `features.admin_permissions`. VanillaPermissionsPlugin does not broadcast raw command input. Its existing replacement executors still send custom sender/target messages, not native feedback broadcasts.
 
 **Selectors:** Only affects vanilla entity selectors in commands. Custom plugin commands might not respect these.
 

@@ -1,4 +1,4 @@
-package io.github.soul4723.extrapermissions.util;
+package io.github.soul4723.vanillapermissions.util;
 
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.cacheddata.CachedPermissionData;
@@ -82,9 +82,9 @@ public class PermissionManager {
     private static boolean shouldOpBypass(CommandSender sender) {
         if (!sender.isOp()) return false;
 
-        if (plugin instanceof io.github.soul4723.extrapermissions.ExtraPermissions) {
-            io.github.soul4723.extrapermissions.ExtraPermissions ep =
-                (io.github.soul4723.extrapermissions.ExtraPermissions) plugin;
+        if (plugin instanceof io.github.soul4723.vanillapermissions.VanillaPermissionsPlugin) {
+            io.github.soul4723.vanillapermissions.VanillaPermissionsPlugin ep =
+                (io.github.soul4723.vanillapermissions.VanillaPermissionsPlugin) plugin;
 
             return ep.isOpsBypassAll();
         }
