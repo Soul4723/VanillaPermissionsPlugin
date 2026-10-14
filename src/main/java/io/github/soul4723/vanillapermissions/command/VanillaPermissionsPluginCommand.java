@@ -2,25 +2,34 @@ package io.github.soul4723.vanillapermissions.command;
 
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
-import java.util.Locale;
-import dev.jorel.commandapi.arguments.ArgumentSuggestions;
-import dev.jorel.commandapi.arguments.DoubleArgument;
+import dev.jorel.commandapi.arguments.AbstractArgument;
 import dev.jorel.commandapi.arguments.EntitySelectorArgument;
-import dev.jorel.commandapi.arguments.FloatArgument;
-import dev.jorel.commandapi.arguments.StringArgument;
+import dev.jorel.commandapi.arguments.LocationArgument;
+import dev.jorel.commandapi.arguments.RotationArgument;
+import dev.jorel.commandapi.executors.CommandArguments;
+import dev.jorel.commandapi.wrappers.NativeProxyCommandSender;
+import dev.jorel.commandapi.wrappers.Rotation;
 import io.github.soul4723.vanillapermissions.VanillaPermissionsPlugin;
 import io.github.soul4723.vanillapermissions.util.PermissionManager;
+import io.github.soul4723.vanillapermissions.util.SelectorPermissionCheck;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
-public class VanillaPermissionsPluginCommand {
+import java.util.Collection;
+import java.util.Locale;
+
+public final class VanillaPermissionsPluginCommand {
+
+    private static final String TELEPORT = "minecraft.command.teleport";
+
+    private VanillaPermissionsPluginCommand() {}
 
     public static void registerCommands(VanillaPermissionsPlugin plugin) {
         registerAdminCommands(plugin);
         if (plugin.isFeatureEnabled("command_permissions")) {
-            registerVanillaCommands();
+            registerTeleportCommands(plugin);
         }
     }
 
@@ -28,27 +37,25 @@ public class VanillaPermissionsPluginCommand {
         try {
             new CommandAPICommand("vanillapermissions")
                 .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "vanillapermissions.use"))
-                .withAliases("eperm", "ep")
                 .withSubcommand(new CommandAPICommand("reload")
                     .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "vanillapermissions.reload"))
                     .executes((sender, args) -> {
                         plugin.reloadPluginConfig();
                         sender.sendMessage("§aVanillaPermissionsPlugin configuration reloaded!");
-                        sender.sendMessage("§7Note: Some changes may require a full plugin restart to take effect.");
+                        sender.sendMessage("§7Some changes require a plugin restart to take effect.");
                     }))
                 .withSubcommand(new CommandAPICommand("check")
                     .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "vanillapermissions.admin"))
                     .withArguments(new EntitySelectorArgument.OnePlayer("player"))
                     .executes((sender, args) -> {
                         Object raw = args.getUnchecked("player");
-                        if (!(raw instanceof Player)) {
-                            sender.sendMessage("§cPlayer not found!");
+                        if (!(raw instanceof Player target)) {
+                            sender.sendMessage("§cPlayer not found.");
                             return;
                         }
-                        Player target = (Player) raw;
 
                         sender.sendMessage("§6Permissions for " + target.getName() + ":");
-                        String[] keyPermissions = {
+                        String[] permissions = {
                             "vanillapermissions.use",
                             "vanillapermissions.reload",
                             "vanillapermissions.admin",
@@ -57,10 +64,8 @@ public class VanillaPermissionsPluginCommand {
                             "minecraft.selector.self.s",
                             "minecraft.operator_block.command_block.place"
                         };
-
-                        for (String permission : keyPermissions) {
-                            boolean hasPermission = PermissionManager.hasPermissionOrParent(target, permission);
-                            String status = hasPermission ? "§a✓" : "§c✗";
+                        for (String permission : permissions) {
+                            String status = PermissionManager.hasPermissionOrParent(target, permission) ? "§a✓" : "§c✗";
                             sender.sendMessage("§7  " + status + " §f" + permission);
                         }
                     }))
@@ -71,13 +76,14 @@ public class VanillaPermissionsPluginCommand {
                         sender.sendMessage("§7Plugin Version: §f" + plugin.getDescription().getVersion());
 
                         var hook = PermissionManager.getLuckPermsHook();
-                        sender.sendMessage("§7LuckPerms Integration: §f" + (hook != null && hook.isEnabled() ? "§aEnabled" : "§cDisabled"));
-
+                        sender.sendMessage("§7LuckPerms Integration: "
+                            + (hook != null && hook.isEnabled() ? "§aEnabled" : "§cDisabled"));
                         sender.sendMessage("§7Feature Status:");
-                        sender.sendMessage("§7  command_permissions: " + (plugin.isFeatureEnabled("command_permissions") ? "§aEnabled" : "§cDisabled"));
-                        sender.sendMessage("§7  selector_permissions: " + (plugin.isFeatureEnabled("selector_permissions") ? "§aEnabled" : "§cDisabled"));
-                        sender.sendMessage("§7  bypass_permissions: " + (plugin.isFeatureEnabled("bypass_permissions") ? "§aEnabled" : "§cDisabled"));
-                        sender.sendMessage("§7  admin_permissions: " + (plugin.isFeatureEnabled("admin_permissions") ? "§aEnabled" : "§cDisabled"));
+                        for (String feature : new String[] {
+                                "command_permissions", "selector_permissions", "bypass_permissions", "admin_permissions"}) {
+                            sender.sendMessage("§7  " + feature + ": "
+                                + (plugin.isFeatureEnabled(feature) ? "§aEnabled" : "§cDisabled"));
+                        }
                     }))
                 .register();
         } catch (Exception e) {
@@ -85,276 +91,196 @@ public class VanillaPermissionsPluginCommand {
         }
     }
 
-    private static void registerVanillaCommands() {
+    private static void registerTeleportCommands(VanillaPermissionsPlugin plugin) {
         try {
-            try {
-                CommandAPI.unregister("tp");
-            } catch (Exception ignored) {
-            }
-            try {
-                CommandAPI.unregister("teleport");
-            } catch (Exception ignored) {
-            }
-
-            new CommandAPICommand("gamemode")
-                .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "minecraft.command.gamemode"))
-                .withArguments(new StringArgument("gamemode")
-                    .replaceSuggestions(ArgumentSuggestions.strings("survival", "creative", "adventure", "spectator")))
-                .withOptionalArguments(new EntitySelectorArgument.ManyPlayers("target"))
-                .executes((sender, args) -> {
-                    Object gmObj = args.getUnchecked("gamemode");
-                    if (gmObj == null) {
-                        sender.sendMessage("§cUsage: /gamemode <survival|creative|adventure|spectator> [player]");
-                        return;
-                    }
-
-                    String gamemode = ((String) gmObj).toLowerCase(Locale.ROOT);
-                    try {
-                        org.bukkit.GameMode.valueOf(gamemode.toUpperCase(Locale.ROOT));
-                    } catch (IllegalArgumentException e) {
-                        sender.sendMessage("§cInvalid gamemode: " + gamemode + ". Valid modes: survival, creative, adventure, spectator");
-                        return;
-                    }
-
-                    Object rawTarget = args.getUnchecked("target");
-                    java.util.Collection<Player> targets;
-                    if (rawTarget instanceof java.util.Collection<?>) {
-                        @SuppressWarnings("unchecked")
-                        java.util.Collection<Player> selected = (java.util.Collection<Player>) rawTarget;
-                        targets = selected;
-                    } else if (sender instanceof Player player) {
-                        targets = java.util.List.of(player);
-                    } else {
-                        sender.sendMessage("§cConsole must specify target players!");
-                        return;
-                    }
-                    if (targets.isEmpty()) {
-                        sender.sendMessage("§cNo targets found!");
-                        return;
-                    }
-                    for (Player target : targets) {
-                        boolean self = target.equals(sender);
-                        if (!self && !PermissionManager.hasPermissionOrParent(sender, "minecraft.command.gamemode.other")) {
-                            sender.sendMessage("§cYou don't have permission to set other players' gamemode!");
-                            return;
-                        }
-                        if (!PermissionManager.hasPermissionOrParent(sender,
-                                "minecraft.command.gamemode." + gamemode + (self ? "" : ".other"))) {
-                            sender.sendMessage("§cYou don't have permission to set gamemode " + gamemode + "!");
-                            return;
-                        }
-                    }
-                    org.bukkit.GameMode mode = org.bukkit.GameMode.valueOf(gamemode.toUpperCase(Locale.ROOT));
-                    for (Player target : targets) {
-                        target.setGameMode(mode);
-                        sender.sendMessage("§aSet " + target.getName() + "'s gamemode to " + gamemode);
-                    }
-                })
-                .register();
-
-            new CommandAPICommand("tp")
-                .withAliases("teleport")
-                .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "minecraft.command.teleport"))
-                .withArguments(new EntitySelectorArgument.OneEntity("target"))
-                .executes((sender, args) -> {
-                    if (!(sender instanceof Player)) {
-                        sender.sendMessage("§cThis command can only be run by players!");
-                        return;
-                    }
-                    Player player = (Player) sender;
-
-                    Object rawTarget = args.getUnchecked("target");
-                    if (rawTarget instanceof Entity) {
-                        Entity target = (Entity) rawTarget;
-                        if (!PermissionManager.hasPermissionOrParent(player, "minecraft.command.teleport.targets")) {
-                            player.sendMessage("§cYou don't have permission to teleport to targets!");
-                            return;
-                        }
-                        if (player.teleport(target)) {
-                            player.sendMessage("§aTeleported to " + target.getName());
-                        } else {
-                            player.sendMessage("§cCould not teleport to " + target.getName());
-                        }
-                        return;
-                    }
-
-                    player.sendMessage("§cUsage: /tp <player/entity> or /tp <x> <y> <z> [yaw] [pitch]");
-                })
-                .register();
-
-            new CommandAPICommand("tp")
-                .withAliases("teleport")
-                .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "minecraft.command.teleport"))
-                .withArguments(
-                    new DoubleArgument("x"),
-                    new DoubleArgument("y"),
-                    new DoubleArgument("z")
-                )
-                .withOptionalArguments(
-                    new FloatArgument("yaw"),
-                    new FloatArgument("pitch")
-                )
-                .executes((sender, args) -> {
-                    if (!(sender instanceof Player)) {
-                        sender.sendMessage("§cThis command can only be run by players!");
-                        return;
-                    }
-                    Player player = (Player) sender;
-
-                    try {
-                        Object xObj = args.getUnchecked("x");
-                        Object yObj = args.getUnchecked("y");
-                        Object zObj = args.getUnchecked("z");
-                        if (xObj instanceof Number && yObj instanceof Number && zObj instanceof Number) {
-                            if (!PermissionManager.hasPermissionOrParent(player, "minecraft.command.teleport.location")) {
-                                player.sendMessage("§cYou don't have permission to teleport to coordinates!");
-                                return;
-                            }
-
-                            double x = ((Number) xObj).doubleValue();
-                            double y = ((Number) yObj).doubleValue();
-                            double z = ((Number) zObj).doubleValue();
-
-                            if (!Double.isFinite(x) || !Double.isFinite(y) || !Double.isFinite(z) || Math.abs(x) > 30000000 || Math.abs(z) > 30000000 || Math.abs(y) > 20000000) {
-                                player.sendMessage("§cCoordinates out of world bounds! Must be between -30,000,000 and 30,000,000");
-                                return;
-                            }
-
-                            Location location = new Location(player.getWorld(), x, y, z);
-                            try {
-                                Object yawObj = args.getUnchecked("yaw");
-                                if (yawObj instanceof Number) location.setYaw(((Number) yawObj).floatValue());
-                                Object pitchObj = args.getUnchecked("pitch");
-                                if (pitchObj instanceof Number) location.setPitch(((Number) pitchObj).floatValue());
-                            } catch (Exception ignored) {}
-
-                            if (player.teleport(location)) {
-                                player.sendMessage("§aTeleported to " + formatLocation(location));
-                            } else {
-                                player.sendMessage("§cCould not teleport to " + formatLocation(location));
-                            }
-                            return;
-                        }
-                    } catch (Exception ignored) {}
-
-                    player.sendMessage("§cUsage: /tp <player/entity> or /tp <x> <y> <z> [yaw] [pitch]");
-                })
-                .register();
-
-            // /tp <target> <destination> - Teleport entity TO another entity
-            new CommandAPICommand("tp")
-                .withAliases("teleport")
-                .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "minecraft.command.teleport"))
-                .withArguments(
-                    new EntitySelectorArgument.ManyEntities("targets"),
-                    new EntitySelectorArgument.OneEntity("destination")
-                )
-                .executes((sender, args) -> {
-                    if (!PermissionManager.hasPermissionOrParent(sender, "minecraft.command.teleport.targets.targets")) {
-                        sender.sendMessage("§cYou don't have permission to teleport entities to other entities!");
-                        return;
-                    }
-
-                    Object rawTargets = args.getUnchecked("targets");
-                    Object rawDestination = args.getUnchecked("destination");
-
-                    if (rawTargets instanceof java.util.Collection && rawDestination instanceof Entity) {
-                        @SuppressWarnings("unchecked")
-                        java.util.Collection<Entity> targets = (java.util.Collection<Entity>) rawTargets;
-                        Entity destination = (Entity) rawDestination;
-
-                        if (targets.isEmpty()) {
-                            sender.sendMessage("§cNo targets found!");
-                            return;
-                        }
-
-                        int count = 0;
-                        for (Entity target : targets) {
-                            if (target.teleport(destination)) count++;
-                        }
-                        if (count == 0) {
-                            sender.sendMessage("§cTeleport failed for all targets!");
-                        } else {
-                            sender.sendMessage("§aTeleported " + count + " entit" + (count == 1 ? "y" : "ies") + " to " + destination.getName()
-                                + (count < targets.size() ? " §c(" + (targets.size() - count) + " failed)" : ""));
-                        }
-                    }
-                })
-                .register();
-
-            // /tp <target> <x> <y> <z> - Teleport entity TO coordinates
-            new CommandAPICommand("tp")
-                .withAliases("teleport")
-                .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, "minecraft.command.teleport"))
-                .withArguments(
-                    new EntitySelectorArgument.ManyEntities("targets"),
-                    new DoubleArgument("x"),
-                    new DoubleArgument("y"),
-                    new DoubleArgument("z")
-                )
-                .withOptionalArguments(
-                    new FloatArgument("yaw"),
-                    new FloatArgument("pitch")
-                )
-                .executesNative((proxy, args) -> {
-                    CommandSender sender = proxy.getCaller();
-                    if (!PermissionManager.hasPermissionOrParent(sender, "minecraft.command.teleport.targets.location")) {
-                        sender.sendMessage("§cYou don't have permission to teleport entities to coordinates!");
-                        return;
-                    }
-
-                    Object rawTargets = args.getUnchecked("targets");
-                    Object xObj = args.getUnchecked("x");
-                    Object yObj = args.getUnchecked("y");
-                    Object zObj = args.getUnchecked("z");
-
-                    if (rawTargets instanceof java.util.Collection &&
-                        xObj instanceof Number && yObj instanceof Number && zObj instanceof Number) {
-                        @SuppressWarnings("unchecked")
-                        java.util.Collection<Entity> targets = (java.util.Collection<Entity>) rawTargets;
-
-                        double x = ((Number) xObj).doubleValue();
-                        double y = ((Number) yObj).doubleValue();
-                        double z = ((Number) zObj).doubleValue();
-
-                        if (!Double.isFinite(x) || !Double.isFinite(y) || !Double.isFinite(z) || Math.abs(x) > 30000000 || Math.abs(z) > 30000000 || Math.abs(y) > 20000000) {
-                            sender.sendMessage("§cCoordinates out of world bounds! Must be between -30,000,000 and 30,000,000");
-                            return;
-                        }
-
-                        if (targets.isEmpty()) {
-                            sender.sendMessage("§cNo targets found!");
-                            return;
-                        }
-
-                        Location location = new Location(proxy.getWorld(), x, y, z);
-
-                        try {
-                            Object yawObj = args.getUnchecked("yaw");
-                            if (yawObj instanceof Number) location.setYaw(((Number) yawObj).floatValue());
-                            Object pitchObj = args.getUnchecked("pitch");
-                            if (pitchObj instanceof Number) location.setPitch(((Number) pitchObj).floatValue());
-                        } catch (Exception ignored) {}
-
-                        int count = 0;
-                        for (Entity target : targets) {
-                            if (target.teleport(location)) count++;
-                        }
-                        if (count == 0) {
-                            sender.sendMessage("§cTeleport failed for all targets!");
-                        } else {
-                            sender.sendMessage("§aTeleported " + count + " entit" + (count == 1 ? "y" : "ies") + " to " + formatLocation(location)
-                                + (count < targets.size() ? " §c(" + (targets.size() - count) + " failed)" : ""));
-                        }
-                    }
-                })
-                .register();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to register vanilla command replacements: " + e.getMessage(), e);
+            CommandAPI.unregister("tp");
+        } catch (Exception ignored) {
         }
+        try {
+            CommandAPI.unregister("teleport");
+        } catch (Exception ignored) {
+        }
+
+        boolean selectorPermissions = plugin.isFeatureEnabled("selector_permissions");
+        var target = new EntitySelectorArgument.OneEntity("target");
+        new CommandAPICommand("tp")
+            .withAliases("teleport")
+            .withArguments(target)
+            .executesNative((proxy, args) -> {
+                teleportToEntity(selectorPermissions, proxy, args, target);
+            })
+            .register();
+
+        var location = new LocationArgument("location");
+        var rotation = new RotationArgument("rotation");
+        new CommandAPICommand("tp")
+            .withAliases("teleport")
+            .withArguments(location)
+            .withOptionalArguments(rotation)
+            .executesNative((proxy, args) -> {
+                teleportToLocation(proxy, args);
+            })
+            .register();
+
+        var targets = new EntitySelectorArgument.ManyEntities("targets");
+        var destination = new EntitySelectorArgument.OneEntity("destination");
+        new CommandAPICommand("tp")
+            .withAliases("teleport")
+            .withArguments(targets, destination)
+            .executesNative((proxy, args) -> {
+                teleportTargetsToEntity(selectorPermissions, proxy, args, targets, destination);
+            })
+            .register();
+
+        var locationTargets = new EntitySelectorArgument.ManyEntities("targets");
+        var targetLocation = new LocationArgument("location");
+        var targetRotation = new RotationArgument("rotation");
+        new CommandAPICommand("tp")
+            .withAliases("teleport")
+            .withArguments(locationTargets, targetLocation)
+            .withOptionalArguments(targetRotation)
+            .executesNative((proxy, args) -> {
+                teleportTargetsToLocation(selectorPermissions, proxy, args, locationTargets);
+            })
+            .register();
     }
 
-    private static String formatLocation(Location loc) {
-        return String.format("%.2f, %.2f, %.2f", loc.getX(), loc.getY(), loc.getZ());
+    private static void teleportToEntity(boolean selectorPermissions, NativeProxyCommandSender proxy,
+                                         CommandArguments args, EntitySelectorArgument.OneEntity targetArgument) {
+        CommandSender caller = proxy.getCaller();
+        if (!canUse(caller, TELEPORT + ".targets")) return;
+        if (!canUseSelector(selectorPermissions, caller, args, targetArgument)) return;
+        if (!(proxy.getCallee() instanceof Entity executor)) {
+            caller.sendMessage("§cThis command needs an entity executor.");
+            return;
+        }
+        Object parsedTarget = args.getUnchecked("target");
+        if (!(parsedTarget instanceof Entity target)) {
+            caller.sendMessage("§cNo entity matched the target.");
+            return;
+        }
+        sendTeleportResult(caller, executor.teleport(target), "to " + target.getName());
+    }
+
+    private static void teleportToLocation(NativeProxyCommandSender proxy, CommandArguments args) {
+        CommandSender caller = proxy.getCaller();
+        if (!canUse(caller, TELEPORT + ".location")) return;
+        if (!(proxy.getCallee() instanceof Entity executor)) {
+            caller.sendMessage("§cThis command needs an entity executor.");
+            return;
+        }
+        Object parsedLocation = args.getUnchecked("location");
+        if (!(parsedLocation instanceof Location destination) || !withinWorldBounds(destination)) {
+            caller.sendMessage("§cCoordinates out of world bounds.");
+            return;
+        }
+        Location target = withRotation(destination, rotation(args), executor);
+        sendTeleportResult(caller, executor.teleport(target), "to " + formatLocation(target));
+    }
+
+    private static void teleportTargetsToEntity(boolean selectorPermissions, NativeProxyCommandSender proxy,
+                                                CommandArguments args, EntitySelectorArgument.ManyEntities targetsArgument,
+                                                EntitySelectorArgument.OneEntity destinationArgument) {
+        CommandSender caller = proxy.getCaller();
+        if (!canUse(caller, TELEPORT + ".targets.targets")) return;
+        if (!canUseSelector(selectorPermissions, caller, args, targetsArgument)
+                || !canUseSelector(selectorPermissions, caller, args, destinationArgument)) return;
+
+        Object parsedTargets = args.getUnchecked("targets");
+        Object parsedDestination = args.getUnchecked("destination");
+        if (!(parsedTargets instanceof Collection<?> targets) || !(parsedDestination instanceof Entity destination)) {
+            caller.sendMessage("§cNo valid entity target was found.");
+            return;
+        }
+        if (targets.isEmpty()) {
+            caller.sendMessage("§cNo entities matched the target.");
+            return;
+        }
+        int successes = 0;
+        for (Object item : targets) {
+            if (item instanceof Entity target && target.teleport(destination)) successes++;
+        }
+        sendTeleportCount(caller, successes, targets.size(), "to " + destination.getName());
+    }
+
+    private static void teleportTargetsToLocation(boolean selectorPermissions, NativeProxyCommandSender proxy,
+                                                  CommandArguments args,
+                                                  EntitySelectorArgument.ManyEntities targetsArgument) {
+        CommandSender caller = proxy.getCaller();
+        if (!canUse(caller, TELEPORT + ".targets.location")) return;
+        if (!canUseSelector(selectorPermissions, caller, args, targetsArgument)) return;
+
+        Object parsedTargets = args.getUnchecked("targets");
+        Object parsedLocation = args.getUnchecked("location");
+        if (!(parsedTargets instanceof Collection<?> targets) || !(parsedLocation instanceof Location destination)
+                || !withinWorldBounds(destination)) {
+            caller.sendMessage("§cNo valid entity target or destination was found.");
+            return;
+        }
+        if (targets.isEmpty()) {
+            caller.sendMessage("§cNo entities matched the target.");
+            return;
+        }
+        Rotation rotation = rotation(args);
+        int successes = 0;
+        for (Object item : targets) {
+            if (item instanceof Entity target && target.teleport(withRotation(destination, rotation, target))) successes++;
+        }
+        sendTeleportCount(caller, successes, targets.size(), "to " + formatLocation(destination));
+    }
+
+    private static boolean canUse(CommandSender sender, String permission) {
+        if (PermissionManager.hasPermissionOrParent(sender, TELEPORT)
+                && PermissionManager.hasPermissionOrParent(sender, permission)) return true;
+        sender.sendMessage("§cYou don't have permission to use this teleport form.");
+        return false;
+    }
+
+    private static boolean canUseSelector(boolean selectorPermissions, CommandSender sender,
+                                          CommandArguments args, AbstractArgument<?, ?, ?, ?> argument) {
+        if (!selectorPermissions || SelectorPermissionCheck.hasPermission(sender, args, argument)) return true;
+        sender.sendMessage("§cYou don't have permission to use that selector.");
+        return false;
+    }
+
+    private static Rotation rotation(CommandArguments args) {
+        Object parsed = args.getUnchecked("rotation");
+        return parsed instanceof Rotation value ? value : null;
+    }
+
+    private static Location withRotation(Location destination, Rotation rotation, Entity target) {
+        Location location = destination.clone();
+        if (rotation == null) {
+            Location current = target.getLocation();
+            location.setYaw(current.getYaw());
+            location.setPitch(current.getPitch());
+        } else {
+            location.setYaw(rotation.getNormalizedYaw());
+            location.setPitch(rotation.getNormalizedPitch());
+        }
+        return location;
+    }
+
+    private static boolean withinWorldBounds(Location location) {
+        return Double.isFinite(location.getX()) && Double.isFinite(location.getY()) && Double.isFinite(location.getZ())
+            && Math.abs(location.getX()) <= 30_000_000
+            && Math.abs(location.getZ()) <= 30_000_000
+            && Math.abs(location.getY()) <= 20_000_000;
+    }
+
+    private static void sendTeleportResult(CommandSender sender, boolean success, String destination) {
+        sender.sendMessage((success ? "§aTeleported " : "§cCould not teleport ") + destination);
+    }
+
+    private static void sendTeleportCount(CommandSender sender, int successes, int total, String destination) {
+        if (successes == 0) {
+            sender.sendMessage("§cTeleport failed for all " + total + " targets.");
+            return;
+        }
+        sender.sendMessage("§aTeleported " + successes + " of " + total + " targets " + destination + ".");
+    }
+
+    private static String formatLocation(Location location) {
+        return String.format(Locale.ROOT, "%.2f, %.2f, %.2f", location.getX(), location.getY(), location.getZ());
     }
 }

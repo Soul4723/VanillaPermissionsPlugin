@@ -1,133 +1,68 @@
-import dev.jorel.commandapi.executors.CommandArguments;
-import dev.jorel.commandapi.wrappers.NativeProxyCommandSender;
-import io.github.soul4723.vanillapermissions.command.DifficultyCommandHandler;
-import io.github.soul4723.vanillapermissions.command.GameruleCommandHandler;
 import io.github.soul4723.vanillapermissions.command.TimeCommandHandler;
 import io.github.soul4723.vanillapermissions.command.WeatherCommandHandler;
-import org.bukkit.Bukkit;
-import org.bukkit.Difficulty;
-import org.bukkit.Server;
 import org.bukkit.World;
-import org.bukkit.command.BlockCommandSender;
-import org.bukkit.command.CommandSender;
-import org.bukkit.command.ConsoleCommandSender;
-import org.bukkit.entity.Player;
 
-import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
-// Run with -ea and Maven's test classpath. Actual executor/gate bodies, substituted APIs.
-// ponytail: compiler lambda indices; inspect javap after registration edits and use live
-// registered command checks when parser, dispatch, or /execute routing coverage is needed.
+// Run with assertions enabled and Maven's test classpath; no server required.
 public class WorldCommandSendersCheck {
-    static class WorldState {
-        long time = 6000;
-        boolean storm, thunder, rule = true;
-        Difficulty difficulty;
+    private static final class WeatherState {
+        boolean storm;
+        boolean thunder;
+        int weatherDuration;
+        int thunderDuration;
         final World world = (World) Proxy.newProxyInstance(World.class.getClassLoader(), new Class<?>[]{World.class},
-                (p, m, v) -> switch (m.getName()) {
-                    case "getTime" -> time;
-                    case "getFullTime" -> 72000L;
-                    case "getGameTime" -> 90000L;
-                    case "setTime" -> { time = (long) v[0]; yield null; }
-                    case "setStorm" -> { storm = (boolean) v[0]; yield null; }
-                    case "setThundering" -> { thunder = (boolean) v[0]; yield null; }
-                    case "getGameRuleValue" -> rule;
-                    case "setGameRule" -> { rule = (boolean) v[1]; yield true; }
-                    case "setDifficulty" -> { difficulty = (Difficulty) v[0]; yield null; }
-                    default -> throw new AssertionError("Unexpected world call: " + m);
+                (proxy, method, args) -> switch (method.getName()) {
+                    case "setStorm" -> { storm = (boolean) args[0]; yield null; }
+                    case "setThundering" -> { thunder = (boolean) args[0]; yield null; }
+                    case "setWeatherDuration" -> { weatherDuration = (int) args[0]; yield null; }
+                    case "setThunderDuration" -> { thunderDuration = (int) args[0]; yield null; }
+                    default -> throw new AssertionError("Unexpected World call: " + method);
                 });
     }
-    static Object invoke(Class<?> handler, int index, CommandSender sender, Map<String, Object> args) throws Exception {
-        Method method = handler.getDeclaredMethod("lambda$registerCommands$" + index, args == null
-                ? new Class<?>[]{CommandSender.class}
-                : new Class<?>[]{NativeProxyCommandSender.class, CommandArguments.class});
-        method.setAccessible(true);
-        return method.invoke(null, args == null ? new Object[]{sender} : new Object[]{sender,
-                new CommandArguments(args.values().toArray(), args, new String[0], Map.of(), "fixture")});
-    }
-    static void run(Class<?> handler, int index, NativeProxyCommandSender source, Map<String, Object> args,
-                    List<String> messages, String expected) throws Exception {
-        invoke(handler, index, source, args);
-        assert messages.equals(List.of(expected)) : messages;
-        messages.clear();
-    }
+
     public static void main(String[] ignored) throws Exception {
-        WorldState sourceWorld = new WorldState(), otherWorld = new WorldState();
-        Server server = (Server) Proxy.newProxyInstance(Server.class.getClassLoader(), new Class<?>[]{Server.class},
-                (p, m, v) -> {
-                    assert m.getName().equals("getWorlds") : m;
-                    return List.of(sourceWorld.world, otherWorld.world);
-                });
-        Field field = Bukkit.class.getDeclaredField("server");
-        field.setAccessible(true);
-        Object previous = field.get(null);
-        field.set(null, server);
+        Method parseTime = TimeCommandHandler.class.getDeclaredMethod("parseTime", String.class);
+        parseTime.setAccessible(true);
+        assert (int) parseTime.invoke(null, "day") == 1_000;
+        assert (int) parseTime.invoke(null, "noon") == 6_000;
+        assert (int) parseTime.invoke(null, "night") == 13_000;
+        assert (int) parseTime.invoke(null, "midnight") == 18_000;
+        assert (int) parseTime.invoke(null, "24000") == 24_000;
+        expectInvalidTime(parseTime, "-1");
+        expectInvalidTime(parseTime, "tomorrow");
+
+        Method setWeather = WeatherCommandHandler.class.getDeclaredMethod(
+                "setWeather", World.class, String.class, Integer.class);
+        setWeather.setAccessible(true);
+
+        WeatherState state = new WeatherState();
+        setWeather.invoke(null, state.world, "clear", 30);
+        assert !state.storm && !state.thunder;
+        assert state.weatherDuration == 600 && state.thunderDuration == 600;
+
+        setWeather.invoke(null, state.world, "rain", 90);
+        assert state.storm && !state.thunder;
+        assert state.weatherDuration == 1_800 && state.thunderDuration == 1_800;
+
+        setWeather.invoke(null, state.world, "thunder", 45);
+        assert state.storm && state.thunder;
+        assert state.weatherDuration == 900 && state.thunderDuration == 900;
+
+        setWeather.invoke(null, state.world, "clear", null);
+        assert state.weatherDuration >= 6_000 && state.weatherDuration <= 18_000;
+        assert state.weatherDuration == state.thunderDuration;
+        System.out.println("Time aliases/range and weather states/duration checks passed");
+    }
+
+    private static void expectInvalidTime(Method parseTime, String value) throws Exception {
         try {
-            for (Class<? extends CommandSender> role : List.of(ConsoleCommandSender.class, BlockCommandSender.class, Player.class)) {
-                List<String> messages = new ArrayList<>(), permissions = new ArrayList<>();
-                boolean[] permitted = {true};
-                CommandSender caller = (CommandSender) Proxy.newProxyInstance(role.getClassLoader(), new Class<?>[]{role},
-                        (p, m, v) -> switch (m.getName()) {
-                            case "isOp" -> false;
-                            case "hasPermission" -> { permissions.add((String) v[0]); yield permitted[0]; }
-                            case "sendMessage" -> { messages.add((String) v[0]); yield null; }
-                            default -> throw new AssertionError("Caller world/other API used: " + m);
-                        });
-                NativeProxyCommandSender source = (NativeProxyCommandSender) Proxy.newProxyInstance(
-                        NativeProxyCommandSender.class.getClassLoader(), new Class<?>[]{NativeProxyCommandSender.class},
-                        (p, m, v) -> switch (m.getName()) {
-                            case "getCaller" -> caller;
-                            case "getWorld" -> sourceWorld.world;
-                            default -> throw new AssertionError("Proxy/callee feedback or privileges used: " + m);
-                        });
-                // Registration predicates tested separately; this does not emulate dispatcher rejection.
-                Class<?>[] handlers = {TimeCommandHandler.class, WeatherCommandHandler.class,
-                        GameruleCommandHandler.class, DifficultyCommandHandler.class};
-                String[][] suffixes = {{"time.set", "time.add", "time.query"}, {"weather.clear", "weather.rain", "weather.thunder"},
-                        {"gamerule.query", "gamerule.set"}, {"difficulty"}};
-                for (int h = 0; h < handlers.length; h++) {
-                    for (int g = 0; g < suffixes[h].length; g++) {
-                        assert (boolean) invoke(handlers[h], g * 2, caller, null);
-                        assert permissions.equals(List.of("minecraft.command." + suffixes[h][g])) : permissions;
-                        permissions.clear();
-                        permitted[0] = false;
-                        assert !(boolean) invoke(handlers[h], g * 2, caller, null);
-                        permitted[0] = true;
-                        permissions.clear();
-                    }
-                }
-                run(TimeCommandHandler.class, 1, source, Map.of("time", 1000), messages, "§aTime set to 1000");
-                assert sourceWorld.time == 1000;
-                run(TimeCommandHandler.class, 3, source, Map.of("time", 20), messages, "§aAdded 20 ticks to time");
-                assert sourceWorld.time == 1020;
-                run(TimeCommandHandler.class, 5, source, Map.of("type", "day"), messages, "§aTime: 3");
-                run(WeatherCommandHandler.class, 1, source, Map.of(), messages, "§aWeather cleared.");
-                assert !sourceWorld.storm && !sourceWorld.thunder;
-                run(WeatherCommandHandler.class, 3, source, Map.of(), messages, "§aRain started.");
-                assert sourceWorld.storm && !sourceWorld.thunder;
-                run(WeatherCommandHandler.class, 5, source, Map.of(), messages, "§aThunderstorm started.");
-                assert sourceWorld.storm && sourceWorld.thunder;
-                run(GameruleCommandHandler.class, 3, source, Map.of("rule", "doDaylightCycle", "value", "false"), messages,
-                        "§aSet doDaylightCycle to false");
-                assert !sourceWorld.rule;
-                run(GameruleCommandHandler.class, 1, source, Map.of("rule", "doDaylightCycle"), messages, "§adoDaylightCycle = false");
-                run(TimeCommandHandler.class, 1, source, Map.of(), messages, "§cTime is required");
-                run(GameruleCommandHandler.class, 3, source, Map.of("rule", "doDaylightCycle", "value", "invalid"), messages,
-                        "§cError setting gamerule: Invalid boolean value: invalid (expected true or false)");
-                assert !sourceWorld.rule && sourceWorld.time == 1020;
-                assert otherWorld.time == 6000 && !otherWorld.storm && !otherWorld.thunder && otherWorld.rule;
-                run(DifficultyCommandHandler.class, 1, source, Map.of("difficulty", "hard"), messages, "§aSet difficulty to hard");
-                assert sourceWorld.difficulty == Difficulty.HARD && otherWorld.difficulty == Difficulty.HARD;
-                assert permissions.isEmpty() : "Executor added permission policy";
-            }
-        } finally {
-            field.set(null, previous);
+            parseTime.invoke(null, value);
+            throw new AssertionError("Accepted invalid time: " + value);
+        } catch (InvocationTargetException e) {
+            assert e.getCause() instanceof IllegalArgumentException : e.getCause();
         }
-        System.out.println("World commands actual executors/gates: console/block/player source world, caller-only feedback, unchanged difficulty scope and validation passed");
     }
 }

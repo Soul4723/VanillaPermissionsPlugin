@@ -2,9 +2,10 @@ package io.github.soul4723.vanillapermissions.command;
 
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
+import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import dev.jorel.commandapi.arguments.IntegerArgument;
-import dev.jorel.commandapi.wrappers.NativeProxyCommandSender;
-import dev.jorel.commandapi.executors.NativeCommandExecutor;
+import dev.jorel.commandapi.arguments.MultiLiteralArgument;
+import dev.jorel.commandapi.arguments.StringArgument;
 import io.github.soul4723.vanillapermissions.util.PermissionManager;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
@@ -21,78 +22,82 @@ public class TimeCommandHandler {
             plugin.getLogger().fine("Time command not previously registered");
         }
 
-        CommandAPICommand set = new CommandAPICommand("set")
+        new CommandAPICommand("time")
+                .withSubcommand(new CommandAPICommand("set")
                         .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".set"))
-                        .withArguments(new IntegerArgument("time", 0))
+                        .withArguments(new StringArgument("time").replaceSuggestions(
+                                ArgumentSuggestions.strings("day", "noon", "night", "midnight")))
                         .executesNative((proxy, args) -> {
-                            Integer ticksObj = (Integer) args.get("time");
-                            if (ticksObj == null) {
-                                proxy.getCaller().sendMessage("§cTime is required");
+                            CommandSender sender = proxy.getCaller();
+                            if (!requirePermission(sender, "set")) {
                                 return;
                             }
-                            setTime(proxy, ticksObj);
-                        });
-
-        set.withSubcommands(
-                timeAlias("day", 1_000),
-                timeAlias("noon", 6_000),
-                timeAlias("night", 13_000),
-                timeAlias("midnight", 18_000)
-        );
-
-        CommandAPICommand timeCmd = new CommandAPICommand("time")
-                .withSubcommand(set)
+                            String value = (String) args.get("time");
+                            try {
+                                int ticks = parseTime(value);
+                                proxy.getWorld().setTime(ticks);
+                                sender.sendMessage("§aTime set to " + ticks);
+                            } catch (IllegalArgumentException e) {
+                                sender.sendMessage("§c" + e.getMessage());
+                            }
+                        }))
                 .withSubcommand(new CommandAPICommand("add")
                         .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".add"))
                         .withArguments(new IntegerArgument("time"))
                         .executesNative((proxy, args) -> {
                             CommandSender sender = proxy.getCaller();
-                            Integer ticksObj = (Integer) args.get("time");
-                            if (ticksObj == null) {
-                                sender.sendMessage("§cTime is required");
+                            if (!requirePermission(sender, "add")) {
                                 return;
                             }
-                            int ticks = ticksObj;
+                            int ticks = (Integer) args.get("time");
                             World world = proxy.getWorld();
                             world.setTime(world.getTime() + ticks);
                             sender.sendMessage("§aAdded " + ticks + " ticks to time");
-                        })
-                )
+                        }))
                 .withSubcommand(new CommandAPICommand("query")
                         .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".query"))
-                        .withArguments(new dev.jorel.commandapi.arguments.MultiLiteralArgument("type", "daytime", "gametime", "day"))
+                        .withArguments(new MultiLiteralArgument("type", "daytime", "gametime", "day"))
                         .executesNative((proxy, args) -> {
                             CommandSender sender = proxy.getCaller();
-                            World world = proxy.getWorld();
-                            String type = (String) args.get("type");
-                            if (type == null) {
-                                sender.sendMessage("§cTime type is required");
+                            if (!requirePermission(sender, "query")) {
                                 return;
                             }
-                            long time;
-                            if (type.equals("gametime")) {
-                                time = world.getGameTime();
-                            } else if (type.equals("day")) {
-                                time = world.getFullTime() / 24000L;
-                            } else {
-                                time = world.getTime();
-                            }
+                            World world = proxy.getWorld();
+                            String type = (String) args.get("type");
+                            long time = switch (type) {
+                                case "gametime" -> world.getGameTime();
+                                case "day" -> world.getFullTime() / 24_000L;
+                                default -> world.getTime();
+                            };
                             sender.sendMessage("§aTime: " + time);
-                        })
-                );
-
-        timeCmd.register();
+                        }))
+                .register();
     }
 
-    private static CommandAPICommand timeAlias(String name, int ticks) {
-        return new CommandAPICommand(name)
-                .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".set"))
-                .executesNative((NativeCommandExecutor) (proxy, args) -> setTime(proxy, ticks));
+    private static boolean requirePermission(CommandSender sender, String action) {
+        if (PermissionManager.hasPermissionOrParent(sender, BASE_PERM + "." + action)) {
+            return true;
+        }
+        sender.sendMessage("§cYou don't have permission to use /time " + action + ".");
+        return false;
     }
 
-    private static void setTime(NativeProxyCommandSender proxy, int ticks) {
-        World world = proxy.getWorld();
-        world.setTime(ticks);
-        proxy.getCaller().sendMessage("§aTime set to " + ticks);
+    static int parseTime(String value) {
+        return switch (value) {
+            case "day" -> 1_000;
+            case "noon" -> 6_000;
+            case "night" -> 13_000;
+            case "midnight" -> 18_000;
+            default -> {
+                if (value.isEmpty() || !value.chars().allMatch(ch -> ch >= '0' && ch <= '9')) {
+                    throw new IllegalArgumentException("Invalid time: " + value);
+                }
+                try {
+                    yield Integer.parseInt(value);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("Invalid time: " + value);
+                }
+            }
+        };
     }
 }

@@ -3,7 +3,7 @@ version: 2.1.0
 main: io.github.soul4723.vanillapermissions.VanillaPermissionsPlugin
 api-version: '1.20'
 author: Soul4723
-description: Granular permission control for vanilla Minecraft commands and features
+description: Paper port of DrexHD's VanillaPermissions with LuckPerms command permissions
 website: https://github.com/Soul4723/VanillaPermissionsPlugin
 
 depend: [CommandAPI, LuckPerms]
@@ -176,11 +176,6 @@ permissions:
     default: false
 
   # Admin permissions
-  minecraft.adminbroadcast.receive:
-    description: Grant-only compatibility alias for native command feedback
-    default: false
-    children:
-      minecraft.admin.command_feedback: true
   minecraft.debug_stick.use.block:
     description: Use debug stick on blocks
     default: false

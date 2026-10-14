@@ -1,198 +1,73 @@
 # VanillaPermissionsPlugin
 
-Adds granular permission control for vanilla Minecraft commands on Paper servers. Lets you control specific gamemode types, teleport options, entity selectors, and more.
+Paper port inspired by [DrexHD's VanillaPermissions](https://github.com/DrexHD/VanillaPermissions). It uses LuckPerms to grant or deny specific vanilla command actions, modes, targets, and selectors—for example, allowing a player to use survival and spectator for themself while blocking creative, adventure, and changes to other players.
 
-Heavily influenced by the [VanillaPermissions](https://github.com/DrexHD/VanillaPermissions) mod from DrexHD.
+This project targets Paper's supported command and event APIs. Replaced command syntax and behavior can differ from the Fabric mod and from newer Minecraft releases.
 
-## Requirements/Dependencies
+## Requirements
 
-[Paper](https://papermc.io/downloads) 1.20.6+ (*Forks might work, but I won't be testing them. If you confirm a fork works, open an issue and I’ll add it to the supported list.*)
+- Paper 1.20.6 or newer
+- Java 21
+- CommandAPI 11.0.0 or newer
+- LuckPerms 5.5 or newer
 
-[CommandAPI](https://github.com/CommandAPI/CommandAPI/releases) 11.0.0+
+CommandAPI and LuckPerms are required plugins. Install them alongside VanillaPermissionsPlugin.
 
-[LuckPerms](https://luckperms.net/download) 5.5+
+## Gamemode example
 
-## What does it do?
+These LuckPerms commands allow a group to set its own gamemode to survival or spectator and deny changes to other players:
 
-Gives you actual control over vanilla commands instead of the usual all-or-nothing approach, and a few other nice to haves.
-
-**Commands with granular permissions:**
-- `/gamemode`, `/tp`, `/time`, `/weather`, `/gamerule`, `/difficulty`, `/effect` and `/whitelist`
-
-**Entity selectors:**
-- Control who can use `@a`, `@e`, `@p`, `@r`, `@s` in commands
-
-**Useful bypasses:**
-- Whitelist
-- Server full kicks
-- Player movement speed checks
-
-Per-player spawn protection bypass and chat-only speed bypass are deferred on Paper 1.20.6 pending supported native integration. Historical nodes `minecraft.bypass.spawn-protection` and `minecraft.bypass.chat-speed` no longer provide bypasses; native spawn protection and chat checks retain normal behavior.
-
-**Admin controls:**
-- Command blocks, structure blocks, jigsaw blocks (place/view/break)
-- Debug stick usage
-- Native command feedback permission compatibility alias
-
-## Quick Examples
-
-### Example Moderator Setup
-```
-Group Moderator
-minecraft.command.gamemode true
-minecraft.command.gamemode.survival true
-minecraft.command.gamemode.spectator true
-minecraft.command.gamemode.creative false
-minecraft.command.gamemode.adventure false
-minecraft.command.gamemode.other true
-minecraft.command.gamemode.survival.other true
-minecraft.command.gamemode.spectator.other false
-minecraft.command.gamemode.creative.other false
-minecraft.command.gamemode.adventure.other false
-
-minecraft.command.teleport true
-minecraft.command.teleport.targets true
-minecraft.command.teleport.location false
+```text
+/lp creategroup limited-gamemode
+/lp group limited-gamemode permission set minecraft.command.gamemode true
+/lp group limited-gamemode permission set minecraft.command.gamemode.survival true
+/lp group limited-gamemode permission set minecraft.command.gamemode.spectator true
+/lp group limited-gamemode permission set minecraft.command.gamemode.creative false
+/lp group limited-gamemode permission set minecraft.command.gamemode.adventure false
+/lp group limited-gamemode permission set minecraft.command.gamemode.other false
+/lp user <player> parent add limited-gamemode
 ```
 
-### Example Builder Setup
-```
-Group Builder
-minecraft.command.gamemode true
-minecraft.command.gamemode.creative true
-minecraft.command.gamemode.survival true
-minecraft.command.gamemode.spectator false
-minecraft.command.gamemode.adventure false
-minecraft.command.gamemode.other false
-```
+The base node enables `/gamemode`; each mode node controls that mode. Explicit `false` nodes override inherited grants. The `.other` node blocks gamemode changes targeting anyone else. To grant changes to others, set `.other` to `true` and grant or deny each `minecraft.command.gamemode.<mode>.other` node as needed.
 
-### Making OPs respect permissions
-In `config.yml`:
-```yaml
-default_permissions:
-  ops_bypass_all: false
-```
+## Command permissions
 
-## How `.other` permissions work
+The plugin replaces these vanilla commands with permission-checked Paper commands:
 
-For commands that target players (like gamemode), permissions are checked in this order:
+- `/gamemode`: base command, individual modes, other-player changes
+- `/tp` and `/teleport`: entity and coordinate destinations, entity targets
+- `/time`: set, add, query
+- `/weather`: clear, rain, thunder
+- `/gamerule`: query and set
+- `/difficulty`
+- `/effect`: give and clear
+- `/whitelist`: add, remove, on, off
 
-**General permission (checked first):**
-- `minecraft.command.gamemode.other` - If false, blocks ALL gamemode changes to other players
-- If true, allows changing others to any mode
+Each command requires its `minecraft.command.<name>` base node; action-specific nodes in `src/main/resources/plugin.yml` narrow access. Parent grants apply unless a matching node is explicitly denied. Operator players bypass plugin checks by default; set `default_permissions.ops_bypass_all: false` in `config.yml` to apply LuckPerms checks to operators too.
 
-**Specific mode permissions (checked second):**
-- `minecraft.command.gamemode.survival.other` - Additional check for this specific mode
-- `minecraft.command.gamemode.creative.other` - Additional check for this specific mode
-- etc.
+Selector restrictions apply when a replacement command parses a selector argument. Nodes are `minecraft.selector.self.s`, `minecraft.selector.player.a`, `.p`, `.r`, and `minecraft.selector.entity.e`. `/effect` also checks `minecraft.selector.player.effect.targets` or `minecraft.selector.entity.effect.targets` for selector targets. These checks do not intercept selectors in unrelated plugins' commands or every native Paper command.
 
-**Both must pass:** To change another player's gamemode, you need BOTH:
-1. `minecraft.command.gamemode.other` = true (or parent permission)
-2. `minecraft.command.gamemode.<mode>.other` = true (or parent permission)
+## Other controls
 
-## Configuration
+- `minecraft.bypass.whitelist`, `minecraft.bypass.player-limit`, `minecraft.bypass.force-gamemode`, `minecraft.bypass.move-speed.player`
+- `minecraft.operator_block.<block>.<place|view|break>` for command, jigsaw, and structure blocks
+- `minecraft.debug_stick.use.block`
+
+Enable or disable command, selector, bypass, and admin checks in `config.yml`:
 
 ```yaml
 features:
-  command_permissions: true    # Granular command controls
-  selector_permissions: true   # Entity selector restrictions
-  bypass_permissions: true     # Whitelist, server full, movement speed, etc.
-  admin_permissions: true      # Command blocks, debug stick, etc.
+  command_permissions: true
+  selector_permissions: true
+  bypass_permissions: true
+  admin_permissions: true
 
 default_permissions:
-  ops_bypass_all: true         # Plugin checks only; native Paper feedback is separate
+  ops_bypass_all: true
 ```
 
-## Commands
-
-**Plugin commands:**
-- `/vanillapermissions reload` (or `/ep reload`) - Reload config
-- `/vanillapermissions check <player>` - Check a player's key permissions
-- `/vanillapermissions debug` - View plugin status and info
-
-**Overridden vanilla commands:**
-- `/gamemode <mode> [player]`
-- `/tp <target>` - Teleport to entity
-- `/tp <x> <y> <z>` - Teleport to coordinates
-- `/tp <targets> <destination>` - Teleport entities to another entity
-- `/tp <targets> <x> <y> <z>` - Teleport entities to coordinates
-- `/time <set|add|query> <value>`
-- `/weather <clear|rain|thunder>`
-- `/gamerule <query|set> <rule> [value]`
-- `/difficulty <peaceful|easy|normal|hard>`
-- `/effect <give|clear> <target> [effect]`
-- `/whitelist <add|remove|on|off> [player]`
-
----
-
-## Permissions Reference
-
-### Gamemode
-- `minecraft.command.gamemode` - Base permission
-- `minecraft.command.gamemode.survival` - Use survival mode
-- `minecraft.command.gamemode.creative` - Use creative mode
-- `minecraft.command.gamemode.adventure` - Use adventure mode
-- `minecraft.command.gamemode.spectator` - Use spectator mode
-- `minecraft.command.gamemode.other` - Change other players (any mode)
-- `minecraft.command.gamemode.<mode>.other` - Change others to specific mode
-
-### Teleport
-- `minecraft.command.teleport` - Base permission
-- `minecraft.command.teleport.targets` - Teleport to entities/players
-- `minecraft.command.teleport.location` - Teleport self to coordinates
-- `minecraft.command.teleport.targets.targets` - Teleport entities to other entities
-- `minecraft.command.teleport.targets.location` - Teleport entities to coordinates
-
-### Other Commands
-- `minecraft.command.time` + `.set`, `.add`, `.query`
-- `minecraft.command.weather` + `.clear`, `.rain`, `.thunder`
-- `minecraft.command.gamerule` + `.query`, `.set`
-- `minecraft.command.difficulty`
-- `minecraft.command.effect` + `.give`, `.clear`
-- `minecraft.command.whitelist` + `.add`, `.remove`, `.on`, `.off`
-
-### Selectors
-- `minecraft.selector.entity.e` - Use @e (all entities)
-- `minecraft.selector.player.a` - Use @a (all players)
-- `minecraft.selector.player.p` - Use @p (nearest player)
-- `minecraft.selector.player.r` - Use @r (random player)
-- `minecraft.selector.self.s` - Use @s (self)
-
-**Note:** Some commands (like `/effect`) also create dynamic selector permissions based on the target type:
-- `minecraft.selector.player.effect.targets` - Use player selectors in /effect command
-- `minecraft.selector.entity.effect.targets` - Use entity selectors in /effect command
-
-### Bypasses
-- `minecraft.bypass.whitelist` - Join when whitelist is on
-- `minecraft.bypass.player-limit` - Join when server is full
-- `minecraft.bypass.force-gamemode` - Override force-gamemode setting
-- `minecraft.bypass.move-speed.player` - Bypass Paper's too-quickly and moved-wrongly checks
-
-### Operator Blocks
-Replace `<action>` with `place`, `view`, or `break`:
-- `minecraft.operator_block.command_block.<action>`
-- `minecraft.operator_block.jigsaw.<action>`
-- `minecraft.operator_block.structure_block.<action>`
-
-### Admin
-- `minecraft.admin.command_feedback` - Receive eligible native command feedback (Paper permission)
-- `minecraft.adminbroadcast.receive` - Historical grant-only alias for `minecraft.admin.command_feedback` (default false)
-- `minecraft.debug_stick.use.block` - Use debug stick
-
-## Notes
-
-**Permission hierarchy:** Parent permissions grant access to children. For example, `minecraft.command.gamemode` gives access to all gamemode subpermissions unless explicitly denied.
-
-**OP behavior:** By default, OPs bypass all VanillaPermissionsPlugin checks. Set `ops_bypass_all: false` in config to change this. This setting does not override Paper's native command feedback permission or OP defaults.
-
-**Command feedback:** Paper controls eligible native feedback through `minecraft.admin.command_feedback` (granted to OPs by default) and native gamerules: `sendCommandFeedback` controls player feedback broadcasts, while `logAdminCommands` controls console logging. The historical alias grants the native permission; setting the alias to false does not revoke an independently granted native permission. Native feedback and the descriptor alias are independent of `features.admin_permissions`. VanillaPermissionsPlugin does not broadcast raw command input. Its existing replacement executors still send custom sender/target messages, not native feedback broadcasts.
-
-**Selectors:** Only affects vanilla entity selectors in commands. Custom plugin commands might not respect these.
-
-**Operator blocks & debug stick:** Only work in Creative mode anyway (vanilla behavior). These permissions add an extra layer for creative servers.
-
-**Movement speed bypass:** Uses Paper's `PlayerFailMoveEvent` for too-quickly and moved-wrongly player checks. Flying, vehicle, invalid-packet and plugin kicks are not bypassed.
+Plugin administration uses `/vanillapermissions reload`, `/vanillapermissions check <player>`, and `/vanillapermissions debug`.
 
 ## License
 
-MIT License - See `LICENSE` file for details.
+MIT. See [LICENSE](LICENSE).

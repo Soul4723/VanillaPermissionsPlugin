@@ -25,6 +25,8 @@ jobs:
             CommandPermissionsCheck \
             EffectCommandCheck \
             ForceGamemodeContextCheck \
+            GamemodePermissionsCheck \
+            io.github.soul4723.vanillapermissions.util.SelectorPermissionMappingCheck \
             TeleportCorrectnessCheck \
             WhitelistCorrectnessCheck \
             WorldCommandSendersCheck

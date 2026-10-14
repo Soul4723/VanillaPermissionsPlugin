@@ -1,9 +1,7 @@
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Map;
 import java.util.zip.ZipFile;
-import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.PluginDescriptionFile;
 
 // Run after mvn package, with Paper API and its dependencies on the classpath:
@@ -14,17 +12,14 @@ class NativeFeedbackCheck {
         if (!NativeFeedbackCheck.class.desiredAssertionStatus()) {
             throw new IllegalStateException("Run with -ea");
         }
-        String aliasName = "minecraft.adminbroadcast.receive";
+        String oldAliasName = "minecraft.adminbroadcast.receive";
         String nativeName = "minecraft.admin.command_feedback";
         Path resources = Path.of("src/main/resources");
         try (var jar = new ZipFile("target/VanillaPermissionsPlugin-2.1.0.jar")) {
             byte[] packaged = jar.getInputStream(jar.getEntry("plugin.yml")).readAllBytes();
             assert java.util.Arrays.equals(packaged, Files.readAllBytes(resources.resolve("plugin.yml")));
             var descriptor = new PluginDescriptionFile(new java.io.ByteArrayInputStream(packaged));
-            var alias = descriptor.getPermissions().stream()
-                .filter(p -> p.getName().equals(aliasName)).findFirst().orElseThrow();
-            assert alias.getDefault() == PermissionDefault.FALSE;
-            assert alias.getChildren().equals(Map.of(nativeName, true));
+            assert descriptor.getPermissions().stream().noneMatch(p -> p.getName().equals(oldAliasName));
             assert descriptor.getPermissions().stream().noneMatch(p -> p.getName().equals(nativeName))
                 : "Plugin must not redefine Paper's native permission/default";
             assert jar.getEntry("io/github/soul4723/vanillapermissions/listener/AdminBroadcastListener.class") == null;

@@ -2,6 +2,7 @@ package io.github.soul4723.vanillapermissions;
 
 import io.github.soul4723.vanillapermissions.command.DifficultyCommandHandler;
 import io.github.soul4723.vanillapermissions.command.EffectCommandHandler;
+import io.github.soul4723.vanillapermissions.command.GameModeCommandHandler;
 import io.github.soul4723.vanillapermissions.command.VanillaPermissionsPluginCommand;
 import io.github.soul4723.vanillapermissions.command.GameruleCommandHandler;
 import io.github.soul4723.vanillapermissions.command.TimeCommandHandler;
@@ -11,7 +12,6 @@ import io.github.soul4723.vanillapermissions.listener.DebugStickListener;
 import io.github.soul4723.vanillapermissions.listener.ForceGamemodeBypassListener;
 import io.github.soul4723.vanillapermissions.listener.MoveSpeedBypassListener;
 import io.github.soul4723.vanillapermissions.listener.OperatorBlockListener;
-import io.github.soul4723.vanillapermissions.listener.SelectorPermissionListener;
 import io.github.soul4723.vanillapermissions.listener.WhitelistBypassListener;
 import io.github.soul4723.vanillapermissions.util.LuckPermsHook;
 import io.github.soul4723.vanillapermissions.util.PermissionManager;
@@ -46,12 +46,14 @@ public class VanillaPermissionsPlugin extends JavaPlugin {
         registerGranularCommands();
         registerListeners();
 
-        getLogger().info("VanillaPermissionsPlugin v" + getDescription().getVersion() + " enabled (inspired by VanillaPermissions)");
+        getLogger().info("VanillaPermissionsPlugin v" + getDescription().getVersion()
+            + " enabled (Paper port inspired by DrexHD's VanillaPermissions)");
     }
 
     private void registerGranularCommands() {
         if (isFeatureEnabled("command_permissions")) {
             try {
+                GameModeCommandHandler.registerCommands(this);
                 WhitelistCommandHandler.registerCommands(this);
                 TimeCommandHandler.registerCommands(this);
                 WeatherCommandHandler.registerCommands(this);
@@ -75,10 +77,6 @@ public class VanillaPermissionsPlugin extends JavaPlugin {
             getServer().getPluginManager().registerEvents(new WhitelistBypassListener(), this);
             getServer().getPluginManager().registerEvents(new ForceGamemodeBypassListener(), this);
             getServer().getPluginManager().registerEvents(new MoveSpeedBypassListener(), this);
-        }
-
-        if (isFeatureEnabled("selector_permissions")) {
-            getServer().getPluginManager().registerEvents(new SelectorPermissionListener(), this);
         }
     }
 
