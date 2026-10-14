@@ -19,14 +19,27 @@ Gamemode has separate mode nodes, including `minecraft.command.gamemode.survival
 
 ## Selectors
 
-`minecraft.selector` controls selector syntax. `SelectorPolicy` provides self, player, and entity scopes plus count limits and weight metadata through nodes under `minecraft.selector.*`. Normal Paper runtime integration is limited to behavior reachable through the plugin API; later versions may need adapter updates.
+`minecraft.selector` controls selector syntax. Native command targets use self, player, and entity scope nodes under `minecraft.selector.*`, plus count limits and weight metadata.
+
+For non-op user to run `/gamemode survival @s` but block other players:
+
+```text
+minecraft.command.gamemode=true
+minecraft.command.gamemode.survival=true
+minecraft.command.gamemode.survival.target=true
+minecraft.selector=true
+minecraft.selector.self.gamemode.target.survival.target=true
+minecraft.selector.player.gamemode.target.survival.target=false
+```
+
+Selector policy checks full result before executing command; mixed targets like `@a` fail without partial changes. Paper 1.20.6 is tested; later versions may need native adapter updates.
 
 ## Other controls
 
 - `minecraft.bypass.whitelist`, `minecraft.bypass.player-limit`, `minecraft.bypass.force-gamemode`, `minecraft.bypass.move-speed.player`
 - `minecraft.operator_block.<block>.<place|view|break>` and `minecraft.debug_stick.use.block` through Paper listeners
 
-Paper's drop-in API does not expose Drex's native spawn-protection, chat-spam, admin-feedback recipient, NBT packet, command-block-minecart, debug-chart, or selector-result hooks. Those internals are outside this build's supported surface.
+Paper's plugin API does not expose Drex's native spawn-protection, chat-spam, admin-feedback recipient, NBT packet, command-block-minecart, or debug-chart hooks. This drop-in build does not implement those controls.
 
 Plugin commands: `/vanillapermissions check <player>` and `/vanillapermissions debug`.
 
