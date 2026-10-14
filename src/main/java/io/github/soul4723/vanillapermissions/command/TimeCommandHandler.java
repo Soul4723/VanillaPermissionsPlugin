@@ -4,6 +4,7 @@ import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.IntegerArgument;
 import dev.jorel.commandapi.wrappers.NativeProxyCommandSender;
+import dev.jorel.commandapi.executors.NativeCommandExecutor;
 import io.github.soul4723.vanillapermissions.util.PermissionManager;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
@@ -86,7 +87,7 @@ public class TimeCommandHandler {
     private static CommandAPICommand timeAlias(String name, int ticks) {
         return new CommandAPICommand(name)
                 .withRequirement(sender -> PermissionManager.hasPermissionOrParent(sender, BASE_PERM + ".set"))
-                .executesNative((proxy, args) -> setTime(proxy, ticks));
+                .executesNative((NativeCommandExecutor) (proxy, args) -> setTime(proxy, ticks));
     }
 
     private static void setTime(NativeProxyCommandSender proxy, int ticks) {

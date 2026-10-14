@@ -133,7 +133,8 @@ public class EffectCommandHandler {
                                     if (effectType == null) {
                                         living.clearActivePotionEffects();
                                         affected++;
-                                    } else if (living.removePotionEffect(effectType)) {
+                                    } else {
+                                        living.removePotionEffect(effectType);
                                         affected++;
                                     }
                                 }
