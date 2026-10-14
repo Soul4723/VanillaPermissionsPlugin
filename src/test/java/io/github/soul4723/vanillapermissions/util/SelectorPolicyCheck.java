@@ -62,7 +62,6 @@ public final class SelectorPolicyCheck {
         TestPermissions unrestricted = new TestPermissions();
         expectDenied(() -> SelectorPolicy.validate(source, List.of("teleport", "targets", "destination"), "targets",
                 List.of(SelectorNativePermissions.target(new Object())), unrestricted));
-        permissions.nodes.put("minecraft.selector.player." + PERMISSION_PATH, true);
         permissions.nodes.put("minecraft.selector.self." + PERMISSION_PATH, true);
 
         permissions.meta.put(SOURCE_ID + ":minecraft.selector.limit." + PERMISSION_PATH, 1);
@@ -72,6 +71,7 @@ public final class SelectorPolicyCheck {
                 List.of(SelectorNativePermissions.target("one"), SelectorNativePermissions.target("two")), permissions));
 
         permissions.meta.clear();
+        permissions.nodes.put("minecraft.selector.player." + PERMISSION_PATH, true);
         permissions.meta.put(SOURCE_ID + ":minecraft.selector.weight." + PERMISSION_PATH, 2);
         permissions.meta.put(OTHER_ID + ":minecraft.selector.weight." + PERMISSION_PATH, 3);
         expectDenied(() -> SelectorPolicy.validate(source, List.of("teleport", "targets", "destination"), "targets",
