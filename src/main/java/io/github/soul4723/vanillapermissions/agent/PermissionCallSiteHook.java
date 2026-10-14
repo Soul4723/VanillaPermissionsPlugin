@@ -8,23 +8,42 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.AdviceAdapter;
 
-final class SpawnProtectionHook implements NmsFeatureHook {
-    private static final String METHOD = "isUnderSpawnProtection";
-    private static final String METHOD_DESCRIPTOR = "(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/entity/player/Player;)Z";
-    private static final String OP_CHECK_OWNER = "net/minecraft/server/dedicated/DedicatedPlayerList";
-    private static final String OP_CHECK_NAME = "isOp";
-    private static final String OP_CHECK_DESCRIPTOR = "(Lcom/mojang/authlib/GameProfile;)Z";
+final class PermissionCallSiteHook implements NmsFeatureHook {
     private static final String BRIDGE = "io/github/soul4723/vanillapermissions/agent/PermissionBridge";
+
+    private final String id;
+    private final String targetClass;
+    private final String targetMethod;
+    private final String targetMethodDescriptor;
+    private final String checkedOwner;
+    private final String checkedMethod;
+    private final String checkedMethodDescriptor;
+    private final String permission;
+    private final int subjectLocal;
     private boolean changed;
+
+    PermissionCallSiteHook(String id, String targetClass, String targetMethod, String targetMethodDescriptor,
+                           String checkedOwner, String checkedMethod, String checkedMethodDescriptor,
+                           String permission, int subjectLocal) {
+        this.id = id;
+        this.targetClass = targetClass;
+        this.targetMethod = targetMethod;
+        this.targetMethodDescriptor = targetMethodDescriptor;
+        this.checkedOwner = checkedOwner;
+        this.checkedMethod = checkedMethod;
+        this.checkedMethodDescriptor = checkedMethodDescriptor;
+        this.permission = permission;
+        this.subjectLocal = subjectLocal;
+    }
 
     @Override
     public String id() {
-        return "bypass.spawn-protection";
+        return id;
     }
 
     @Override
     public String targetClass() {
-        return "net/minecraft/server/dedicated/DedicatedServer";
+        return targetClass;
     }
 
     @Override
@@ -37,35 +56,20 @@ final class SpawnProtectionHook implements NmsFeatureHook {
             public MethodVisitor visitMethod(int access, String name, String descriptor, String signature,
                                              String[] exceptions) {
                 MethodVisitor method = super.visitMethod(access, name, descriptor, signature, exceptions);
-                if (!METHOD.equals(name) || !METHOD_DESCRIPTOR.equals(descriptor)) return method;
+                if (!targetMethod.equals(name) || !targetMethodDescriptor.equals(descriptor)) return method;
                 return new AdviceAdapter(Opcodes.ASM9, method, access, name, descriptor) {
                     @Override
                     public void visitMethodInsn(int opcode, String owner, String methodName,
                                                 String methodDescriptor, boolean isInterface) {
-                        if (opcode != INVOKEVIRTUAL || !OP_CHECK_OWNER.equals(owner)
-                            || !OP_CHECK_NAME.equals(methodName) || !OP_CHECK_DESCRIPTOR.equals(methodDescriptor)) {
-                            super.visitMethodInsn(opcode, owner, methodName, methodDescriptor, isInterface);
-                            return;
-                        }
-
-                        Type[] argumentTypes = Type.getArgumentTypes(methodDescriptor);
-                        int[] arguments = new int[argumentTypes.length];
-                        for (int index = argumentTypes.length - 1; index >= 0; index--) {
-                            arguments[index] = newLocal(argumentTypes[index]);
-                            storeLocal(arguments[index], argumentTypes[index]);
-                        }
-                        int receiver = newLocal(Type.getObjectType(owner));
-                        storeLocal(receiver);
-                        loadLocal(receiver);
-                        for (int index = 0; index < argumentTypes.length; index++) {
-                            loadLocal(arguments[index], argumentTypes[index]);
-                        }
                         super.visitMethodInsn(opcode, owner, methodName, methodDescriptor, isInterface);
+                        if (opcode != INVOKEVIRTUAL || !checkedOwner.equals(owner)
+                            || !checkedMethod.equals(methodName)
+                            || !checkedMethodDescriptor.equals(methodDescriptor)) return;
 
                         int original = newLocal(Type.BOOLEAN_TYPE);
                         storeLocal(original, Type.BOOLEAN_TYPE);
-                        loadLocal(3);
-                        push("minecraft.bypass.spawn-protection");
+                        visitVarInsn(ALOAD, subjectLocal);
+                        push(permission);
                         loadLocal(original, Type.BOOLEAN_TYPE);
                         super.visitMethodInsn(INVOKESTATIC, BRIDGE, "check",
                             "(Ljava/lang/Object;Ljava/lang/String;Z)Z", false);
@@ -75,7 +79,7 @@ final class SpawnProtectionHook implements NmsFeatureHook {
             }
         };
         reader.accept(visitor, ClassReader.EXPAND_FRAMES);
-        if (!changed) throw new IllegalStateException("Expected op check not found in isUnderSpawnProtection");
+        if (!changed) throw new IllegalStateException("Expected permission call not found in " + targetMethod);
         return writer.toByteArray();
     }
 }

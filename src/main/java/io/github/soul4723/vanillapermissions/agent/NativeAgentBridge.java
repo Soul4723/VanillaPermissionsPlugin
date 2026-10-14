@@ -12,6 +12,8 @@ public final class NativeAgentBridge {
     public static boolean isActive() {
         try {
             return (boolean) bridge("PermissionBridge").getMethod("isAgentActive").invoke(null);
+        } catch (ClassNotFoundException absent) {
+            return false;
         } catch (ReflectiveOperationException error) {
             throw bridgeFailure(error);
         }
@@ -51,6 +53,8 @@ public final class NativeAgentBridge {
     private static void invoke(String bridgeName, String methodName) {
         try {
             bridge(bridgeName).getMethod(methodName).invoke(null);
+        } catch (ClassNotFoundException absent) {
+            return;
         } catch (ReflectiveOperationException error) {
             throw bridgeFailure(error);
         }

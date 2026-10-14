@@ -6,10 +6,11 @@ import java.lang.instrument.Instrumentation;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
-import java.util.List;
 
 public final class VanillaPermissionsAgent {
     private static final String[] BRIDGE_CLASSES = {
@@ -24,7 +25,43 @@ public final class VanillaPermissionsAgent {
 
     public static void premain(String arguments, Instrumentation instrumentation) {
         installBootstrapBridge(instrumentation);
-        List<NmsFeatureHook> hooks = List.of(new SpawnProtectionHook());
+        List<NmsFeatureHook> hooks = List.of(
+            new PermissionCallSiteHook(
+                "bypass.spawn-protection",
+                "net/minecraft/server/dedicated/DedicatedServer",
+                "isUnderSpawnProtection",
+                "(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/entity/player/Player;)Z",
+                "net/minecraft/server/dedicated/DedicatedPlayerList",
+                "isOp",
+                "(Lcom/mojang/authlib/GameProfile;)Z",
+                "minecraft.bypass.spawn-protection",
+                3),
+            new PermissionCallSiteHook(
+                "selector.permission",
+                "net/minecraft/commands/arguments/selector/EntitySelector",
+                "checkPermissions",
+                "(Lnet/minecraft/commands/CommandSourceStack;)V",
+                "net/minecraft/commands/CommandSourceStack",
+                "hasPermission",
+                "(ILjava/lang/String;)Z",
+                "minecraft.selector",
+                1),
+            new SelectorResultHook(
+                "selector.entity-arguments",
+                "net/minecraft/commands/arguments/EntityArgument",
+                Set.of("getEntity", "getPlayer", "getEntities", "getOptionalEntities", "getPlayers", "getOptionalPlayers"),
+                null),
+            new SelectorResultHook(
+                "selector.profile-arguments",
+                "net/minecraft/commands/arguments/GameProfileArgument",
+                Set.of("getGameProfiles"),
+                "(Lcom/mojang/brigadier/context/CommandContext;Ljava/lang/String;)Ljava/util/Collection;"),
+            new SelectorResultHook(
+                "selector.score-holder-arguments",
+                "net/minecraft/commands/arguments/ScoreHolderArgument",
+                Set.of("getNames"),
+                "(Lcom/mojang/brigadier/context/CommandContext;Ljava/lang/String;Ljava/util/function/Supplier;)Ljava/util/Collection;")
+        );
         instrumentation.addTransformer(new ServerPermissionTransformer(hooks), false);
         System.err.println("[VanillaPermissionsPlugin] Native permission agent ready: "
             + hooks.stream().map(NmsFeatureHook::id).toList());
