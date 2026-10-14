@@ -7,8 +7,12 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.context.ParsedCommandNode;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.CommandNode;
+import com.mojang.brigadier.tree.ArgumentCommandNode;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.lang.reflect.Field;
@@ -29,6 +33,7 @@ public final class NativeExecuteCommandExtensions {
     private static Method entityPermissionLevel;
     private static Field permissionLevel;
     private static Field silent;
+    private static Field selectorBypass;
     private static Class<?> commandSourceStack;
 
     private NativeExecuteCommandExtensions() {}
@@ -92,6 +97,7 @@ public final class NativeExecuteCommandExtensions {
         if (!entityPermissionLevel.trySetAccessible()) throw new IllegalAccessException("Entity.getPermissionLevel is inaccessible");
         silent = sourceClass.getDeclaredField("silent");
         if (!silent.trySetAccessible()) throw new IllegalAccessException("CommandSourceStack.silent is inaccessible");
+        selectorBypass = sourceClass.getField("bypassSelectorPermissions");
         sourceClass.getMethod("withSuppressedOutput");
         sourceClass.getMethod("withPermission", int.class);
         sourceClass.getMethod("getServer");
@@ -120,12 +126,15 @@ public final class NativeExecuteCommandExtensions {
         addChild(conditional, node);
     }
 
-    private static Collection<Object> permissionCondition(CommandContext<Object> context, boolean positive) {
+    private static Collection<Object> permissionCondition(CommandContext<Object> context, boolean positive)
+            throws CommandSyntaxException {
         try {
-            Object entity = getEntity.invoke(null, context, "entity");
+            Object entity = resolveArgument(context, "entity", getEntity);
             String permission = StringArgumentType.getString(context, "permission");
             boolean granted = hasPermission(entity, permission);
             return granted == positive ? List.of(context.getSource()) : List.of();
+        } catch (CommandSyntaxException error) {
+            throw error;
         } catch (ReflectiveOperationException | RuntimeException error) {
             warn("Could not evaluate /execute permission condition", error);
             return List.of();
@@ -226,13 +235,54 @@ public final class NativeExecuteCommandExtensions {
         }
     }
 
-    private static Collection<?> entities(CommandContext<?> context) {
+    private static Collection<?> entities(CommandContext<?> context)
+            throws CommandSyntaxException {
         try {
-            Object result = getEntities.invoke(null, context, "targets");
+            Object result = resolveArgument(context, "targets", getEntities);
             return result instanceof Collection<?> values ? values : List.of();
+        } catch (CommandSyntaxException error) {
+            throw error;
         } catch (ReflectiveOperationException | RuntimeException error) {
             warn("Could not resolve /execute entity targets", error);
             return List.of();
+        }
+    }
+
+    private static Object resolveArgument(CommandContext<?> context, String name, Method resolver)
+            throws ReflectiveOperationException, CommandSyntaxException {
+        Object source = context.getSource();
+        Object senderValue = invoke(source, "getBukkitSender");
+        CommandSender sender = senderValue instanceof CommandSender value
+                ? value : null;
+        boolean selector = sender instanceof Player
+                && NativeCommandPermissions.isSelectorArgument(context, name);
+        boolean previous = selector && selectorBypass.getBoolean(source);
+        if (selector) {
+            boolean vanillaAllowed = previous || (boolean) invoke(source, "hasPermission", 2, "minecraft.command.selector");
+            SelectorNativePermissions.validateSelectorSyntax(sender, vanillaAllowed);
+            if (!previous) selectorBypass.setBoolean(source, true);
+        }
+        try {
+            Object result = invokeArgument(resolver, context, name);
+            List<String> path = context.getNodes().stream().map(ParsedCommandNode::getNode)
+                    .map(CommandNode::getName).toList();
+            SelectorNativePermissions.validate(sender, path, name, result);
+            return result;
+        } finally {
+            if (selector && !previous) selectorBypass.setBoolean(source, false);
+        }
+    }
+
+    private static Object invokeArgument(Method resolver, CommandContext<?> context, String name)
+            throws ReflectiveOperationException, CommandSyntaxException {
+        try {
+            return resolver.invoke(null, context, name);
+        } catch (java.lang.reflect.InvocationTargetException error) {
+            Throwable cause = error.getCause();
+            if (cause instanceof CommandSyntaxException syntax) throw syntax;
+            if (cause instanceof ReflectiveOperationException reflective) throw reflective;
+            if (cause instanceof RuntimeException runtime) throw runtime;
+            throw new IllegalStateException("Native selector resolver failed", cause);
         }
     }
 
@@ -284,7 +334,11 @@ public final class NativeExecuteCommandExtensions {
     }
 
     private static void warn(String message, Throwable error) {
-        if (plugin != null) plugin.getLogger().warning(message + ": " + error.getMessage());
+        if (plugin != null) {
+            while ((error instanceof java.lang.reflect.InvocationTargetException
+                    || error instanceof IllegalStateException) && error.getCause() != null) error = error.getCause();
+            plugin.getLogger().warning(message + ": " + error.getClass().getSimpleName() + ": " + error.getMessage());
+        }
     }
 
     private record Mutation(CommandNode<?> parent, CommandNode<?> node) {}

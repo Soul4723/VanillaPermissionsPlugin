@@ -50,6 +50,10 @@ public final class SelectorNativePermissions {
         SelectorPolicy.validate(sender, parsedNodePath, argumentName, targets(result), PERMISSIONS);
     }
 
+    public static void validateSelectorSyntax(CommandSender sender, boolean vanillaAllowed) throws CommandSyntaxException {
+        if (!SelectorPolicy.allowSelectorSyntax(sender, vanillaAllowed, PERMISSIONS)) throw DENIED.create();
+    }
+
     static Collection<SelectorPolicy.Target> targets(Object result) throws CommandSyntaxException {
         if (result instanceof Optional<?> optional) {
             return optional.isPresent() ? targets(optional.get()) : List.of();

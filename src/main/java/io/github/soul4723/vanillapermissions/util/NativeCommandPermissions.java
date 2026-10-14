@@ -32,6 +32,8 @@ public final class NativeCommandPermissions {
     private static final List<CommandMutation> SELECTOR_INSTALLED = new ArrayList<>();
     private static final AtomicBoolean SENDER_LOOKUP_WARNING = new AtomicBoolean();
     private static JavaPlugin plugin;
+    private static Field selectorBypass;
+    private static Method nativePermission;
 
     private NativeCommandPermissions() {}
 
@@ -111,6 +113,8 @@ public final class NativeCommandPermissions {
         ClassLoader serverLoader = org.bukkit.Bukkit.getServer().getClass().getClassLoader();
         Class<?> sourceClass = Class.forName("net.minecraft.commands.CommandSourceStack", false, serverLoader);
         Method getSender = sourceClass.getMethod("getBukkitSender");
+        selectorBypass = sourceClass.getField("bypassSelectorPermissions");
+        nativePermission = sourceClass.getMethod("hasPermission", int.class, String.class);
         if (!CommandSender.class.isAssignableFrom(getSender.getReturnType())) {
             throw new IllegalStateException("Native command source has unexpected Bukkit sender type");
         }
@@ -233,9 +237,65 @@ public final class NativeCommandPermissions {
 
         @Override
         public int run(CommandContext<Object> context) throws CommandSyntaxException {
-            validateSelectors(context);
-            return fallback.run(context);
+            Object source = context.getSource();
+            CommandSender sender = commandSender(source);
+            boolean hasSelectors = sender instanceof Player && hasSelectorArguments(context);
+            if (!hasSelectors) {
+                validateSelectors(context);
+                return fallback.run(context);
+            }
+
+            try {
+                boolean previous = selectorBypass.getBoolean(source);
+                boolean vanillaAllowed = previous || (boolean) nativePermission.invoke(
+                    source, 2, "minecraft.command.selector");
+                SelectorNativePermissions.validateSelectorSyntax(sender, vanillaAllowed);
+                selectorBypass.setBoolean(source, true);
+                try {
+                    validateSelectors(context);
+                    return fallback.run(context);
+                } finally {
+                    selectorBypass.setBoolean(source, previous);
+                }
+            } catch (InvocationTargetException error) {
+                throw reflectionFailure(error);
+            } catch (IllegalAccessException error) {
+                throw new IllegalStateException("Could not apply native selector permission", error);
+            }
         }
+    }
+
+    public static boolean isSelectorArgument(CommandContext<?> context, String name) {
+        return hasSelectorArguments(context, name);
+    }
+
+    private static boolean hasSelectorArguments(CommandContext<?> context) {
+        return hasSelectorArguments(context, null);
+    }
+
+    private static boolean hasSelectorArguments(CommandContext<?> context, String name) {
+        for (ParsedCommandNode<?> parsed : context.getNodes()) {
+            if (!(parsed.getNode() instanceof ArgumentCommandNode<?, ?> argument)
+                    || name != null && !argument.getName().equals(name)
+                    || selectorResolver(argument.getType()) == null) continue;
+            if (parsed.getRange().get(context.getInput()).startsWith("@")) return true;
+        }
+        return false;
+    }
+
+    private static CommandSender commandSender(Object source) {
+        try {
+            return (CommandSender) source.getClass().getMethod("getBukkitSender").invoke(source);
+        } catch (ReflectiveOperationException | RuntimeException error) {
+            return null;
+        }
+    }
+
+    private static RuntimeException reflectionFailure(InvocationTargetException error) throws CommandSyntaxException {
+        Throwable cause = error.getCause();
+        if (cause instanceof CommandSyntaxException syntax) throw syntax;
+        if (cause instanceof RuntimeException runtime) return runtime;
+        return new IllegalStateException("Native selector permission check failed", cause);
     }
 
     private static void validateSelectors(CommandContext<?> context) throws CommandSyntaxException {
