@@ -71,7 +71,8 @@ public final class SelectorNativePermissions {
         }
 
         String type = value.getClass().getName();
-        if (type.equals("net.minecraft.world.scores.ScoreHolder")) {
+        if (type.equals("net.minecraft.world.scores.ScoreHolder")
+                || invokeOrNull(value, "getScoreboardName") instanceof String) {
             return new SelectorPolicy.Target(SelectorPolicy.Target.Kind.SCORE_HOLDER, null, null);
         }
         if (type.equals("com.mojang.authlib.GameProfile")) {
