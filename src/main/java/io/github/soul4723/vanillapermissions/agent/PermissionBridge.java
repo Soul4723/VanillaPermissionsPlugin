@@ -31,7 +31,7 @@ public final class PermissionBridge {
         return agentActive;
     }
 
-    static void setAgentActive() {
+    public static void setAgentActive() {
         agentActive = true;
     }
 
