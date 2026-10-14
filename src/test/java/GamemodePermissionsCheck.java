@@ -139,8 +139,10 @@ public class GamemodePermissionsCheck {
             assert !changed(privileged, GameMode.SURVIVAL) : "Player callee escalated console command";
             permissions.get(caller.id).put(BASE + ".other", Tristate.FALSE);
             permissions.get(caller.id).put(BASE + ".survival.other", Tristate.FALSE);
+            int otherChangesBeforeExecute = other.changes.getOrDefault(GameMode.SURVIVAL, 0);
             runNative(caller.player, other.player, GameMode.SURVIVAL);
-            assert !changed(other, GameMode.SURVIVAL) : "Callee was misclassified as caller self";
+            assert other.changes.getOrDefault(GameMode.SURVIVAL, 0) == otherChangesBeforeExecute
+                    : "Callee was misclassified as caller self";
             int callerSurvivalChanges = caller.changes.getOrDefault(GameMode.SURVIVAL, 0);
             int otherSurvivalChanges = other.changes.getOrDefault(GameMode.SURVIVAL, 0);
             runNative(caller.player, caller.player, GameMode.SURVIVAL,
