@@ -103,8 +103,10 @@ public class ForceGamemodeContextCheck {
             assert !cancelled(listener, player, PlayerGameModeChangeEvent.Cause.DEFAULT_GAMEMODE)
                     : "Explicit leaf denial lost to parent";
             nodes.remove(LEAF);
+            int parentContexts = contexts[0];
             assert cancelled(listener, player, PlayerGameModeChangeEvent.Cause.DEFAULT_GAMEMODE)
                     : "Exact parent grant lost";
+            assert contexts[0] == parentContexts + 1 : "Repeated context lookup within one permission check";
             nodes.put("minecraft.bypass", Tristate.FALSE);
             nodes.put("minecraft", Tristate.TRUE);
             assert !PermissionManager.hasPermissionOrParent(player, LEAF) : "Parent denial ignored";

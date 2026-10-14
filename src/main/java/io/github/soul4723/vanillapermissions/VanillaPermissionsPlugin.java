@@ -21,32 +21,8 @@ public class VanillaPermissionsPlugin extends JavaPlugin {
 
     private LuckPermsHook luckPermsHook;
 
-    private boolean checkDependencies() {
-        boolean hasAll = true;
-
-        if (getServer().getPluginManager().getPlugin("CommandAPI") == null) {
-            getLogger().severe("VanillaPermissionsPlugin requires CommandAPI to function!");
-            getLogger().severe("Download: https://github.com/CommandAPI/CommandAPI/releases");
-            hasAll = false;
-        }
-
-        if (getServer().getPluginManager().getPlugin("LuckPerms") == null) {
-            getLogger().severe("VanillaPermissionsPlugin requires LuckPerms to function!");
-            getLogger().severe("Download: https://luckperms.net/download");
-            hasAll = false;
-        }
-
-        return hasAll;
-    }
-
-
     @Override
     public void onEnable() {
-        if (!checkDependencies()) {
-            getServer().getPluginManager().disablePlugin(this);
-            return;
-        }
-
         saveDefaultConfig();
 
         if (!validateConfiguration()) {

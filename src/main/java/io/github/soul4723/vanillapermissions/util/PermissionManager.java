@@ -2,6 +2,7 @@ package io.github.soul4723.vanillapermissions.util;
 
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.cacheddata.CachedPermissionData;
+import net.luckperms.api.model.user.User;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -64,16 +65,40 @@ public class PermissionManager {
     public static boolean hasPermissionOrParent(CommandSender sender, String permission) {
         if (shouldOpBypass(sender)) return true;
 
-        if (isExplicitlyDenied(sender, permission)) return false;
-        if (hasPermission(sender, permission)) return true;
+        CachedPermissionData data = null;
+        if (sender instanceof Player player && luckPermsHook != null && luckPermsHook.isEnabled()) {
+            try {
+                LuckPerms luckPerms = luckPermsHook.getLuckPerms();
+                User user = luckPerms.getUserManager().getUser(player.getUniqueId());
+                if (user == null) return false;
+                data = user.getCachedData().getPermissionData(
+                        luckPerms.getContextManager().getQueryOptions(player));
+            } catch (Exception e) {
+                if (logger != null) {
+                    logger.warning("LuckPerms permission check failed, falling back to Bukkit: " + e.getMessage());
+                }
+            }
+        }
 
-        String[] parts = permission.split("\\.");
-        for (int i = parts.length - 1; i > 0; i--) {
-            String[] parentParts = new String[i];
-            System.arraycopy(parts, 0, parentParts, 0, i);
-            String parentPerm = String.join(".", parentParts);
-            if (isExplicitlyDenied(sender, parentPerm)) return false;
-            if (hasPermission(sender, parentPerm)) return true;
+        for (int end = permission.length(); end > 0;) {
+            String current = permission.substring(0, end);
+            if (data != null) {
+                try {
+                    if (data.checkPermission(current).asBoolean()) return true;
+                    if (data.queryPermission(current).result() != net.luckperms.api.util.Tristate.UNDEFINED) return false;
+                } catch (Exception e) {
+                    if (logger != null) {
+                        logger.warning("LuckPerms permission check failed, falling back to Bukkit: " + e.getMessage());
+                    }
+                    if (hasBukkitPermission(sender, current)) return true;
+                }
+            } else if (hasBukkitPermission(sender, current)) {
+                return true;
+            }
+
+            int dot = permission.lastIndexOf('.', end - 1);
+            if (dot < 0) return false;
+            end = dot;
         }
 
         return false;
@@ -92,25 +117,14 @@ public class PermissionManager {
         return true;
     }
 
-    private static boolean isExplicitlyDenied(CommandSender sender, String permission) {
-        if (!(sender instanceof Player)) return false;
-
-        Player player = (Player) sender;
-        if (luckPermsHook != null && luckPermsHook.isEnabled()) {
-            try {
-                LuckPerms luckPerms = luckPermsHook.getLuckPerms();
-                net.luckperms.api.model.user.User user = luckPerms.getUserManager().getUser(player.getUniqueId());
-                if (user != null) {
-                    CachedPermissionData data = user.getCachedData().getPermissionData(
-                            luckPerms.getContextManager().getQueryOptions(player));
-                    return !data.checkPermission(permission).asBoolean() &&
-                           data.queryPermission(permission).result() != net.luckperms.api.util.Tristate.UNDEFINED;
-                }
-            } catch (Exception e) {
-                return false;
+    private static boolean hasBukkitPermission(CommandSender sender, String permission) {
+        try {
+            return sender.hasPermission(permission);
+        } catch (Exception e) {
+            if (logger != null) {
+                logger.warning("Permission check failed for sender: " + e.getMessage());
             }
+            return false;
         }
-
-        return false;
     }
 }
