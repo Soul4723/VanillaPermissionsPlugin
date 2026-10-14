@@ -106,10 +106,14 @@ public class EffectCommandHandler {
     }
 
     static PotionEffect createPotionEffect(PotionEffectType type, Integer seconds, Integer amplifier, Boolean hideParticles) {
-        int durationTicks = (seconds == null ? 30 : seconds) * 20;
-        int effectAmplifier = amplifier == null ? 0 : amplifier;
-        boolean showParticles = !Boolean.TRUE.equals(hideParticles);
-        return new PotionEffect(type, durationTicks, effectAmplifier, false, showParticles, showParticles);
+        PotionEffectOptions options = potionEffectOptions(seconds, amplifier, hideParticles);
+        return new PotionEffect(type, options.durationTicks(), options.amplifier(), false,
+                options.showParticles(), options.showParticles());
+    }
+
+    static PotionEffectOptions potionEffectOptions(Integer seconds, Integer amplifier, Boolean hideParticles) {
+        return new PotionEffectOptions((seconds == null ? 30 : seconds) * 20,
+                amplifier == null ? 0 : amplifier, !Boolean.TRUE.equals(hideParticles));
     }
 
     static int clearPotionEffects(Collection<Entity> targets, PotionEffectType type) {
@@ -164,6 +168,8 @@ public class EffectCommandHandler {
         }
         return true;
     }
+
+    record PotionEffectOptions(int durationTicks, int amplifier, boolean showParticles) {}
 
     @SuppressWarnings("unchecked")
     private static Collection<Entity> asEntities(Object value) {
