@@ -223,13 +223,9 @@ public class VanillaPermissionsPluginCommand {
                             Location location = new Location(player.getWorld(), x, y, z);
                             try {
                                 Object yawObj = args.getUnchecked("yaw");
+                                if (yawObj instanceof Number) location.setYaw(((Number) yawObj).floatValue());
                                 Object pitchObj = args.getUnchecked("pitch");
-                                if (yawObj instanceof Number && pitchObj instanceof Number) {
-                                    float yaw = ((Number) yawObj).floatValue();
-                                    float pitch = ((Number) pitchObj).floatValue();
-                                    location.setYaw(yaw);
-                                    location.setPitch(pitch);
-                                }
+                                if (pitchObj instanceof Number) location.setPitch(((Number) pitchObj).floatValue());
                             } catch (Exception ignored) {}
 
                             if (player.teleport(location)) {
@@ -335,13 +331,9 @@ public class VanillaPermissionsPluginCommand {
 
                         try {
                             Object yawObj = args.getUnchecked("yaw");
+                            if (yawObj instanceof Number) location.setYaw(((Number) yawObj).floatValue());
                             Object pitchObj = args.getUnchecked("pitch");
-                            if (yawObj instanceof Number && pitchObj instanceof Number) {
-                                float yaw = ((Number) yawObj).floatValue();
-                                float pitch = ((Number) pitchObj).floatValue();
-                                location.setYaw(yaw);
-                                location.setPitch(pitch);
-                            }
+                            if (pitchObj instanceof Number) location.setPitch(((Number) pitchObj).floatValue());
                         } catch (Exception ignored) {}
 
                         int count = 0;

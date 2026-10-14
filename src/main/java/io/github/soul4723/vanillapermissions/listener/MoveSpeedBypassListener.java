@@ -1,45 +1,21 @@
 package io.github.soul4723.vanillapermissions.listener;
 
 import io.github.soul4723.vanillapermissions.util.PermissionManager;
-import java.util.Locale;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Player;
+import io.papermc.paper.event.player.PlayerFailMoveEvent;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerKickEvent;
 
 public class MoveSpeedBypassListener implements Listener {
 
     private static final String PLAYER_SPEED_PERMISSION = "minecraft.bypass.move-speed.player";
-    private static final String VEHICLE_SPEED_PREFIX = "minecraft.bypass.move-speed.vehicle.";
 
     @EventHandler
-    public void onPlayerKick(PlayerKickEvent event) {
-        Player player = event.getPlayer();
-        String kickReason = event.getReason().toLowerCase(Locale.ROOT);
-
-        if (isMovementSpeedKick(kickReason)) {
-            if (PermissionManager.hasPermissionOrParent(player, PLAYER_SPEED_PERMISSION)) {
-                event.setCancelled(true);
-                return;
-            }
-
-            Entity vehicle = player.getVehicle();
-            if (vehicle != null) {
-                String vehicleType = vehicle.getType().toString().toLowerCase(Locale.ROOT);
-                String vehiclePermission = VEHICLE_SPEED_PREFIX + vehicleType;
-                if (PermissionManager.hasPermissionOrParent(player, vehiclePermission)) {
-                    event.setCancelled(true);
-                }
-            }
+    public void onPlayerFailMove(PlayerFailMoveEvent event) {
+        PlayerFailMoveEvent.FailReason reason = event.getFailReason();
+        if ((reason == PlayerFailMoveEvent.FailReason.MOVED_TOO_QUICKLY ||
+                reason == PlayerFailMoveEvent.FailReason.MOVED_WRONGLY) &&
+                PermissionManager.hasPermissionOrParent(event.getPlayer(), PLAYER_SPEED_PERMISSION)) {
+            event.setAllowed(true);
         }
-    }
-
-    private boolean isMovementSpeedKick(String kickReason) {
-        return kickReason.contains("moved too quickly") ||
-               kickReason.contains("moved wrongly") ||
-               kickReason.contains("moving too fast") ||
-               kickReason.contains("flying is not enabled") ||
-               kickReason.contains("vehicle") && kickReason.contains("moved");
     }
 }

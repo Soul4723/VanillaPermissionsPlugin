@@ -25,7 +25,7 @@ Gives you actual control over vanilla commands instead of the usual all-or-nothi
 **Useful bypasses:**
 - Whitelist
 - Server full kicks
-- Movement speed kicks
+- Player movement speed checks
 
 Per-player spawn protection bypass and chat-only speed bypass are deferred on Paper 1.20.6 pending supported native integration. Historical nodes `minecraft.bypass.spawn-protection` and `minecraft.bypass.chat-speed` no longer provide bypasses; native spawn protection and chat checks retain normal behavior.
 
@@ -166,9 +166,7 @@ default_permissions:
 - `minecraft.bypass.whitelist` - Join when whitelist is on
 - `minecraft.bypass.player-limit` - Join when server is full
 - `minecraft.bypass.force-gamemode` - Override force-gamemode setting
-- `minecraft.bypass.move-speed.player` - Bypass movement speed kicks
-- `minecraft.bypass.move-speed.vehicle.boat` - Bypass speed kick in boats
-- `minecraft.bypass.move-speed.vehicle.minecart` - Bypass speed kick in minecarts
+- `minecraft.bypass.move-speed.player` - Bypass Paper's too-quickly and moved-wrongly checks
 
 ### Operator Blocks
 Replace `<action>` with `place`, `view`, or `break`:
@@ -193,7 +191,7 @@ Replace `<action>` with `place`, `view`, or `break`:
 
 **Operator blocks & debug stick:** Only work in Creative mode anyway (vanilla behavior). These permissions add an extra layer for creative servers.
 
-**Movement speed bypasses:** Detection is based on kick message keywords. Might not catch all cases, especially with custom anti-cheat plugins.
+**Movement speed bypass:** Uses Paper's `PlayerFailMoveEvent` for too-quickly and moved-wrongly player checks. Flying, vehicle, invalid-packet and plugin kicks are not bypassed.
 
 ## License
 

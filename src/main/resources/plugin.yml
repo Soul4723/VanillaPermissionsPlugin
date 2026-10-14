@@ -172,13 +172,7 @@ permissions:
     description: Override server force-gamemode setting
     default: false
   minecraft.bypass.move-speed.player:
-    description: Bypass player movement speed kicks
-    default: false
-  minecraft.bypass.move-speed.vehicle.boat:
-    description: Bypass movement speed kick while in boat
-    default: false
-  minecraft.bypass.move-speed.vehicle.minecart:
-    description: Bypass movement speed kick while in minecart
+    description: Bypass player movement speed checks
     default: false
 
   # Admin permissions

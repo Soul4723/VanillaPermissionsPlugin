@@ -31,5 +31,7 @@ jobs:
           do
             java -ea -cp "$check_cp" "$check"
           done
-          javac --release 21 -cp "$check_cp" -d target/test-classes tests/NativeFeedbackCheck.java
+          javac --release 21 -cp "$check_cp" -d target/test-classes \
+            tests/NativeFeedbackCheck.java tests/MoveSpeedBypassCheck.java
           java -ea -cp "$check_cp" NativeFeedbackCheck
+          java -ea -cp "$check_cp" MoveSpeedBypassCheck

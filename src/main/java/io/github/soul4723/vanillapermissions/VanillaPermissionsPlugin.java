@@ -91,8 +91,8 @@ public class VanillaPermissionsPlugin extends JavaPlugin {
     }
 
     private boolean validateConfiguration() {
-        if (!getConfig().contains("features")) {
-            getLogger().warning("Missing 'features' section in config.yml");
+        if (!getConfig().isConfigurationSection("features")) {
+            getLogger().warning("Missing or invalid 'features' section in config.yml");
             return false;
         }
 

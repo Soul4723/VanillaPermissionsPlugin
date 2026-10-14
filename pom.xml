@@ -23,7 +23,7 @@
 
     <scm>
         <connection>scm:git:git://github.com/Soul4723/VanillaPermissionsPlugin.git</connection>
-        <developerConnection>scm:git:ssh://github.com:Soul4723/VanillaPermissionsPlugin.git</developerConnection>
+        <developerConnection>scm:git:ssh://git@github.com/Soul4723/VanillaPermissionsPlugin.git</developerConnection>
         <url>https://github.com/Soul4723/VanillaPermissionsPlugin/tree/main</url>
     </scm>
 

@@ -84,6 +84,11 @@ public class TeleportCorrectnessCheck {
             assert location.getYaw() == 90 && location.getPitch() == 30;
             feedback(sender, accepted ? "§aTeleported to " : "§cCould not teleport to ");
         }
+        sender.accepted = true;
+        run(12, sender.player, Map.of("x", 10.0, "y", 64.0, "z", 20.0, "yaw", 45.0f));
+        Location playerYawOnly = (Location) sender.destination;
+        assert playerYawOnly.getYaw() == 45 && playerYawOnly.getPitch() == 0;
+        feedback(sender, "§aTeleported to ");
         for (int index : new int[]{14, 16}) {
             for (int successes = 0; successes <= 2; successes++) {
                 first.accepted = successes > 0;
@@ -115,6 +120,16 @@ public class TeleportCorrectnessCheck {
             run(index, index == 16 ? nativeSource(sender.player, source) : sender.player, empty);
             feedback(sender, "§cNo targets found!");
         }
+        Map<String, Object> yawOnlyTargets = new java.util.HashMap<>();
+        yawOnlyTargets.put("targets", List.of(first.player, second.player));
+        yawOnlyTargets.put("x", 10.0); yawOnlyTargets.put("y", 64.0); yawOnlyTargets.put("z", 20.0);
+        yawOnlyTargets.put("yaw", 45.0f);
+        run(16, nativeSource(sender.player, source), yawOnlyTargets);
+        for (Fixture target : List.of(first, second)) {
+            Location location = (Location) target.destination;
+            assert location.getYaw() == 45 && location.getPitch() == 0;
+        }
+        feedback(sender, "§aTeleported 2 entities");
         run(16, nativeSource(sender.player, source), Map.of("targets", List.of(first.player), "x", 1.0, "y", 64.0, "z", 2.0));
         Location defaultRotation = (Location) first.destination;
         assert defaultRotation.getYaw() == 0 && defaultRotation.getPitch() == 0;
