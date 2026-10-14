@@ -1,6 +1,6 @@
 # VanillaPermissionsPlugin
 
-Paper port of [DrexHD's VanillaPermissions](https://github.com/DrexHD/VanillaPermissions). LuckPerms controls native vanilla command paths while Paper keeps command parsing and execution.
+Paper plugin inspired by [DrexHD's VanillaPermissions](https://github.com/DrexHD/VanillaPermissions). LuckPerms controls granular vanilla command paths while Paper keeps native parsing and execution.
 
 ## Requirements
 
@@ -9,27 +9,24 @@ Paper port of [DrexHD's VanillaPermissions](https://github.com/DrexHD/VanillaPer
 - CommandAPI 11.0.0
 - LuckPerms 5.5
 
-The native command hook uses Paper and Minecraft internals tested against 1.20.6. Later versions are not verified.
+Install plugin normally in `plugins/`; no server agent or startup flag required. Later Paper versions are unverified.
 
 ## Command permissions
 
-Each Brigadier node checks `minecraft.command.<full path>`. A LuckPerms `true` grants that node and `false` denies it. An undefined node uses the command's original vanilla permission requirement. Dotted parent nodes do not grant child nodes by themselves; use LuckPerms inheritance or wildcard permissions for broad grants.
+Each Brigadier node checks `minecraft.command.<full path>`. LuckPerms `true` grants, `false` denies, and undefined uses vanilla's requirement. Parent nodes do not grant child nodes by themselves; use LuckPerms inheritance or wildcards for broad grants.
 
-Gamemode has separate mode nodes. For example, grant `minecraft.command.gamemode` and `minecraft.command.gamemode.survival` to allow `/gamemode survival`; leave `minecraft.command.gamemode.survival.target` unset to keep explicit target forms behind vanilla's requirement. Target forms do not yet distinguish self from other players.
+Gamemode has separate mode nodes, including `minecraft.command.gamemode.survival`. The native `/execute` tree adds `if permission`, `feedback`, and `oplevel` paths.
 
-The native `/execute` tree adds Drex-style `if permission`, `feedback`, and `oplevel` paths.
+## Selectors
 
-Score-holder arguments enforce `minecraft.selector.limit.<command>.<argument>`. The upstream README documents only this limit for score holders; its current validator rejects their resolved string values during scope checks, so this port follows the documented behavior.
+`minecraft.selector` controls selector syntax. `SelectorPolicy` provides self, player, and entity scopes plus count limits and weight metadata through nodes under `minecraft.selector.*`. Normal Paper runtime integration is limited to behavior reachable through the plugin API; later versions may need adapter updates.
 
 ## Other controls
 
 - `minecraft.bypass.whitelist`, `minecraft.bypass.player-limit`, `minecraft.bypass.force-gamemode`, `minecraft.bypass.move-speed.player`
-- `minecraft.operator_block.<block>.<place|view|break>` for command, jigsaw, and structure blocks
-- `minecraft.debug_stick.use.block`
+- `minecraft.operator_block.<block>.<place|view|break>` and `minecraft.debug_stick.use.block` through Paper listeners
 
-`config.yml` toggles command, bypass, and admin permissions. Selector parsing and per-target selector permissions are not implemented yet.
-
-Install CommandAPI and LuckPerms alongside the plugin. Plugin commands: `/vanillapermissions reload`, `/vanillapermissions check <player>`, `/vanillapermissions debug`.
+Plugin commands: `/vanillapermissions check <player>` and `/vanillapermissions debug`.
 
 ## License
 

@@ -1,9 +1,0 @@
-# VanillaPermissionsPlugin Configuration
-# Influenced by VanillaPermissions (https://github.com/DrexHD/VanillaPermissions)
-# Toggle different permission enforcement features
-
-features:
-  command_permissions: true
-  bypass_permissions: true
-  # Plugin admin checks only; native command feedback/alias are independent
-  admin_permissions: true

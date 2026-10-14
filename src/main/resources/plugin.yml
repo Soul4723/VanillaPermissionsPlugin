@@ -12,55 +12,6 @@ permissions:
   vanillapermissions.use:
     description: Use VanillaPermissionsPlugin commands
     default: op
-  vanillapermissions.reload:
-    description: Reload VanillaPermissionsPlugin configuration
-    default: op
   vanillapermissions.admin:
     description: Access VanillaPermissionsPlugin admin features
     default: op
-
-  # Bypass permissions
-  minecraft.bypass.whitelist:
-    description: Bypass server whitelist
-    default: false
-  minecraft.bypass.player-limit:
-    description: Bypass server player limit
-    default: false
-  minecraft.bypass.force-gamemode:
-    description: Override server force-gamemode setting
-    default: false
-  minecraft.bypass.move-speed.player:
-    description: Bypass player movement speed checks
-    default: false
-
-  # Admin permissions
-  minecraft.debug_stick.use.block:
-    description: Use debug stick on blocks
-    default: false
-  minecraft.operator_block.command_block.place:
-    description: Place command blocks
-    default: false
-  minecraft.operator_block.command_block.view:
-    description: View command block contents
-    default: false
-  minecraft.operator_block.command_block.break:
-    description: Break command blocks
-    default: false
-  minecraft.operator_block.jigsaw.place:
-    description: Place jigsaw blocks
-    default: false
-  minecraft.operator_block.jigsaw.view:
-    description: View jigsaw blocks
-    default: false
-  minecraft.operator_block.jigsaw.break:
-    description: Break jigsaw blocks
-    default: false
-  minecraft.operator_block.structure_block.place:
-    description: Place structure blocks
-    default: false
-  minecraft.operator_block.structure_block.view:
-    description: View structure blocks
-    default: false
-  minecraft.operator_block.structure_block.break:
-    description: Break structure blocks
-    default: false

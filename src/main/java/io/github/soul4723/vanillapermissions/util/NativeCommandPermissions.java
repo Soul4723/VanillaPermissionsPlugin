@@ -29,7 +29,7 @@ public final class NativeCommandPermissions {
     public static void register(JavaPlugin owner) {
         plugin = owner;
         owner.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
-            if (!owner.isEnabled() || !isCommandFeatureEnabled(owner)) return;
+            if (!owner.isEnabled()) return;
             try {
                 install(event.registrar().getDispatcher());
             } catch (ReflectiveOperationException | RuntimeException error) {
@@ -54,11 +54,6 @@ public final class NativeCommandPermissions {
         NativeGameModeTree.uninstall();
         NativeExecuteCommandExtensions.clear();
         plugin = null;
-    }
-
-    private static boolean isCommandFeatureEnabled(JavaPlugin owner) {
-        return !(owner instanceof io.github.soul4723.vanillapermissions.VanillaPermissionsPlugin vanilla)
-            || vanilla.isFeatureEnabled("command_permissions");
     }
 
     public static CommandDispatcher<?> getNativeDispatcher(CommandDispatcher<?> apiDispatcher) throws ReflectiveOperationException {

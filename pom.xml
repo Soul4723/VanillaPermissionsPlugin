@@ -63,16 +63,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.ow2.asm</groupId>
-            <artifactId>asm</artifactId>
-            <version>9.7.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.ow2.asm</groupId>
-            <artifactId>asm-commons</artifactId>
-            <version>9.7.1</version>
-        </dependency>
-        <dependency>
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>
             <version>${paper.api.version}</version>
@@ -111,35 +101,6 @@
                 <configuration>
                     <encoding>UTF-8</encoding>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>3.6.0</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals><goal>shade</goal></goals>
-                        <configuration>
-                            <createDependencyReducedPom>false</createDependencyReducedPom>
-                            <relocations>
-                                <relocation>
-                                    <pattern>org.objectweb.asm</pattern>
-                                    <shadedPattern>io.github.soul4723.vanillapermissions.agent.shaded.asm</shadedPattern>
-                                </relocation>
-                            </relocations>
-                            <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <manifestEntries>
-                                        <Premain-Class>io.github.soul4723.vanillapermissions.agent.VanillaPermissionsAgent</Premain-Class>
-                                        <Can-Redefine-Classes>false</Can-Redefine-Classes>
-                                        <Can-Retransform-Classes>false</Can-Retransform-Classes>
-                                    </manifestEntries>
-                                </transformer>
-                            </transformers>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
         <resources>
