@@ -1,0 +1,17 @@
+name: VanillaPermissionsPlugin
+version: 2.1.0
+main: io.github.soul4723.vanillapermissions.VanillaPermissionsPlugin
+api-version: '1.20'
+author: Soul4723
+description: Paper port of DrexHD's VanillaPermissions with LuckPerms command permissions
+website: https://github.com/Soul4723/VanillaPermissionsPlugin
+
+depend: [CommandAPI, LuckPerms]
+
+permissions:
+  vanillapermissions.use:
+    description: Use VanillaPermissionsPlugin commands
+    default: op
+  vanillapermissions.admin:
+    description: Access VanillaPermissionsPlugin admin features
+    default: op
