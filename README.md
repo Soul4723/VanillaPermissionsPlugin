@@ -36,7 +36,7 @@ Rules that apply everywhere:
 - **Parent and child nodes are checked independently along the command path.** The player needs the root and every node on the path to be allowed. An unset sub-node follows vanilla, which almost always means "open to anyone who can use the command". **Granting a root therefore exposes all of its sub-commands**; set the branches you don't want to `false`.
 - **Wildcards** work when LuckPerms `apply-wildcards` is on (the default). `minecraft.command.time.*` matches every node below `minecraft.command.time`, but not `minecraft.command.time` itself. A wildcard also covers sub-nodes, so `minecraft.command.* false` plus `minecraft.command.time true` still denies `/time query`; add `minecraft.command.time.* true` to allow the sub-commands. Wildcards do not apply to meta keys.
 - **Console and command blocks** are never affected by command or selector nodes.
-- **Bypass nodes are grant-only.** With `false` or unset, vanilla still lets operators past the whitelist and player limit as usual.
+- **Bypass nodes are grant-only.** With `false` or unset, vanilla behaviour applies: operators can still join while not whitelisted, and operators marked `bypassesPlayerLimit` in `ops.json` can still join a full server.
 - **To see every node a command checks,** run `/lp verbose on <player>`, have the player run or tab-complete the command, then `/lp verbose off`.
 
 ## Permission reference
