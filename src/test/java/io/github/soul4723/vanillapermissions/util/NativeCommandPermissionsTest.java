@@ -2,6 +2,7 @@ package io.github.soul4723.vanillapermissions.util;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import com.mojang.brigadier.tree.RootCommandNode;
@@ -32,6 +33,9 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Predicate;
 
+import static com.mojang.brigadier.arguments.StringArgumentType.word;
+import static com.mojang.brigadier.builder.LiteralArgumentBuilder.literal;
+import static com.mojang.brigadier.builder.RequiredArgumentBuilder.argument;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -181,6 +185,37 @@ class NativeCommandPermissionsTest {
         for (CommandNode<?> plugin : List.of(pluginGamemode, lp, namespacedLp)) {
             assertFalse(roots.containsKey(plugin), "Plugin command got vanilla nodes: " + plugin.getName());
         }
+    }
+
+    @Test
+    void parsedPathIncludesTheCommandAfterRedirects() throws Exception {
+        CommandDispatcher<Object> dispatcher = new CommandDispatcher<>();
+        LiteralCommandNode<Object> gamemode = dispatcher.register(literal("gamemode")
+            .then(literal("creative").then(argument("target", word()).executes(c -> 1))));
+        dispatcher.register(literal("minecraft:gamemode").redirect(gamemode));
+        LiteralCommandNode<Object> teleport = dispatcher.register(literal("teleport")
+            .then(argument("destination", word()).executes(c -> 1)));
+        dispatcher.register(literal("tp").redirect(teleport));
+        LiteralCommandNode<Object> execute = dispatcher.register(literal("execute")
+            .then(literal("run").redirect(dispatcher.getRoot())));
+        dispatcher.register(literal("execute")
+            .then(literal("as").then(argument("targets", word()).redirect(execute))));
+
+        List<String> gamemodePath = List.of("gamemode", "creative", "target");
+        assertEquals(gamemodePath, leafPath(dispatcher, "gamemode creative Bob"));
+        assertEquals(gamemodePath, leafPath(dispatcher, "minecraft:gamemode creative Bob"));
+        assertEquals(List.of("teleport", "destination"), leafPath(dispatcher, "tp Bob"));
+        assertEquals(List.of("teleport", "destination"), leafPath(dispatcher, "teleport Bob"));
+        assertEquals(gamemodePath, leafPath(dispatcher, "execute run gamemode creative Bob"));
+        assertEquals(gamemodePath, leafPath(dispatcher, "execute as x run minecraft:gamemode creative Bob"));
+        assertEquals("gamemode.target.creative.target",
+            SelectorPolicy.selectorPath(leafPath(dispatcher, "minecraft:gamemode creative Bob"), "target"));
+    }
+
+    private static List<String> leafPath(CommandDispatcher<Object> dispatcher, String input) {
+        CommandContext<Object> leaf = dispatcher.parse(input, new Object()).getContext().build(input);
+        while (leaf.getChild() != null) leaf = leaf.getChild();
+        return NativeCommandPermissions.parsedPath(leaf);
     }
 
     public static final class TestSource {

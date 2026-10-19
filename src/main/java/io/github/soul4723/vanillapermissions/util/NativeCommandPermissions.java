@@ -7,6 +7,7 @@ import com.mojang.brigadier.context.ParsedCommandNode;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.ArgumentCommandNode;
 import com.mojang.brigadier.tree.CommandNode;
+import com.mojang.brigadier.tree.RootCommandNode;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
@@ -349,10 +350,21 @@ public final class NativeCommandPermissions {
         return new IllegalStateException("Native selector permission check failed", cause);
     }
 
+    /**
+     * Node names of the command being executed. After a redirect (a {@code minecraft:<name>} or {@code /tp}
+     * alias, {@code /execute as …}) the executing context is a child that starts below the redirect target, so
+     * its own nodes lack the command name; the target is its root node and is prepended here.
+     */
+    static List<String> parsedPath(CommandContext<?> context) {
+        List<String> path = new ArrayList<>();
+        if (!(context.getRootNode() instanceof RootCommandNode<?>)) path.add(context.getRootNode().getName());
+        for (ParsedCommandNode<?> parsed : context.getNodes()) path.add(parsed.getNode().getName());
+        return path;
+    }
+
     private static void validateSelectors(CommandContext<?> context) throws CommandSyntaxException {
         if (!(commandSender(context.getSource()) instanceof CommandSender sender)) return;
-        List<String> path = context.getNodes().stream().map(ParsedCommandNode::getNode)
-            .map(CommandNode::getName).toList();
+        List<String> path = parsedPath(context);
         for (ParsedCommandNode<?> parsed : context.getNodes()) {
             if (!(parsed.getNode() instanceof ArgumentCommandNode<?, ?> argument)) continue;
             Method resolver = selectorResolver(argument.getType());

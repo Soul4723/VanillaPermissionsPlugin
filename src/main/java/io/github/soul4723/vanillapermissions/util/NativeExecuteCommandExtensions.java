@@ -7,7 +7,6 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.context.ParsedCommandNode;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.CommandNode;
 import org.bukkit.command.CommandSender;
@@ -294,8 +293,7 @@ public final class NativeExecuteCommandExtensions {
         }
         try {
             Object result = invokeArgument(resolver, context, name);
-            List<String> path = context.getNodes().stream().map(ParsedCommandNode::getNode)
-                    .map(CommandNode::getName).toList();
+            List<String> path = NativeCommandPermissions.parsedPath(context);
             SelectorNativePermissions.validate(sender, path, name, result);
             return result;
         } finally {

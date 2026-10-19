@@ -82,6 +82,7 @@ Upstream's `/execute` extensions are added and use normal command nodes:
   - `/gamemode survival @s` → `gamemode.target.survival.target`
   - `/effect give @s speed` → `effect.targets.give.targets.effect`
   - `/effect give @s speed 5` → `effect.targets.give.targets.effect.seconds`
+  - Aliases use the full command's path: `/minecraft:gamemode creative Bob` → `gamemode.target.creative.target`, `/tp Bob` → `teleport.destination.destination`.
 - Because the path changes with optional arguments, use wildcards for scope nodes (`minecraft.selector.player.effect.targets.*`) and set limit and weight meta for each form (meta has no wildcards).
 - Scope, limit and weight apply to every player or entity argument, whether a name or a selector was typed. `minecraft.selector` only controls `@` syntax.
 - Fake scoreboard names are not players or entities; only the limit applies to them.
