@@ -49,7 +49,9 @@ public final class NativeCommandPermissions {
             } catch (ReflectiveOperationException | RuntimeException error) {
                 owner.getLogger().log(Level.SEVERE, "Could not add LuckPerms checks to vanilla commands on this server build "
                     + "(only Paper 1.20.6 is supported); disabling VanillaPermissionsPlugin so no command is left half-checked", error);
-                owner.getServer().getPluginManager().disablePlugin(owner);
+                uninstall();
+                // Disabling inside a lifecycle event removes handlers Paper is iterating, which crashes the server.
+                owner.getServer().getScheduler().runTask(owner, () -> owner.getServer().getPluginManager().disablePlugin(owner));
             }
         });
     }
