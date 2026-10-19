@@ -48,8 +48,9 @@ public final class NativeCommandPermissions {
             try {
                 install(event.registrar().getDispatcher());
             } catch (ReflectiveOperationException | RuntimeException error) {
-                owner.getLogger().log(Level.SEVERE, "Could not add LuckPerms checks to vanilla commands (only Paper 1.20.6 is supported). "
-                    + "Vanilla commands were restored and VanillaPermissionsPlugin is disabling itself so no command is left half-checked", error);
+                owner.getLogger().log(Level.SEVERE, "Could not add LuckPerms checks to vanilla commands (only Paper 1.20.6 is tested). "
+                    + "Vanilla commands were restored and VanillaPermissionsPlugin is disabling itself so no command is left half-checked. "
+                    + "Run it on Paper 1.20.6 or remove it.", error);
                 uninstall();
                 // Disabling inside a lifecycle event removes handlers Paper is iterating, which crashes the server.
                 owner.getServer().getScheduler().runTask(owner, () -> owner.getServer().getPluginManager().disablePlugin(owner));
@@ -65,7 +66,7 @@ public final class NativeCommandPermissions {
                     mutation.field().set(mutation.node(), mutation.original());
                 }
             } catch (IllegalAccessException | RuntimeException ignored) {
-                if (plugin != null) plugin.getLogger().warning("Could not restore a native command permission predicate");
+                if (plugin != null) plugin.getLogger().warning("Could not restore a native command permission predicate; restart the server to restore vanilla commands");
             }
         }
         INSTALLED.clear();
@@ -77,7 +78,7 @@ public final class NativeCommandPermissions {
                     mutation.field().set(mutation.node(), mutation.original());
                 }
             } catch (IllegalAccessException | RuntimeException error) {
-                if (plugin != null) plugin.getLogger().warning("Could not restore native selector command executor");
+                if (plugin != null) plugin.getLogger().warning("Could not restore native selector command executor; restart the server to restore vanilla commands");
             }
         }
         SELECTOR_INSTALLED.clear();
