@@ -3,20 +3,24 @@ package io.github.soul4723.vanillapermissions.util;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.cacheddata.CachedMetaData;
 import net.luckperms.api.model.user.User;
+import net.luckperms.api.util.Tristate;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
-import net.luckperms.api.util.Tristate;
 
-import java.util.logging.Logger;
-import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.UUID;
+import java.util.logging.Logger;
 
+/**
+ * LuckPerms lookups in the player's current context. {@link #queryPermission} keeps the unset state so callers
+ * can fall back to vanilla; {@link #hasPermission(Player, String)} treats unset as not granted.
+ */
 public class PermissionManager {
 
     private static LuckPermsHook luckPermsHook;
     private static Logger logger;
+
     public static void initialize(LuckPermsHook luckPermsHook, JavaPlugin plugin) {
         PermissionManager.luckPermsHook = luckPermsHook;
         PermissionManager.logger = plugin.getLogger();
@@ -45,24 +49,6 @@ public class PermissionManager {
             case FALSE -> false;
             case UNDEFINED -> fallback;
         };
-    }
-
-    public static Optional<String> getMetaValue(CommandSender sender, String key) {
-        User user = getUser(sender);
-        if (user == null) return Optional.empty();
-
-        try {
-            LuckPerms luckPerms = luckPermsHook.getLuckPerms();
-            CachedMetaData metaData = user.getCachedData().getMetaData(
-                luckPerms.getContextManager().getQueryOptions((Player) sender)
-            );
-            return Optional.ofNullable(metaData.getMetaValue(key));
-        } catch (Exception e) {
-            if (logger != null) {
-                logger.warning("LuckPerms metadata query failed: " + e.getMessage());
-            }
-            return Optional.empty();
-        }
     }
 
     public static OptionalInt getIntegerMeta(UUID subjectId, CommandSender onlineSubject, String key) {
@@ -121,7 +107,7 @@ public class PermissionManager {
         if (luckPermsHook != null && luckPermsHook.isEnabled()) {
             try {
                 LuckPerms luckPerms = luckPermsHook.getLuckPerms();
-                net.luckperms.api.model.user.User user = luckPerms.getUserManager().getUser(player.getUniqueId());
+                User user = luckPerms.getUserManager().getUser(player.getUniqueId());
                 hasPermission = user != null && user.getCachedData().getPermissionData(
                         luckPerms.getContextManager().getQueryOptions(player)).checkPermission(permission).asBoolean();
             } catch (Exception e) {

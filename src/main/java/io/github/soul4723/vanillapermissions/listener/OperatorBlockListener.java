@@ -1,78 +1,56 @@
 package io.github.soul4723.vanillapermissions.listener;
 
 import io.github.soul4723.vanillapermissions.util.PermissionManager;
-import java.util.Locale;
 import org.bukkit.Material;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.block.Action;
 
+/**
+ * Lets LuckPerms take operator block access away. Vanilla still requires op and creative mode,
+ * so an unset node keeps vanilla behaviour and only an explicit false changes anything.
+ */
 public class OperatorBlockListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent event) {
-        Material blockType = event.getBlock().getType();
-        if (isOperatorBlock(blockType)) {
-            String permission = getOperatorBlockPermission(blockType, "place");
-            if (!PermissionManager.hasPermission(event.getPlayer(), permission)) {
-                event.setCancelled(true);
-                event.getPlayer().sendMessage("§cYou don't have permission to place " + blockType.name().toLowerCase(Locale.ROOT) + "!");
-            }
-        }
+        if (denied(event.getPlayer(), event.getBlock().getType(), "place")) event.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
-        Material blockType = event.getBlock().getType();
-        if (isOperatorBlock(blockType)) {
-            String permission = getOperatorBlockPermission(blockType, "break");
-            if (!PermissionManager.hasPermission(event.getPlayer(), permission)) {
-                event.setCancelled(true);
-                event.getPlayer().sendMessage("§cYou don't have permission to break " + blockType.name().toLowerCase(Locale.ROOT) + "!");
-            }
-        }
+        if (denied(event.getPlayer(), event.getBlock().getType(), "break")) event.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPlayerInteract(PlayerInteractEvent event) {
         if (event.getAction() != Action.RIGHT_CLICK_BLOCK || event.getClickedBlock() == null) return;
-
-        Material blockType = event.getClickedBlock().getType();
-        if (isOperatorBlock(blockType)) {
-            String viewPermission = getOperatorBlockPermission(blockType, "view");
-            if (!PermissionManager.hasPermission(event.getPlayer(), viewPermission)) {
-                event.setCancelled(true);
-                event.getPlayer().sendMessage("§cYou don't have permission to view " + blockType.name().toLowerCase(Locale.ROOT) + " contents!");
-            }
-        }
+        if (denied(event.getPlayer(), event.getClickedBlock().getType(), "view")) event.setCancelled(true);
     }
 
-    private boolean isOperatorBlock(Material material) {
-        return material == Material.COMMAND_BLOCK ||
-               material == Material.REPEATING_COMMAND_BLOCK ||
-               material == Material.CHAIN_COMMAND_BLOCK ||
-               material == Material.JIGSAW ||
-               material == Material.STRUCTURE_BLOCK;
+    private static boolean denied(Player player, Material material, String action) {
+        String block = blockName(material);
+        if (block == null) return false;
+        if (PermissionManager.hasPermissionOrFallback(player, permission(block, action), true)) return false;
+        player.sendMessage("§cYou do not have permission to " + action + " " + block.replace('_', ' ') + "s.");
+        return true;
     }
 
-    private String getOperatorBlockPermission(Material material, String action) {
-        String blockType;
-        if (material == Material.COMMAND_BLOCK ||
-            material == Material.REPEATING_COMMAND_BLOCK ||
-            material == Material.CHAIN_COMMAND_BLOCK) {
-            blockType = "command_block";
-        } else if (material == Material.JIGSAW) {
-            blockType = "jigsaw";
-        } else if (material == Material.STRUCTURE_BLOCK) {
-            blockType = "structure_block";
-        } else {
-            blockType = "unknown";
-        }
+    static String permission(String block, String action) {
+        return "minecraft.operator_block." + block + "." + action;
+    }
 
-        return "minecraft.operator_block." + blockType + "." + action;
+    static String blockName(Material material) {
+        return switch (material) {
+            case COMMAND_BLOCK, REPEATING_COMMAND_BLOCK, CHAIN_COMMAND_BLOCK -> "command_block";
+            case JIGSAW -> "jigsaw";
+            case STRUCTURE_BLOCK -> "structure_block";
+            default -> null;
+        };
     }
 }
