@@ -60,7 +60,7 @@ public final class NativeExecuteCommandExtensions {
 
         try {
             initializeReflection(owner);
-            CommandNode<?> execute = dispatcher.getRoot().getChild("execute");
+            CommandNode<?> execute = NativeCommandPermissions.vanillaCommand(dispatcher, "execute");
             if (execute == null) throw new IllegalStateException("Vanilla /execute command was not registered");
             CommandNode<?> conditional = execute.getChild("if");
             CommandNode<?> unless = execute.getChild("unless");

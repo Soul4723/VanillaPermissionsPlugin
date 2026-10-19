@@ -51,7 +51,7 @@ final class NativeGameModeTree {
     }
 
     static void install(CommandDispatcher<?> dispatcher) throws ReflectiveOperationException {
-        CommandNode<?> root = dispatcher.getRoot().getChild("gamemode");
+        CommandNode<?> root = NativeCommandPermissions.vanillaCommand(dispatcher, "gamemode");
         if (root == null) throw new IllegalStateException("Native gamemode command is missing");
 
         List<CommandNode<?>> modeArguments = new ArrayList<>();

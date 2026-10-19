@@ -1,5 +1,10 @@
 package io.github.soul4723.vanillapermissions.util;
 
+import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.tree.CommandNode;
+import com.mojang.brigadier.tree.LiteralCommandNode;
+import com.mojang.brigadier.tree.RootCommandNode;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.cacheddata.CachedDataManager;
 import net.luckperms.api.cacheddata.CachedPermissionData;
@@ -21,15 +26,19 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Tri-state behaviour of the predicate installed on every native command node. */
+/** Which native nodes get checks, and the tri-state behaviour of the predicate installed on them. */
 class NativeCommandPermissionsTest {
     private static final String PERMISSION = "minecraft.command.gamemode.survival";
 
@@ -138,10 +147,40 @@ class NativeCommandPermissionsTest {
     }
 
     @Test
-    void namespacedAliasesShareTheCommandNode() {
-        assertEquals("gamemode", NativeCommandPermissions.rootPath("minecraft:gamemode"));
-        assertEquals("gamemode", NativeCommandPermissions.rootPath("gamemode"));
-        assertEquals("luckperms:lp", NativeCommandPermissions.rootPath("luckperms:lp"));
+    void onlyVanillaCommandsAreChecked() throws ReflectiveOperationException {
+        CommandDispatcher<Object> dispatcher = new CommandDispatcher<>();
+        LiteralCommandNode<Object> time = dispatcher.register(LiteralArgumentBuilder.literal("time")
+            .then(LiteralArgumentBuilder.literal("set")));
+        LiteralCommandNode<Object> teleport = dispatcher.register(LiteralArgumentBuilder.literal("teleport"));
+        LiteralCommandNode<Object> tp = dispatcher.register(LiteralArgumentBuilder.literal("tp").redirect(teleport));
+        LiteralCommandNode<Object> gamemode = dispatcher.register(LiteralArgumentBuilder.literal("gamemode"));
+        // Paper adds a minecraft: alias for every vanilla command before plugins register theirs.
+        for (CommandNode<Object> node : List.copyOf(dispatcher.getRoot().getChildren())) {
+            CommandNode<Object> target = node.getRedirect() == null ? node : node.getRedirect();
+            dispatcher.register(LiteralArgumentBuilder.literal("minecraft:" + node.getName()).redirect(target));
+        }
+        // A plugin takes over /gamemode and adds its own commands.
+        RootCommandNode<Object> root = dispatcher.getRoot();
+        assertTrue(NativeGameModeTree.removeNode(root, gamemode));
+        LiteralCommandNode<Object> pluginGamemode = dispatcher.register(LiteralArgumentBuilder.literal("gamemode"));
+        LiteralCommandNode<Object> lp = dispatcher.register(LiteralArgumentBuilder.literal("lp"));
+        LiteralCommandNode<Object> namespacedLp = dispatcher.register(LiteralArgumentBuilder.literal("luckperms:lp").redirect(lp));
+
+        Map<CommandNode<?>, String> roots = new IdentityHashMap<>();
+        for (NativeCommandPermissions.VanillaRoot vanilla : NativeCommandPermissions.vanillaRoots(root)) {
+            assertNull(roots.put(vanilla.node(), vanilla.path()), "Node collected twice: " + vanilla.path());
+        }
+
+        assertEquals("time", roots.get(time));
+        assertEquals("time", roots.get(root.getChild("minecraft:time")), "minecraft: alias bypasses the command node");
+        assertEquals("tp", roots.get(tp));
+        assertEquals("tp", roots.get(root.getChild("minecraft:tp")));
+        assertEquals("teleport", roots.get(teleport));
+        assertEquals("gamemode", roots.get(gamemode), "Vanilla command replaced by a plugin lost its checks");
+        assertSame(gamemode, NativeCommandPermissions.vanillaCommand(dispatcher, "gamemode"));
+        for (CommandNode<?> plugin : List.of(pluginGamemode, lp, namespacedLp)) {
+            assertFalse(roots.containsKey(plugin), "Plugin command got vanilla nodes: " + plugin.getName());
+        }
     }
 
     public static final class TestSource {

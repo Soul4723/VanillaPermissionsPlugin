@@ -140,10 +140,12 @@ public final class NativeCommandPermissions {
             throw new IllegalAccessException("Brigadier command field is inaccessible");
         }
 
+        List<VanillaRoot> roots = vanillaRoots(nativeDispatcher.getRoot());
+        if (roots.isEmpty()) throw new IllegalStateException("Paper did not register any minecraft: command aliases");
         List<Mutation> pending = new ArrayList<>();
         Set<CommandNode<?>> visited = Collections.newSetFromMap(new IdentityHashMap<>());
-        for (CommandNode<?> node : nativeDispatcher.getRoot().getChildren()) {
-            collect(node, rootPath(node.getName()), getSender, requirement, command, visited, pending);
+        for (VanillaRoot root : roots) {
+            collect(root.node(), root.path(), getSender, requirement, command, visited, pending);
         }
 
         List<Mutation> applied = new ArrayList<>();
@@ -167,11 +169,38 @@ public final class NativeCommandPermissions {
     }
 
     /**
-     * Paper registers {@code minecraft:<name>} aliases that redirect to each vanilla command. They share the
-     * command's node so a denial of {@code minecraft.command.<name>} cannot be bypassed through the alias.
+     * The vanilla command nodes to check, with their permission paths. Paper's dispatcher also holds Bukkit and
+     * plugin commands, so vanilla commands are found through the {@code minecraft:<name>} alias Paper registers for
+     * each of them. The alias shares the command's node, so it cannot bypass {@code minecraft.command.<name>}, and
+     * its redirect still reaches the vanilla command when a plugin has taken over the plain name.
      */
-    static String rootPath(String name) {
-        return name.startsWith(VANILLA_NAMESPACE) ? name.substring(VANILLA_NAMESPACE.length()) : name;
+    static List<VanillaRoot> vanillaRoots(CommandNode<?> dispatcherRoot) {
+        List<VanillaRoot> roots = new ArrayList<>();
+        // Identity, not equals: Brigadier nodes compare by structure.
+        Set<CommandNode<?>> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (CommandNode<?> alias : dispatcherRoot.getChildren()) {
+            if (!alias.getName().startsWith(VANILLA_NAMESPACE) || alias.getRedirect() == null) continue;
+            String name = alias.getName().substring(VANILLA_NAMESPACE.length());
+            CommandNode<?> target = alias.getRedirect();
+            CommandNode<?> plain = dispatcherRoot.getChild(name);
+            if (seen.add(alias)) roots.add(new VanillaRoot(alias, name));
+            if (seen.add(target)) roots.add(new VanillaRoot(target, target.getName()));
+            if (plain != null && flatten(plain) == target && seen.add(plain)) roots.add(new VanillaRoot(plain, name));
+        }
+        return roots;
+    }
+
+    record VanillaRoot(CommandNode<?> node, String path) {}
+
+    /** The vanilla node behind {@code minecraft:<name>}, even if a plugin command now owns the plain name. */
+    static CommandNode<?> vanillaCommand(CommandDispatcher<?> dispatcher, String name) {
+        CommandNode<?> alias = dispatcher.getRoot().getChild(VANILLA_NAMESPACE + name);
+        return alias != null && alias.getRedirect() != null ? alias.getRedirect() : dispatcher.getRoot().getChild(name);
+    }
+
+    private static CommandNode<?> flatten(CommandNode<?> node) {
+        while (node.getRedirect() != null) node = node.getRedirect();
+        return node;
     }
 
     private static void refreshOnlinePlayers(JavaPlugin owner) {
