@@ -36,7 +36,8 @@ Rules that apply everywhere:
 - **Parent and child nodes are checked independently along the command path.** The player needs the root and every node on the path to be allowed. An unset sub-node follows vanilla, which usually means "open to anyone who can use the command". A few sub-commands keep their own vanilla operator requirement (for example `/random reset`); `/lp verbose` shows them. **Granting a root therefore exposes all of its sub-commands**; set the branches you don't want to `false`.
 - **Wildcards** work when LuckPerms `apply-wildcards` is on (the default). `minecraft.command.time.*` matches every node below `minecraft.command.time`, but not `minecraft.command.time` itself. A wildcard also covers sub-nodes, so `minecraft.command.* false` plus `minecraft.command.time true` still denies `/time query`; add `minecraft.command.time.* true` to allow the sub-commands. Wildcards do not apply to meta keys.
 - **Console and command blocks** are never affected by command or selector nodes.
-- **Bypass nodes are grant-only.** With `false` or unset, vanilla behaviour applies: operators can still join while not whitelisted, and operators marked `bypassesPlayerLimit` in `ops.json` can still join a full server.
+- **Operators have every node that is not explicitly `false`.** With LuckPerms' default `apply-bukkit-default-permissions: true`, a node no plugin registers defaults to "operators", so LuckPerms answers `true` for operators and unset for everyone else. Nodes Paper registers use Paper's default instead: most command roots (`minecraft.command.time`) are `false` for non-operators, a few (`minecraft.command.me`) are `true` for everyone. For command nodes this gives the same result as vanilla. **For bypass nodes it means every operator bypasses the whitelist, the player limit, forced game mode and the movement checks** unless you set the node to `false` for them.
+- **Bypass nodes are grant-only.** For non-operators, `false` and unset both leave vanilla behaviour: not whitelisted means not joining, and a full server is full.
 - **To see every node a command checks,** run `/lp verbose on <player>`, have the player run or tab-complete the command, then `/lp verbose off`.
 
 ## Permission reference
@@ -220,7 +221,7 @@ If a plugin takes over a vanilla name (for example EssentialsX `/gamemode` or `/
   - For limit and weight nodes, the meta value or `unset (no limit)` / `unset (no weight check)`.
   - Any other node shows its LuckPerms value followed by `(not a node this plugin checks)`, which usually means a typo.
 
-  Without a node it shows a summary of a few nodes. It reports the raw LuckPerms value, not the final outcome: an unset root still lets operators through.
+  Without a node it shows a summary of a few nodes. It reports LuckPerms' answer, including the defaults described in [How a node is resolved](#how-a-node-is-resolved): an operator shows `true` for almost every node, and a non-operator shows `false` for command roots that Paper gives to operators.
 - `/vanillapermissions debug` shows the plugin and server version (tested or not), the LuckPerms connection and version, and how many vanilla command nodes carry checks.
 
 ## Limitations
