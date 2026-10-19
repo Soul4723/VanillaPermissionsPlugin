@@ -16,14 +16,15 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.function.Predicate;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
+import java.util.logging.Level;
 
 /** Installs LuckPerms checks on Paper's underlying vanilla Brigadier tree. */
 public final class NativeCommandPermissions {
@@ -33,6 +34,7 @@ public final class NativeCommandPermissions {
     private static final String VANILLA_NAMESPACE = "minecraft:";
     private static final AtomicBoolean SENDER_LOOKUP_WARNING = new AtomicBoolean();
     private static JavaPlugin plugin;
+    private static int checkedNodes;
     private static Field selectorBypass;
     private static Method nativePermission;
 
@@ -45,7 +47,8 @@ public final class NativeCommandPermissions {
             try {
                 install(event.registrar().getDispatcher());
             } catch (ReflectiveOperationException | RuntimeException error) {
-                owner.getLogger().log(Level.SEVERE, "Could not install native command permissions for this Paper build", error);
+                owner.getLogger().log(Level.SEVERE, "Could not add LuckPerms checks to vanilla commands on this server build "
+                    + "(only Paper 1.20.6 is supported); disabling VanillaPermissionsPlugin so no command is left half-checked", error);
                 owner.getServer().getPluginManager().disablePlugin(owner);
             }
         });
@@ -63,6 +66,7 @@ public final class NativeCommandPermissions {
             }
         }
         INSTALLED.clear();
+        checkedNodes = 0;
         for (int i = SELECTOR_INSTALLED.size() - 1; i >= 0; i--) {
             CommandMutation mutation = SELECTOR_INSTALLED.get(i);
             try {
@@ -93,6 +97,11 @@ public final class NativeCommandPermissions {
         }
     }
 
+    /** Number of vanilla command nodes currently carrying a LuckPerms check. */
+    public static synchronized int installedNodeCount() {
+        return checkedNodes;
+    }
+
     public static CommandDispatcher<?> getNativeDispatcher(CommandDispatcher<?> apiDispatcher) throws ReflectiveOperationException {
         Object root = apiDispatcher.getRoot();
         Method getNativeDispatcher = root.getClass().getMethod("getDispatcher");
@@ -111,7 +120,7 @@ public final class NativeCommandPermissions {
         NativeExecuteCommandExtensions.install(plugin, nativeDispatcher);
         NativeGameModeTree.install(nativeDispatcher);
 
-        ClassLoader serverLoader = org.bukkit.Bukkit.getServer().getClass().getClassLoader();
+        ClassLoader serverLoader = Bukkit.getServer().getClass().getClassLoader();
         Class<?> sourceClass = Class.forName("net.minecraft.commands.CommandSourceStack", false, serverLoader);
         Method getSender = sourceClass.getMethod("getBukkitSender");
         selectorBypass = sourceClass.getField("bypassSelectorPermissions");
@@ -149,7 +158,9 @@ public final class NativeCommandPermissions {
             throw error;
         }
         INSTALLED.addAll(applied);
-        plugin.getLogger().info("Applied LuckPerms permissions to " + applied.size() + " native command nodes");
+        // Counted over the live tree so a reload with a fresh dispatcher does not inflate the total.
+        checkedNodes = (int) visited.stream().filter(node -> node.getRequirement() instanceof PermissionPredicate).count();
+        plugin.getLogger().info("Added LuckPerms checks to " + checkedNodes + " vanilla command nodes");
         if (!applied.isEmpty()) refreshOnlinePlayers(plugin);
     }
 
@@ -308,22 +319,7 @@ public final class NativeCommandPermissions {
     }
 
     private static void validateSelectors(CommandContext<?> context) throws CommandSyntaxException {
-        Object rawSource = context.getSource();
-        CommandSender sender;
-        Method getSender;
-        try {
-            getSender = rawSource.getClass().getMethod("getBukkitSender");
-        } catch (NoSuchMethodException error) {
-            return;
-        }
-        Object value;
-        try {
-            value = getSender.invoke(rawSource);
-        } catch (ReflectiveOperationException error) {
-            return;
-        }
-        if (!(value instanceof CommandSender commandSender)) return;
-        sender = commandSender;
+        if (!(commandSender(context.getSource()) instanceof CommandSender sender)) return;
         List<String> path = context.getNodes().stream().map(ParsedCommandNode::getNode)
             .map(CommandNode::getName).toList();
         for (ParsedCommandNode<?> parsed : context.getNodes()) {
@@ -355,7 +351,7 @@ public final class NativeCommandPermissions {
         if (methodName == null) return null;
         for (Method method : argumentType.getClass().getMethods()) {
             if (method.getName().equals(methodName) && method.getParameterCount() == 2
-                    && java.lang.reflect.Modifier.isStatic(method.getModifiers())) return method;
+                    && Modifier.isStatic(method.getModifiers())) return method;
         }
         throw new IllegalStateException("Native selector resolver is missing: " + name + "." + methodName);
     }

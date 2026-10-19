@@ -3,15 +3,23 @@ version: ${project.version}
 main: io.github.soul4723.vanillapermissions.VanillaPermissionsPlugin
 api-version: '1.20'
 author: Soul4723
-description: Paper port of DrexHD's VanillaPermissions with LuckPerms command permissions
-website: https://github.com/Soul4723/VanillaPermissionsPlugin
+description: "${project.description}"
+website: ${project.url}
 
-depend: [CommandAPI, LuckPerms]
+depend: [LuckPerms]
+
+commands:
+  vanillapermissions:
+    description: Inspect how LuckPerms resolves VanillaPermissionsPlugin nodes
+    usage: "/<command> check <player> [node] | /<command> debug"
+    permission: vanillapermissions.use
 
 permissions:
   vanillapermissions.use:
-    description: Use VanillaPermissionsPlugin commands
+    description: Run /vanillapermissions and see its help
     default: op
   vanillapermissions.admin:
-    description: Access VanillaPermissionsPlugin admin features
+    description: Use /vanillapermissions check and debug
     default: op
+    children:
+      vanillapermissions.use: true

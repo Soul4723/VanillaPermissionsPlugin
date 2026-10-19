@@ -14,6 +14,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class VanillaPermissionsPlugin extends JavaPlugin {
 
+    /** The only Paper version whose native command tree this plugin has been verified against. */
+    public static final String TESTED_MINECRAFT_VERSION = "1.20.6";
+
     private LuckPermsHook luckPermsHook;
 
     @Override
@@ -22,19 +25,22 @@ public class VanillaPermissionsPlugin extends JavaPlugin {
         luckPermsHook.initialize(this);
 
         if (!luckPermsHook.isEnabled()) {
-            getLogger().severe("Failed to initialize LuckPerms integration!");
+            getLogger().severe("Disabling VanillaPermissionsPlugin: it cannot work without the LuckPerms API");
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
 
+        String minecraftVersion = getServer().getMinecraftVersion();
+        if (!TESTED_MINECRAFT_VERSION.equals(minecraftVersion)) {
+            getLogger().warning("This server runs Minecraft " + minecraftVersion + ", but VanillaPermissionsPlugin is only tested on Paper "
+                + TESTED_MINECRAFT_VERSION + "; vanilla command checks may fail to install");
+        }
+
         PermissionManager.initialize(luckPermsHook, this);
 
-        VanillaPermissionsPluginCommand.registerCommands(this);
+        VanillaPermissionsPluginCommand.register(this);
         registerListeners();
         NativeCommandPermissions.register(this);
-
-        getLogger().info("VanillaPermissionsPlugin v" + getDescription().getVersion()
-            + " enabled (Paper port inspired by DrexHD's VanillaPermissions)");
     }
 
     private void registerListeners() {
@@ -51,6 +57,5 @@ public class VanillaPermissionsPlugin extends JavaPlugin {
     public void onDisable() {
         if (luckPermsHook != null) luckPermsHook.close();
         NativeCommandPermissions.uninstall();
-        getLogger().info("VanillaPermissionsPlugin disabled");
     }
 }

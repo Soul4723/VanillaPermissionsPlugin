@@ -69,19 +69,19 @@ class SelectorPolicyTest {
     void playerScopeDenialStillAllowsSelf() {
         permissions.nodes.put("minecraft.selector.player." + PERMISSION_PATH, false);
         assertAllowed(List.of(targetPlayer(SOURCE_ID, source)));
-        assertDenied(List.of(targetPlayer(OTHER_ID, other)));
+        assertDenied(List.of(targetPlayer(OTHER_ID, other)), "other players");
     }
 
     @Test
     void entityScopeDenial() {
         permissions.nodes.put("minecraft.selector.entity." + PERMISSION_PATH, false);
-        assertDenied(List.of(SelectorNativePermissions.target(entity(OTHER_ID))));
+        assertDenied(List.of(SelectorNativePermissions.target(entity(OTHER_ID))), "non-player entities");
     }
 
     @Test
     void selfScopeDenial() {
         permissions.nodes.put("minecraft.selector.self." + PERMISSION_PATH, false);
-        assertDenied(List.of(targetPlayer(SOURCE_ID, source)));
+        assertDenied(List.of(targetPlayer(SOURCE_ID, source)), "yourself");
     }
 
     @Test
@@ -94,21 +94,21 @@ class SelectorPolicyTest {
 
     @Test
     void unsupportedTargetsAreAlwaysDenied() {
-        assertDenied(List.of(SelectorNativePermissions.target(new Object())));
+        assertDenied(List.of(SelectorNativePermissions.target(new Object())), "cannot be checked");
     }
 
     @Test
     void limitCountsWholeSelection() {
         permissions.meta.put(SOURCE_ID + ":minecraft.selector.limit." + PERMISSION_PATH, 1);
-        assertDenied(List.of(targetPlayer(SOURCE_ID, source), targetPlayer(OTHER_ID, other)));
-        assertDenied(List.of(SelectorNativePermissions.target("one"), SelectorNativePermissions.target("two")));
+        assertDenied(List.of(targetPlayer(SOURCE_ID, source), targetPlayer(OTHER_ID, other)), "at most 1 target here");
+        assertDenied(List.of(SelectorNativePermissions.target("one"), SelectorNativePermissions.target("two")), "at most 1 target here");
     }
 
     @Test
     void heavierTargetsAreDenied() {
         permissions.meta.put(SOURCE_ID + ":minecraft.selector.weight." + PERMISSION_PATH, 2);
         permissions.meta.put(OTHER_ID + ":minecraft.selector.weight." + PERMISSION_PATH, 3);
-        assertDenied(List.of(targetPlayer(OTHER_ID, other)));
+        assertDenied(List.of(targetPlayer(OTHER_ID, other)), "higher selector weight");
         permissions.meta.put(OTHER_ID + ":minecraft.selector.weight." + PERMISSION_PATH, 2);
         assertAllowed(List.of(targetPlayer(OTHER_ID, other)));
     }
@@ -117,8 +117,9 @@ class SelectorPolicyTest {
         assertDoesNotThrow(validation(targets));
     }
 
-    private void assertDenied(List<SelectorPolicy.Target> targets) {
-        assertThrows(CommandSyntaxException.class, validation(targets), "Expected selector denial");
+    private void assertDenied(List<SelectorPolicy.Target> targets, String reason) {
+        CommandSyntaxException error = assertThrows(CommandSyntaxException.class, validation(targets), "Expected selector denial");
+        assertTrue(error.getMessage().contains(reason), "Denial does not explain itself: " + error.getMessage());
     }
 
     private Executable validation(List<SelectorPolicy.Target> targets) {

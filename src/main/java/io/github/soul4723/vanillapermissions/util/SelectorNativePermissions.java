@@ -1,8 +1,8 @@
 package io.github.soul4723.vanillapermissions.util;
 
+import com.mojang.brigadier.LiteralMessage;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
-import com.mojang.brigadier.LiteralMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
@@ -20,8 +20,10 @@ import java.util.UUID;
 /** Connects resolved vanilla command arguments to the selector permission policy. */
 public final class SelectorNativePermissions {
 
-    private static final SimpleCommandExceptionType DENIED = new SimpleCommandExceptionType(
-            new LiteralMessage("Entity selection is not allowed"));
+    private static final SimpleCommandExceptionType SELECTOR_DENIED = new SimpleCommandExceptionType(
+            new LiteralMessage("You do not have permission to use target selectors"));
+    private static final SimpleCommandExceptionType UNRESOLVED = new SimpleCommandExceptionType(
+            new LiteralMessage("The selected targets could not be checked against selector permissions"));
     private static final SelectorPolicy.Permissions PERMISSIONS = new SelectorPolicy.Permissions() {
         @Override
         public boolean hasPermission(CommandSender sender, String node, boolean fallback) {
@@ -51,7 +53,7 @@ public final class SelectorNativePermissions {
     }
 
     public static void validateSelectorSyntax(CommandSender sender, boolean vanillaAllowed) throws CommandSyntaxException {
-        if (!SelectorPolicy.allowSelectorSyntax(sender, vanillaAllowed, PERMISSIONS)) throw DENIED.create();
+        if (!SelectorPolicy.allowSelectorSyntax(sender, vanillaAllowed, PERMISSIONS)) throw SELECTOR_DENIED.create();
     }
 
     static Collection<SelectorPolicy.Target> targets(Object result) throws CommandSyntaxException {
@@ -63,7 +65,7 @@ public final class SelectorNativePermissions {
             for (Object value : values) targets.add(target(value));
             return targets;
         }
-        if (result == null) throw DENIED.create();
+        if (result == null) throw UNRESOLVED.create();
         return List.of(target(result));
     }
 
