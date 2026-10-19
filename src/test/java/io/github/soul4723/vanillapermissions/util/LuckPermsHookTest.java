@@ -3,6 +3,9 @@ package io.github.soul4723.vanillapermissions.util;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.event.EventBus;
 import net.luckperms.api.event.EventSubscription;
+import net.luckperms.api.event.LuckPermsEvent;
+import net.luckperms.api.event.context.ContextUpdateEvent;
+import net.luckperms.api.event.group.GroupDataRecalculateEvent;
 import net.luckperms.api.event.user.UserDataRecalculateEvent;
 import net.luckperms.api.model.user.User;
 import org.bukkit.Server;
@@ -20,7 +23,10 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
@@ -38,38 +44,42 @@ class LuckPermsHookTest {
     private final LuckPermsHook hook = new LuckPermsHook();
     private boolean pluginEnabled = true;
     private boolean schedulerRejects;
-    private boolean subscriptionClosed;
+    private final Map<Class<?>, Consumer<LuckPermsEvent>> handlers = new HashMap<>();
+    private int closedSubscriptions;
     private int commandUpdates;
-    private Consumer<UserDataRecalculateEvent> handler;
+    private Player player;
     private Plugin plugin;
 
     @BeforeEach
     void initializeHook() {
-        Player player = proxy(Player.class, (p, m, a) -> {
-            assertEquals("updateCommands", m.getName());
-            commandUpdates++;
-            return null;
+        player = proxy(Player.class, (p, m, a) -> switch (m.getName()) {
+            case "updateCommands" -> {
+                commandUpdates++;
+                yield null;
+            }
+            case "getUniqueId" -> playerId;
+            default -> throw new AssertionError("Unexpected Player call: " + m);
         });
         BukkitScheduler scheduler = proxy(BukkitScheduler.class, (p, m, a) -> {
-            assertEquals("runTask", m.getName());
+            assertEquals("runTaskLater", m.getName());
             assertSame(plugin, a[0], "Refresh scheduled for another plugin");
+            assertEquals(LuckPermsHook.REFRESH_DELAY_TICKS, a[2]);
             if (schedulerRejects) throw new IllegalPluginAccessException("Plugin attempted to register task while disabled");
             scheduled.add((Runnable) a[1]);
             return null;
         });
         @SuppressWarnings("unchecked")
-        EventSubscription<UserDataRecalculateEvent> subscription = proxy(EventSubscription.class, (p, m, a) -> {
+        EventSubscription<LuckPermsEvent> subscription = proxy(EventSubscription.class, (p, m, a) -> {
             assertEquals("close", m.getName());
-            subscriptionClosed = true;
+            closedSubscriptions++;
             return null;
         });
         EventBus eventBus = proxy(EventBus.class, (p, m, a) -> {
             assertEquals("subscribe", m.getName());
             assertSame(plugin, a[0], "Subscription must be owned by the plugin");
-            assertSame(UserDataRecalculateEvent.class, a[1]);
             @SuppressWarnings("unchecked")
-            Consumer<UserDataRecalculateEvent> consumer = (Consumer<UserDataRecalculateEvent>) a[2];
-            handler = consumer;
+            Consumer<LuckPermsEvent> consumer = (Consumer<LuckPermsEvent>) a[2];
+            handlers.put((Class<?>) a[1], consumer);
             return subscription;
         });
         LuckPerms luckPerms = proxy(LuckPerms.class, (p, m, a) -> {
@@ -90,6 +100,7 @@ class LuckPermsHookTest {
             case "getServicesManager" -> services;
             case "getScheduler" -> scheduler;
             case "getPlayer" -> playerId.equals(a[0]) ? player : null;
+            case "getOnlinePlayers" -> List.of(player);
             default -> throw new AssertionError("Unexpected Server call: " + m);
         });
         Logger logger = Logger.getAnonymousLogger();
@@ -104,7 +115,9 @@ class LuckPermsHookTest {
 
         hook.initialize(plugin);
         assertTrue(hook.isEnabled(), "LuckPerms hook did not initialize");
-        assertNotNull(handler, "UserDataRecalculateEvent was not subscribed");
+        for (Class<?> event : List.of(UserDataRecalculateEvent.class, GroupDataRecalculateEvent.class, ContextUpdateEvent.class)) {
+            assertNotNull(handlers.get(event), event.getSimpleName() + " was not subscribed");
+        }
     }
 
     @Test
@@ -130,6 +143,25 @@ class LuckPermsHookTest {
     }
 
     @Test
+    void groupChangeRefreshesOnlinePlayers() {
+        handlers.get(GroupDataRecalculateEvent.class).accept(proxy(GroupDataRecalculateEvent.class, (p, m, a) -> {
+            throw new AssertionError("Group details are not needed: " + m);
+        }));
+        runScheduled();
+        assertEquals(1, commandUpdates, "Group permission change did not refresh online players");
+    }
+
+    @Test
+    void contextChangeRefreshesThatPlayer() {
+        handlers.get(ContextUpdateEvent.class).accept(proxy(ContextUpdateEvent.class, (p, m, a) -> {
+            assertEquals("getSubject", m.getName());
+            return a == null ? player : Optional.of(player);
+        }));
+        runScheduled();
+        assertEquals(1, commandUpdates, "Context change did not refresh the player");
+    }
+
+    @Test
     void offlinePlayerIsIgnored() {
         recalculate(UUID.randomUUID());
         runScheduled();
@@ -140,7 +172,7 @@ class LuckPermsHookTest {
     void closeUnsubscribesAndStopsRefreshes() {
         recalculate(playerId);
         hook.close();
-        assertTrue(subscriptionClosed, "LuckPerms subscription was not closed");
+        assertEquals(3, closedSubscriptions, "LuckPerms subscriptions were not closed");
         runScheduled();
         recalculate(playerId);
         assertTrue(scheduled.isEmpty(), "Refresh scheduled after close");
@@ -168,7 +200,7 @@ class LuckPermsHookTest {
             assertEquals("getUniqueId", m.getName());
             return id;
         });
-        handler.accept(proxy(UserDataRecalculateEvent.class, (p, m, a) -> {
+        handlers.get(UserDataRecalculateEvent.class).accept(proxy(UserDataRecalculateEvent.class, (p, m, a) -> {
             assertEquals("getUser", m.getName());
             return user;
         }));
