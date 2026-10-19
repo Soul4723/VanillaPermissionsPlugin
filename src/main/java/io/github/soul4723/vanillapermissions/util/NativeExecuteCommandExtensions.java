@@ -15,7 +15,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -34,6 +36,7 @@ public final class NativeExecuteCommandExtensions {
     private static Field silent;
     private static Field selectorBypass;
     private static Class<?> commandSourceStack;
+    private static Class<?> commandSource;
 
     private NativeExecuteCommandExtensions() {}
 
@@ -89,6 +92,8 @@ public final class NativeExecuteCommandExtensions {
         Class<?> sourceClass = Class.forName("net.minecraft.commands.CommandSourceStack", false, loader);
         commandSourceStack = sourceClass;
         Class<?> commandSourceClass = Class.forName("net.minecraft.commands.CommandSource", false, loader);
+        commandSource = commandSourceClass;
+        commandSourceClass.getMethod("getBukkitSender", sourceClass);
         Class<?> entityClass = Class.forName("net.minecraft.world.entity.Entity", false, loader);
         permissionLevel = sourceClass.getDeclaredField("permissionLevel");
         if (!permissionLevel.trySetAccessible()) throw new IllegalAccessException("CommandSourceStack.permissionLevel is inaccessible");
@@ -164,7 +169,7 @@ public final class NativeExecuteCommandExtensions {
                         .redirect(executeRoot, context -> {
                             Object source = context.getSource();
                             setSilent(source, false);
-                            return invoke(source, "withSource", invoke(source, "getServer"));
+                            return withOutput(source, invoke(source, "getServer"));
                         }));
 
         @SuppressWarnings("unchecked")
@@ -175,7 +180,7 @@ public final class NativeExecuteCommandExtensions {
                             setSilent(context.getSource(), false);
                             List<Object> sources = new ArrayList<>();
                             for (Object target : entities(context)) {
-                                sources.add(invoke(context.getSource(), "withSource", target));
+                                sources.add(withOutput(context.getSource(), target));
                             }
                             return sources;
                         })));
@@ -217,6 +222,32 @@ public final class NativeExecuteCommandExtensions {
     private static void addChild(CommandNode<?> parent, CommandNode<?> child) {
         ((CommandNode) parent).addChild(child);
         if (parent.getChild(child.getName()) == child) INSTALLED.add(new Mutation(parent, child));
+    }
+
+    /**
+     * Sends command output to {@code output} while LuckPerms and selector checks keep using the original sender.
+     * A plain withSource would also make Paper report {@code output} as the Bukkit sender, letting a player run
+     * commands and selectors under the console's or another player's permissions.
+     */
+    static Object withOutput(Object source, Object output) {
+        Object sender = invoke(source, "getBukkitSender");
+        Object redirected = Proxy.newProxyInstance(commandSource.getClassLoader(), new Class<?>[]{commandSource},
+                (proxy, method, arguments) -> {
+                    if (method.getDeclaringClass() == Object.class) {
+                        return switch (method.getName()) {
+                            case "equals" -> proxy == arguments[0];
+                            case "hashCode" -> System.identityHashCode(proxy);
+                            default -> "FeedbackSource[" + output + "]";
+                        };
+                    }
+                    if (method.getName().equals("getBukkitSender")) return sender;
+                    try {
+                        return method.invoke(output, arguments);
+                    } catch (InvocationTargetException error) {
+                        throw error.getCause();
+                    }
+                });
+        return invoke(source, "withSource", redirected);
     }
 
     private static Object withPermissionAtMost(Object source, int requestedLevel) {
@@ -276,7 +307,7 @@ public final class NativeExecuteCommandExtensions {
             throws ReflectiveOperationException, CommandSyntaxException {
         try {
             return resolver.invoke(null, context, name);
-        } catch (java.lang.reflect.InvocationTargetException error) {
+        } catch (InvocationTargetException error) {
             Throwable cause = error.getCause();
             if (cause instanceof CommandSyntaxException syntax) throw syntax;
             if (cause instanceof ReflectiveOperationException reflective) throw reflective;
@@ -334,7 +365,7 @@ public final class NativeExecuteCommandExtensions {
 
     private static void warn(String message, Throwable error) {
         if (plugin != null) {
-            while ((error instanceof java.lang.reflect.InvocationTargetException
+            while ((error instanceof InvocationTargetException
                     || error instanceof IllegalStateException) && error.getCause() != null) error = error.getCause();
             plugin.getLogger().warning(message + ": " + error.getClass().getSimpleName() + ": " + error.getMessage());
         }
