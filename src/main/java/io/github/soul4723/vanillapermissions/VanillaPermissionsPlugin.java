@@ -49,6 +49,7 @@ public class VanillaPermissionsPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (luckPermsHook != null) luckPermsHook.close();
         NativeCommandPermissions.uninstall();
         getLogger().info("VanillaPermissionsPlugin disabled");
     }

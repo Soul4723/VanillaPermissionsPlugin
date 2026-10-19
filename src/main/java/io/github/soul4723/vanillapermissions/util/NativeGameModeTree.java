@@ -26,21 +26,28 @@ final class NativeGameModeTree {
     private NativeGameModeTree() {}
 
     static void uninstall() {
+        RuntimeException failure = null;
         for (int i = INSTALLED.size() - 1; i >= 0; i--) {
             Installation installation = INSTALLED.get(i);
-            boolean unchanged = installation.replacements().stream()
-                .allMatch(node -> installation.root().getChild(node.getName()) == node);
-            if (!unchanged || installation.root().getChild(installation.original().getName()) != null) continue;
+            if (installation.root().getChild(installation.original().getName()) != null) continue;
             for (CommandNode<?> node : installation.replacements()) {
+                if (installation.root().getChild(node.getName()) != node) continue;
                 try {
                     removeNode(installation.root(), node);
-                } catch (ReflectiveOperationException error) {
-                    throw new IllegalStateException("Could not restore native gamemode command tree", error);
+                } catch (ReflectiveOperationException | RuntimeException error) {
+                    if (failure == null) failure = new IllegalStateException("Could not restore native gamemode command tree");
+                    failure.addSuppressed(error);
                 }
             }
-            addChild(installation.root(), installation.original());
+            try {
+                addChild(installation.root(), installation.original());
+            } catch (RuntimeException error) {
+                if (failure == null) failure = new IllegalStateException("Could not restore native gamemode command tree");
+                failure.addSuppressed(error);
+            }
         }
         INSTALLED.clear();
+        if (failure != null) throw failure;
     }
 
     static void install(CommandDispatcher<?> dispatcher) throws ReflectiveOperationException {
@@ -89,11 +96,7 @@ final class NativeGameModeTree {
             @SuppressWarnings("unchecked")
             ArgumentType<Object> playerArgument = (ArgumentType<Object>) players;
             RequiredArgumentBuilder<Object, Object> target = RequiredArgumentBuilder.argument("target", playerArgument);
-            target.executes(context -> {
-                @SuppressWarnings("unchecked")
-                Collection<Object> selected = (Collection<Object>) invoke(getPlayers, null, context, "target");
-                return invokeSetMode(setMode, context, selected, gameType);
-            });
+            target.executes(context -> invokeSetMode(setMode, context, invokePlayers(getPlayers, context, "target"), gameType));
             modeBuilder.then(target);
             replacement.add(modeBuilder.build());
         }
@@ -101,14 +104,29 @@ final class NativeGameModeTree {
         CommandNode<?> original = modeArguments.get(0);
         try {
             removeNode(root, original);
-            for (CommandNode<?> node : replacement) addChild(root, node);
+            for (CommandNode<?> node : replacement) {
+                addChild(root, node);
+                if (root.getChild(node.getName()) != node) {
+                    throw new IllegalStateException("Gamemode mode node already exists: " + node.getName());
+                }
+            }
             if (root.getChild(original.getName()) != null || root.getChild("creative") == null) {
                 throw new IllegalStateException("Could not replace native gamemode argument with literal modes");
             }
             INSTALLED.add(new Installation(root, original, List.copyOf(replacement)));
         } catch (ReflectiveOperationException | RuntimeException error) {
-            for (CommandNode<?> node : replacement) removeNode(root, node);
-            addChild(root, original);
+            for (CommandNode<?> node : replacement) {
+                try {
+                    removeNode(root, node);
+                } catch (ReflectiveOperationException | RuntimeException rollbackError) {
+                    error.addSuppressed(rollbackError);
+                }
+            }
+            try {
+                if (root.getChild(original.getName()) == null) addChild(root, original);
+            } catch (RuntimeException rollbackError) {
+                error.addSuppressed(rollbackError);
+            }
             throw error;
         }
     }
@@ -146,6 +164,22 @@ final class NativeGameModeTree {
         }
     }
 
+    /** Resolves gamemode targets, keeping vanilla's syntax errors (e.g. "No player was found") intact. */
+    @SuppressWarnings("unchecked")
+    static Collection<Object> invokePlayers(Method getPlayers, CommandContext<?> context, String name)
+            throws CommandSyntaxException {
+        try {
+            return (Collection<Object>) getPlayers.invoke(null, context, name);
+        } catch (InvocationTargetException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof CommandSyntaxException syntax) throw syntax;
+            if (cause instanceof RuntimeException runtime) throw runtime;
+            throw new IllegalStateException(cause);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Could not resolve native gamemode targets", e);
+        }
+    }
+
     private static int invokeSetMode(Method setMode, CommandContext<Object> context, Collection<?> targets, Object gameType)
         throws CommandSyntaxException {
         try {
@@ -156,18 +190,6 @@ final class NativeGameModeTree {
             throw new IllegalStateException(cause);
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException("Could not run native gamemode command", e);
-        }
-    }
-
-    private static Object invoke(Method method, Object target, Object... args) {
-        try {
-            return method.invoke(target, args);
-        } catch (InvocationTargetException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof RuntimeException runtime) throw runtime;
-            throw new IllegalStateException(cause);
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException(e);
         }
     }
 }

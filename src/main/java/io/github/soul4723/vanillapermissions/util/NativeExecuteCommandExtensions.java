@@ -10,7 +10,6 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.context.ParsedCommandNode;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.CommandNode;
-import com.mojang.brigadier.tree.ArgumentCommandNode;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -43,7 +42,7 @@ public final class NativeExecuteCommandExtensions {
             Mutation mutation = INSTALLED.get(i);
             try {
                 NativeGameModeTree.removeNode(mutation.parent(), mutation.node());
-            } catch (ReflectiveOperationException error) {
+            } catch (ReflectiveOperationException | RuntimeException error) {
                 if (plugin != null) plugin.getLogger().warning("Could not remove native /execute extension: " + error.getMessage());
             }
         }
