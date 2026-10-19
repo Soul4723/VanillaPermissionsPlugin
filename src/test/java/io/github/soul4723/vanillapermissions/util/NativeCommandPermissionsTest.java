@@ -12,26 +12,38 @@ import net.luckperms.api.query.QueryOptions;
 import net.luckperms.api.util.Tristate;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.UUID;
 import java.util.function.Predicate;
 
-public final class NativeCommandPermissionsCheck {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/** Tri-state behaviour of the predicate installed on every native command node. */
+class NativeCommandPermissionsTest {
     private static final String PERMISSION = "minecraft.command.gamemode.survival";
 
-    private NativeCommandPermissionsCheck() {}
+    private final UUID id = UUID.randomUUID();
+    private Tristate result = Tristate.UNDEFINED;
+    private boolean vanilla = true;
+    private int fallbackCalls;
+    private TestSource source;
+    private Predicate<Object> predicate;
+    private Field hookField;
+    private Object previousHook;
 
-    public static void main(String[] args) throws Exception {
-        if (!NativeCommandPermissionsCheck.class.desiredAssertionStatus()) {
-            throw new IllegalStateException("Run with -ea");
-        }
-
-        UUID id = UUID.randomUUID();
-        Tristate[] result = {Tristate.UNDEFINED};
+    @BeforeEach
+    void installPredicate() throws Exception {
         Player player = proxy(Player.class, (proxy, method, values) -> {
             if (method.getName().equals("getUniqueId")) return id;
             throw new AssertionError("Unexpected Player call: " + method);
@@ -40,26 +52,30 @@ public final class NativeCommandPermissionsCheck {
             throw new AssertionError("Unexpected QueryOptions call: " + method);
         });
         CachedPermissionData permissionData = proxy(CachedPermissionData.class, (proxy, method, values) -> {
-            assert method.getName().equals("queryPermission") && PERMISSION.equals(values[0]) : method;
+            assertEquals("queryPermission", method.getName());
+            assertEquals(PERMISSION, values[0]);
             return new Result<Tristate, Node>() {
-                @Override public Tristate result() { return result[0]; }
+                @Override public Tristate result() { return result; }
                 @Override public Node node() { return null; }
             };
         });
         CachedDataManager cachedData = proxy(CachedDataManager.class, (proxy, method, values) -> {
-            assert method.getName().equals("getPermissionData") && values[0] == options : method;
+            assertEquals("getPermissionData", method.getName());
+            assertSame(options, values[0]);
             return permissionData;
         });
         User user = proxy(User.class, (proxy, method, values) -> {
-            assert method.getName().equals("getCachedData") : method;
+            assertEquals("getCachedData", method.getName());
             return cachedData;
         });
         UserManager users = proxy(UserManager.class, (proxy, method, values) -> {
-            assert method.getName().equals("getUser") && id.equals(values[0]) : method;
+            assertEquals("getUser", method.getName());
+            assertEquals(id, values[0]);
             return user;
         });
         ContextManager context = proxy(ContextManager.class, (proxy, method, values) -> {
-            assert method.getName().equals("getQueryOptions") && values[0] == player : method;
+            assertEquals("getQueryOptions", method.getName());
+            assertSame(player, values[0]);
             return options;
         });
         LuckPerms luckPerms = proxy(LuckPerms.class, (proxy, method, values) -> switch (method.getName()) {
@@ -71,48 +87,54 @@ public final class NativeCommandPermissionsCheck {
             @Override public boolean isEnabled() { return true; }
             @Override public LuckPerms getLuckPerms() { return luckPerms; }
         };
-        Field hookField = PermissionManager.class.getDeclaredField("luckPermsHook");
+        hookField = PermissionManager.class.getDeclaredField("luckPermsHook");
         hookField.setAccessible(true);
-        Object previousHook = hookField.get(null);
+        previousHook = hookField.get(null);
         hookField.set(null, hook);
 
-        TestSource source = new TestSource(player);
-        boolean[] vanilla = {true};
-        int[] fallbackCalls = {0};
+        source = new TestSource(player);
         Predicate<Object> fallback = value -> {
-            assert value == source : "Vanilla fallback received wrong command source";
-            fallbackCalls[0]++;
-            return vanilla[0];
+            assertSame(source, value, "Vanilla fallback received wrong command source");
+            fallbackCalls++;
+            return vanilla;
         };
         Method getBukkitSender = TestSource.class.getMethod("getBukkitSender");
         Class<?> predicateType = Class.forName(NativeCommandPermissions.class.getName() + "$PermissionPredicate");
         Constructor<?> constructor = predicateType.getDeclaredConstructor(String.class, Predicate.class, Method.class);
         constructor.setAccessible(true);
         @SuppressWarnings("unchecked")
-        Predicate<Object> predicate = (Predicate<Object>) constructor.newInstance(
-            "gamemode.survival", fallback, getBukkitSender);
+        Predicate<Object> created = (Predicate<Object>) constructor.newInstance("gamemode.survival", fallback, getBukkitSender);
+        predicate = created;
+    }
 
-        try {
-            result[0] = Tristate.FALSE;
-            assert !predicate.test(source) : "Explicit LuckPerms denial yielded to vanilla permission";
-            assert fallbackCalls[0] == 0 : "Explicit denial invoked vanilla fallback";
+    @AfterEach
+    void restoreHook() throws Exception {
+        hookField.set(null, previousHook);
+    }
 
-            result[0] = Tristate.TRUE;
-            vanilla[0] = false;
-            assert predicate.test(source) : "Explicit LuckPerms grant yielded to vanilla denial";
-            assert fallbackCalls[0] == 0 : "Explicit grant invoked vanilla fallback";
+    @Test
+    void explicitDenialOverridesVanilla() {
+        result = Tristate.FALSE;
+        assertFalse(predicate.test(source), "Explicit LuckPerms denial yielded to vanilla permission");
+        assertEquals(0, fallbackCalls, "Explicit denial invoked vanilla fallback");
+    }
 
-            result[0] = Tristate.UNDEFINED;
-            vanilla[0] = true;
-            assert predicate.test(source) : "Undefined LuckPerms permission lost vanilla grant";
-            vanilla[0] = false;
-            assert !predicate.test(source) : "Undefined LuckPerms permission bypassed vanilla denial";
-            assert fallbackCalls[0] == 2 : "Vanilla fallback count mismatch";
-        } finally {
-            hookField.set(null, previousHook);
-        }
+    @Test
+    void explicitGrantOverridesVanilla() {
+        result = Tristate.TRUE;
+        vanilla = false;
+        assertTrue(predicate.test(source), "Explicit LuckPerms grant yielded to vanilla denial");
+        assertEquals(0, fallbackCalls, "Explicit grant invoked vanilla fallback");
+    }
 
-        System.out.println("Native command permission tri-state and vanilla fallback checks passed");
+    @Test
+    void undefinedUsesVanillaRequirement() {
+        result = Tristate.UNDEFINED;
+        vanilla = true;
+        assertTrue(predicate.test(source), "Undefined LuckPerms permission lost vanilla grant");
+        vanilla = false;
+        assertFalse(predicate.test(source), "Undefined LuckPerms permission bypassed vanilla denial");
+        assertEquals(2, fallbackCalls, "Vanilla fallback count mismatch");
     }
 
     public static final class TestSource {
@@ -123,7 +145,7 @@ public final class NativeCommandPermissionsCheck {
         public CommandSender getBukkitSender() { return sender; }
     }
 
-    private static <T> T proxy(Class<T> type, java.lang.reflect.InvocationHandler handler) {
+    private static <T> T proxy(Class<T> type, InvocationHandler handler) {
         return type.cast(Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[]{type}, handler));
     }
 }
