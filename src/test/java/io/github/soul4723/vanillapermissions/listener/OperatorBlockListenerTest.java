@@ -2,6 +2,7 @@ package io.github.soul4723.vanillapermissions.listener;
 
 import io.github.soul4723.vanillapermissions.util.TestLuckPerms;
 import net.luckperms.api.util.Tristate;
+import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -28,8 +29,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class OperatorBlockListenerTest {
     private final UUID id = UUID.randomUUID();
     private final List<String> messages = new ArrayList<>();
+    private GameMode gameMode = GameMode.CREATIVE;
+    private boolean sneaking;
     private final Player player = proxy(Player.class, (p, m, a) -> switch (m.getName()) {
         case "getUniqueId" -> id;
+        case "getGameMode" -> gameMode;
+        case "isSneaking" -> sneaking;
         case "sendMessage" -> messages.add((String) a[0]);
         default -> throw new AssertionError("Unexpected Player call: " + m);
     });
@@ -65,8 +70,21 @@ class OperatorBlockListenerTest {
     void explicitDenialCancelsWithMessage() {
         luckPerms.nodes.put("minecraft.operator_block.command_block.view", Tristate.FALSE);
         assertTrue(viewCancelled(Material.CHAIN_COMMAND_BLOCK));
-        assertEquals(List.of("§cYou do not have permission to view command blocks."), messages);
+        assertEquals(List.of("§cYou do not have permission to open command blocks."), messages);
         assertFalse(viewCancelled(Material.STRUCTURE_BLOCK), "Denial leaked to another block type");
+    }
+
+    @Test
+    void viewDenialOnlyAppliesWhereVanillaWouldOpenTheScreen() {
+        luckPerms.nodes.put("minecraft.operator_block.command_block.view", Tristate.FALSE);
+        assertFalse(view(Material.COMMAND_BLOCK, null, EquipmentSlot.OFF_HAND).isCancelled(), "Off-hand click denied twice");
+        sneaking = true;
+        assertFalse(view(Material.COMMAND_BLOCK, new ItemStack(Material.STONE), EquipmentSlot.HAND).isCancelled(),
+            "Sneak-placing against a command block was blocked");
+        sneaking = false;
+        gameMode = GameMode.SURVIVAL;
+        assertFalse(viewCancelled(Material.COMMAND_BLOCK), "Survival click was blocked although vanilla opens nothing");
+        assertTrue(messages.isEmpty(), "Denial message sent for a click that opens nothing");
     }
 
     @Test
@@ -84,18 +102,26 @@ class OperatorBlockListenerTest {
         listener.onPlayerInteractWithDebugStick(unset);
         assertFalse(unset.isCancelled(), "Unset node locked operators out of the debug stick");
 
-        luckPerms.nodes.put(DebugStickListener.PERMISSION, Tristate.FALSE);
+        assertEquals("minecraft.debug_stick.use.minecraft.stone", DebugStickListener.permission(Material.STONE));
+        luckPerms.nodes.put("minecraft.debug_stick.use.minecraft.stone", Tristate.FALSE);
         for (EquipmentSlot hand : new EquipmentSlot[]{EquipmentSlot.HAND, EquipmentSlot.OFF_HAND}) {
             PlayerInteractEvent event = new PlayerInteractEvent(player, Action.RIGHT_CLICK_BLOCK, stick, block, BlockFace.UP, hand);
             listener.onPlayerInteractWithDebugStick(event);
             assertTrue(event.isCancelled(), "Debug stick denial bypassed with " + hand);
         }
+        PlayerInteractEvent other = new PlayerInteractEvent(player, Action.LEFT_CLICK_BLOCK, stick, block(Material.OAK_TRAPDOOR), BlockFace.UP);
+        listener.onPlayerInteractWithDebugStick(other);
+        assertFalse(other.isCancelled(), "Debug stick denial leaked to another block");
     }
 
     private boolean viewCancelled(Material material) {
-        PlayerInteractEvent event = new PlayerInteractEvent(player, Action.RIGHT_CLICK_BLOCK, null, block(material), BlockFace.UP);
+        return view(material, null, EquipmentSlot.HAND).isCancelled();
+    }
+
+    private PlayerInteractEvent view(Material material, ItemStack item, EquipmentSlot hand) {
+        PlayerInteractEvent event = new PlayerInteractEvent(player, Action.RIGHT_CLICK_BLOCK, item, block(material), BlockFace.UP, hand);
         new OperatorBlockListener().onPlayerInteract(event);
-        return event.isCancelled();
+        return event;
     }
 
     private static Block block(Material material) {

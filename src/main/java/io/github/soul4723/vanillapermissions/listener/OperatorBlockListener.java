@@ -1,6 +1,7 @@
 package io.github.soul4723.vanillapermissions.listener;
 
 import io.github.soul4723.vanillapermissions.util.PermissionManager;
+import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -10,10 +11,12 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.EquipmentSlot;
 
 /**
- * Lets LuckPerms take operator block access away. Vanilla still requires op and creative mode,
- * so an unset node keeps vanilla behaviour and only an explicit false changes anything.
+ * Lets LuckPerms take operator block access away. Vanilla still requires op and creative mode
+ * (or Paper's own minecraft.commandblock for command blocks), so an unset node keeps vanilla
+ * behaviour and only an explicit false changes anything.
  */
 public class OperatorBlockListener implements Listener {
 
@@ -30,14 +33,20 @@ public class OperatorBlockListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPlayerInteract(PlayerInteractEvent event) {
         if (event.getAction() != Action.RIGHT_CLICK_BLOCK || event.getClickedBlock() == null) return;
-        if (denied(event.getPlayer(), event.getClickedBlock().getType(), "view")) event.setCancelled(true);
+        // Vanilla only opens these screens for creative players clicking with the main hand, and not when they
+        // sneak with an item; leave every other click alone so blocks can still be placed against them.
+        Player player = event.getPlayer();
+        if (event.getHand() != EquipmentSlot.HAND || player.getGameMode() != GameMode.CREATIVE
+                || player.isSneaking() && event.hasItem()) return;
+        if (denied(player, event.getClickedBlock().getType(), "view")) event.setCancelled(true);
     }
 
     private static boolean denied(Player player, Material material, String action) {
         String block = blockName(material);
         if (block == null) return false;
         if (PermissionManager.hasPermissionOrFallback(player, permission(block, action), true)) return false;
-        player.sendMessage("§cYou do not have permission to " + action + " " + block.replace('_', ' ') + "s.");
+        String verb = action.equals("view") ? "open" : action;
+        player.sendMessage("§cYou do not have permission to " + verb + " " + block.replace('_', ' ') + "s.");
         return true;
     }
 
