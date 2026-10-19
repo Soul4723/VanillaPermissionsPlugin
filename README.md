@@ -213,7 +213,14 @@ If a plugin takes over a vanilla name (for example EssentialsX `/gamemode` or `/
 
 ## The `/vanillapermissions` command
 
-- `/vanillapermissions check <player> [node]` shows how LuckPerms resolves a node for an online player in their current context: `true`, `false`, `unset (vanilla behaviour applies)`, or for limit and weight nodes the meta value or `unset (no limit)` / `unset (no weight check)`. Without a node it shows a summary of a few nodes. It reports the raw LuckPerms value, not the final outcome: an unset root still lets operators through.
+- `/vanillapermissions check <player> [node]` shows how LuckPerms resolves a node for an online player in their current context: `true`, `false`, or `unset` followed by what unset means for that node family:
+  - `unset (vanilla behaviour applies)` for `minecraft.command.…`, `minecraft.selector`, `minecraft.operator_block.…` and `minecraft.debug_stick.use.…`.
+  - `unset (allowed)` for `minecraft.selector.<self|player|entity>.…`.
+  - `unset (no bypass)` for `minecraft.bypass.…`.
+  - For limit and weight nodes, the meta value or `unset (no limit)` / `unset (no weight check)`.
+  - Any other node shows its LuckPerms value followed by `(not a node this plugin checks)`, which usually means a typo.
+
+  Without a node it shows a summary of a few nodes. It reports the raw LuckPerms value, not the final outcome: an unset root still lets operators through.
 - `/vanillapermissions debug` shows the plugin and server version (tested or not), the LuckPerms connection and version, and how many vanilla command nodes carry checks.
 
 ## Limitations

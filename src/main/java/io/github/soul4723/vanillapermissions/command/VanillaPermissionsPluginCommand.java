@@ -26,12 +26,15 @@ public final class VanillaPermissionsPluginCommand implements TabExecutor {
         "minecraft.selector",
         "minecraft.command.gamemode",
         "minecraft.command.teleport",
+        "minecraft.command.tp",
         "minecraft.bypass.whitelist",
         "minecraft.bypass.player-limit");
     private static final List<String> NODE_SUGGESTIONS = List.of(
         "minecraft.command.", "minecraft.selector", "minecraft.selector.self.", "minecraft.selector.player.",
         "minecraft.selector.entity.", "minecraft.selector.limit.", "minecraft.selector.weight.",
         "minecraft.bypass.", "minecraft.operator_block.", "minecraft.debug_stick.use.");
+
+    private static final String NOT_CHECKED = " §7(not a node this plugin checks)";
 
     private final VanillaPermissionsPlugin plugin;
 
@@ -71,8 +74,9 @@ public final class VanillaPermissionsPluginCommand implements TabExecutor {
 
     private void sendHelp(CommandSender sender, String label) {
         sender.sendMessage("§6VanillaPermissionsPlugin " + plugin.getPluginMeta().getVersion());
-        sender.sendMessage("§e/" + label + " check <player> [node] §7- show how LuckPerms resolves a node for an online player");
-        sender.sendMessage("§e/" + label + " debug §7- show plugin, server and LuckPerms status");
+        String requires = sender.hasPermission(ADMIN_PERMISSION) ? "" : " §7(requires " + ADMIN_PERMISSION + ")";
+        sender.sendMessage("§e/" + label + " check <player> [node] §7- show how LuckPerms resolves a node for an online player" + requires);
+        sender.sendMessage("§e/" + label + " debug §7- show plugin, server and LuckPerms status" + requires);
     }
 
     private void check(CommandSender sender, String playerName, String node) {
@@ -97,14 +101,28 @@ public final class VanillaPermissionsPluginCommand implements TabExecutor {
         if (limit || node.startsWith("minecraft.selector.weight.")) {
             OptionalInt value = PermissionManager.getIntegerMeta(target.getUniqueId(), target, node);
             if (value.isPresent()) return "§f" + value.getAsInt() + " §7(meta)";
-            return "§7unset (" + (limit ? "no limit" : "no weight check") + ")";
+            return "§7unset (" + unsetMeaning(node) + ")";
         }
-        Tristate value = PermissionManager.queryPermission(target, node);
-        return switch (value) {
-            case TRUE -> "§atrue";
-            case FALSE -> "§cfalse";
-            case UNDEFINED -> "§7unset (vanilla behaviour applies)";
+        String meaning = unsetMeaning(node);
+        return switch (PermissionManager.queryPermission(target, node)) {
+            case TRUE -> "§atrue" + (meaning == null ? NOT_CHECKED : "");
+            case FALSE -> "§cfalse" + (meaning == null ? NOT_CHECKED : "");
+            case UNDEFINED -> meaning == null ? "§7unset" + NOT_CHECKED : "§7unset (" + meaning + ")";
         };
+    }
+
+    /** What an unset value means for the node's family, or {@code null} if this plugin never checks the node. */
+    static String unsetMeaning(String node) {
+        if (node.startsWith("minecraft.selector.limit.")) return "no limit";
+        if (node.startsWith("minecraft.selector.weight.")) return "no weight check";
+        if (node.startsWith("minecraft.selector.self.") || node.startsWith("minecraft.selector.player.")
+                || node.startsWith("minecraft.selector.entity.")) return "allowed";
+        if (node.startsWith("minecraft.bypass.")) return "no bypass";
+        if (node.startsWith("minecraft.command.") || node.equals("minecraft.selector")
+                || node.startsWith("minecraft.operator_block.") || node.startsWith("minecraft.debug_stick.use.")) {
+            return "vanilla behaviour applies";
+        }
+        return null;
     }
 
     private void sendDebug(CommandSender sender) {
