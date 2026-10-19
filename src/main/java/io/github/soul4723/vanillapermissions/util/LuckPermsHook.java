@@ -32,6 +32,11 @@ public class LuckPermsHook implements AutoCloseable {
             plugin.getLogger().severe("LuckPerms is not installed; VanillaPermissionsPlugin requires LuckPerms 5.5 or newer");
             return;
         }
+        // A LuckPerms that failed to start no longer provides its API classes, so do not touch them.
+        if (!luckPermsPlugin.isEnabled()) {
+            plugin.getLogger().severe("LuckPerms is installed but not enabled; fix the LuckPerms errors earlier in the log");
+            return;
+        }
         try {
             RegisteredServiceProvider<LuckPerms> provider =
                 plugin.getServer().getServicesManager().getRegistration(LuckPerms.class);
@@ -77,7 +82,7 @@ public class LuckPermsHook implements AutoCloseable {
     @Override
     public synchronized void close() {
         enabled = false;
-        subscriptions.forEach(EventSubscription::close);
+        for (EventSubscription<?> subscription : subscriptions) subscription.close();
         subscriptions.clear();
         pendingRefreshes.clear();
     }

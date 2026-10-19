@@ -33,6 +33,7 @@ import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -43,6 +44,7 @@ class LuckPermsHookTest {
     private final List<Runnable> scheduled = new ArrayList<>();
     private final LuckPermsHook hook = new LuckPermsHook();
     private boolean pluginEnabled = true;
+    private boolean luckPermsEnabled = true;
     private boolean schedulerRejects;
     private final Map<Class<?>, Consumer<LuckPermsEvent>> handlers = new HashMap<>();
     private int closedSubscriptions;
@@ -86,13 +88,17 @@ class LuckPermsHookTest {
             assertEquals("getEventBus", m.getName());
             return eventBus;
         });
-        Plugin luckPermsPlugin = proxy(Plugin.class, (p, m, a) -> { throw new AssertionError(m); });
+        Plugin luckPermsPlugin = proxy(Plugin.class, (p, m, a) -> {
+            assertEquals("isEnabled", m.getName());
+            return luckPermsEnabled;
+        });
         PluginManager pluginManager = proxy(PluginManager.class, (p, m, a) -> {
             assertEquals("getPlugin", m.getName());
             return "LuckPerms".equals(a[0]) ? luckPermsPlugin : null;
         });
         ServicesManager services = proxy(ServicesManager.class, (p, m, a) -> {
             assertEquals("getRegistration", m.getName());
+            assertTrue(luckPermsEnabled, "Looked up the API of a disabled LuckPerms");
             return new RegisteredServiceProvider<>(LuckPerms.class, luckPerms, ServicePriority.Normal, luckPermsPlugin);
         });
         Server server = proxy(Server.class, (p, m, a) -> switch (m.getName()) {
@@ -118,6 +124,16 @@ class LuckPermsHookTest {
         for (Class<?> event : List.of(UserDataRecalculateEvent.class, GroupDataRecalculateEvent.class, ContextUpdateEvent.class)) {
             assertNotNull(handlers.get(event), event.getSimpleName() + " was not subscribed");
         }
+    }
+
+    @Test
+    void disabledLuckPermsLeavesTheHookOff() {
+        hook.close();
+        LuckPermsHook failed = new LuckPermsHook();
+        luckPermsEnabled = false;
+        failed.initialize(plugin);
+        assertFalse(failed.isEnabled(), "Hook connected to a LuckPerms that failed to start");
+        assertDoesNotThrow(failed::close);
     }
 
     @Test
