@@ -30,6 +30,7 @@ public final class NativeCommandPermissions {
 
     private static final List<Mutation> INSTALLED = new ArrayList<>();
     private static final List<CommandMutation> SELECTOR_INSTALLED = new ArrayList<>();
+    private static final String VANILLA_NAMESPACE = "minecraft:";
     private static final AtomicBoolean SENDER_LOOKUP_WARNING = new AtomicBoolean();
     private static JavaPlugin plugin;
     private static Field selectorBypass;
@@ -131,7 +132,7 @@ public final class NativeCommandPermissions {
         List<Mutation> pending = new ArrayList<>();
         Set<CommandNode<?>> visited = Collections.newSetFromMap(new IdentityHashMap<>());
         for (CommandNode<?> node : nativeDispatcher.getRoot().getChildren()) {
-            collect(node, node.getName(), getSender, requirement, command, visited, pending);
+            collect(node, rootPath(node.getName()), getSender, requirement, command, visited, pending);
         }
 
         List<Mutation> applied = new ArrayList<>();
@@ -150,6 +151,14 @@ public final class NativeCommandPermissions {
         INSTALLED.addAll(applied);
         plugin.getLogger().info("Applied LuckPerms permissions to " + applied.size() + " native command nodes");
         if (!applied.isEmpty()) refreshOnlinePlayers(plugin);
+    }
+
+    /**
+     * Paper registers {@code minecraft:<name>} aliases that redirect to each vanilla command. They share the
+     * command's node so a denial of {@code minecraft.command.<name>} cannot be bypassed through the alias.
+     */
+    static String rootPath(String name) {
+        return name.startsWith(VANILLA_NAMESPACE) ? name.substring(VANILLA_NAMESPACE.length()) : name;
     }
 
     private static void refreshOnlinePlayers(JavaPlugin owner) {

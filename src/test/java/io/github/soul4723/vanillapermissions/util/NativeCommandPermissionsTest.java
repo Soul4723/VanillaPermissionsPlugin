@@ -137,6 +137,13 @@ class NativeCommandPermissionsTest {
         assertEquals(2, fallbackCalls, "Vanilla fallback count mismatch");
     }
 
+    @Test
+    void namespacedAliasesShareTheCommandNode() {
+        assertEquals("gamemode", NativeCommandPermissions.rootPath("minecraft:gamemode"));
+        assertEquals("gamemode", NativeCommandPermissions.rootPath("gamemode"));
+        assertEquals("luckperms:lp", NativeCommandPermissions.rootPath("luckperms:lp"));
+    }
+
     public static final class TestSource {
         private final CommandSender sender;
 
