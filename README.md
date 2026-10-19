@@ -15,7 +15,7 @@ Paper still parses and runs the commands itself. The plugin only adds checks to 
    - `Added LuckPerms checks to <n> vanilla command nodes`
 3. Run `/vanillapermissions debug` to check the plugin and server version, the LuckPerms connection and the number of checked nodes.
 
-If the plugin cannot patch the command tree (another Paper version, or something removed a vanilla command), it logs why, restores the vanilla commands and disables itself on the next tick. The server keeps running. If LuckPerms is missing or failed to start, it logs that and disables itself.
+If the plugin cannot patch the command tree (another Paper version, or something removed a vanilla command), it logs why, restores the vanilla commands and disables itself on the next tick. The server keeps running. If LuckPerms is missing, Paper does not load the plugin and logs the missing dependency. If LuckPerms is installed but failed to start, the plugin logs that and disables itself.
 
 ## How a node is resolved
 
@@ -32,8 +32,8 @@ Every check asks LuckPerms for the node in the player's current context. What th
 
 Rules that apply everywhere:
 
-- **Unset command roots follow vanilla:** operators (level 2 or higher) only. Open to everyone on Paper by default: `/help`, `/me`, `/msg` (`/tell`, `/w`), `/teammsg` (`/tm`) and `/trigger`. Our node names are the same strings as Paper's own Bukkit command permissions, so a value set in LuckPerms is also what Paper sees.
-- **Parent and child nodes are checked independently along the command path.** The player needs the root and every node on the path to be allowed. An unset sub-node follows vanilla, which almost always means "open to anyone who can use the command". **Granting a root therefore exposes all of its sub-commands**; set the branches you don't want to `false`.
+- **Unset command roots follow vanilla:** operators (level 2 or higher) only. Open to everyone on Paper by default: `/minecraft:help` (plain `/help` is Bukkit's), `/me`, `/msg` (`/tell`, `/w`), `/teammsg` (`/tm`) and `/trigger`. Our node names are the same strings as Paper's own Bukkit command permissions, so a value set in LuckPerms is also what Paper sees.
+- **Parent and child nodes are checked independently along the command path.** The player needs the root and every node on the path to be allowed. An unset sub-node follows vanilla, which usually means "open to anyone who can use the command". A few sub-commands keep their own vanilla operator requirement (for example `/random reset`); `/lp verbose` shows them. **Granting a root therefore exposes all of its sub-commands**; set the branches you don't want to `false`.
 - **Wildcards** work when LuckPerms `apply-wildcards` is on (the default). `minecraft.command.time.*` matches every node below `minecraft.command.time`, but not `minecraft.command.time` itself. A wildcard also covers sub-nodes, so `minecraft.command.* false` plus `minecraft.command.time true` still denies `/time query`; add `minecraft.command.time.* true` to allow the sub-commands. Wildcards do not apply to meta keys.
 - **Console and command blocks** are never affected by command or selector nodes.
 - **Bypass nodes are grant-only.** With `false` or unset, vanilla behaviour applies: operators can still join while not whitelisted, and operators marked `bypassesPlayerLimit` in `ops.json` can still join a full server.
@@ -158,9 +158,14 @@ Moderators can apply `/effect` to other players, at most five at a time:
 /lp group moderator permission set minecraft.selector true
 /lp group moderator meta set minecraft.selector.limit.effect.targets.give.targets.effect 5
 /lp group moderator meta set minecraft.selector.limit.effect.targets.give.targets.effect.seconds 5
+/lp group moderator meta set minecraft.selector.limit.effect.targets.give.targets.effect.seconds.amplifier 5
+/lp group moderator meta set minecraft.selector.limit.effect.targets.give.targets.effect.seconds.amplifier.hideParticles 5
+/lp group moderator meta set minecraft.selector.limit.effect.targets.give.targets.effect.infinite 5
+/lp group moderator meta set minecraft.selector.limit.effect.targets.give.targets.effect.infinite.amplifier 5
+/lp group moderator meta set minecraft.selector.limit.effect.targets.give.targets.effect.infinite.amplifier.hideParticles 5
 ```
 
-The limit is set for the forms `/effect give <targets> <effect>` and `… <seconds>`. Meta has no wildcards, so add the longer forms the same way if needed.
+Meta has no wildcards, so every way of typing `/effect give` needs its own line: with or without `<seconds>` or `infinite`, `<amplifier>` and `<hideParticles>`. A form without a line has no limit.
 
 Builders can use the debug stick in creative mode, except on oak trapdoors:
 
@@ -175,7 +180,7 @@ Take operator blocks away from an operator group:
 /lp group admin permission set minecraft.operator_block.* false
 ```
 
-Deny all vanilla commands except `/time`:
+Deny every vanilla command except `/time` (plugin commands are not affected):
 
 ```text
 /lp group member permission set minecraft.command.* false
@@ -183,7 +188,7 @@ Deny all vanilla commands except `/time`:
 /lp group member permission set minecraft.command.time.* true
 ```
 
-`minecraft.command.time.*` does not match the root `minecraft.command.time`, so grant the root separately. The `.*` grant is needed because `minecraft.command.* false` also covers every sub-command of `/time`. See the wildcard rule in [How a node is resolved](#how-a-node-is-resolved).
+`minecraft.command.time.*` does not match the root `minecraft.command.time`, so grant the root separately. The `.*` grant is needed because `minecraft.command.* false` also covers every sub-command of `/time`. See the wildcard rule in [How a node is resolved](#how-a-node-is-resolved). `minecraft.command.* false` also matches Paper's own `minecraft.command.selector`, so set `minecraft.selector true` if the group should keep `@` selectors.
 
 ## What players see when denied
 
@@ -223,7 +228,7 @@ If a plugin takes over a vanilla name (for example EssentialsX `/gamemode` or `/
 - **I granted a command but the player still can't use part of it.** Run `/lp verbose on <player>` and look for a `false` on a child node, or one inherited from a group. `@` selectors also need `minecraft.selector`, and the selector scope nodes must not be `false`.
 - **The player can do more than I wanted.** Granting a root grants every sub-command and target. Set the unwanted branches or selector scopes to `false`.
 - **An operator lost access.** An explicit `false` beats operator status. Look for the node in the operator's own and inherited groups, including wildcards.
-- **The plugin disabled itself at startup.** The log says why. Usually the server is not Paper 1.20.6, or LuckPerms is missing or failed to start.
+- **The plugin disabled itself at startup.** The log says why. Usually the server is not Paper 1.20.6, or LuckPerms failed to start.
 - **`/minecraft:<command>` behaves differently from `/<command>`.** Another plugin owns the plain name. See [Plugin commands from other plugins](#plugin-commands-from-other-plugins).
 
 ## Building from source
