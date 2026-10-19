@@ -31,7 +31,7 @@ public final class VanillaPermissionsPluginCommand implements TabExecutor {
     private static final List<String> NODE_SUGGESTIONS = List.of(
         "minecraft.command.", "minecraft.selector", "minecraft.selector.self.", "minecraft.selector.player.",
         "minecraft.selector.entity.", "minecraft.selector.limit.", "minecraft.selector.weight.",
-        "minecraft.bypass.", "minecraft.operator_block.", "minecraft.debug_stick.use.block");
+        "minecraft.bypass.", "minecraft.operator_block.", "minecraft.debug_stick.use.");
 
     private final VanillaPermissionsPlugin plugin;
 
