@@ -25,7 +25,7 @@ public class VanillaPermissionsPlugin extends JavaPlugin {
         luckPermsHook.initialize(this);
 
         if (!luckPermsHook.isEnabled()) {
-            getLogger().severe("Disabling VanillaPermissionsPlugin: it cannot work without the LuckPerms API");
+            getLogger().severe("Could not connect to LuckPerms (see the messages above), so VanillaPermissionsPlugin is disabling itself");
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
@@ -33,7 +33,7 @@ public class VanillaPermissionsPlugin extends JavaPlugin {
         String minecraftVersion = getServer().getMinecraftVersion();
         if (!TESTED_MINECRAFT_VERSION.equals(minecraftVersion)) {
             getLogger().warning("This server runs Minecraft " + minecraftVersion + ", but VanillaPermissionsPlugin is only tested on Paper "
-                + TESTED_MINECRAFT_VERSION + "; vanilla command checks may fail to install");
+                + TESTED_MINECRAFT_VERSION + ", so adding the vanilla command checks may fail");
         }
 
         PermissionManager.initialize(luckPermsHook, this);

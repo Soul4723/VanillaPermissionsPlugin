@@ -78,7 +78,7 @@ public final class VanillaPermissionsPluginCommand implements TabExecutor {
     private void check(CommandSender sender, String playerName, String node) {
         Player target = Bukkit.getPlayerExact(playerName);
         if (target == null) {
-            sender.sendMessage("§cPlayer " + playerName + " is not online. Nodes are checked in the player's current LuckPerms context.");
+            sender.sendMessage("§cPlayer " + playerName + " is not online. Only online players can be checked, in their current LuckPerms context.");
             return;
         }
         if (node != null) {

@@ -37,7 +37,7 @@ public class PermissionManager {
             ).queryPermission(permission).result();
         } catch (Exception e) {
             if (logger != null) {
-                logger.warning("LuckPerms permission query failed, using vanilla fallback: " + e.getMessage());
+                logger.warning("Could not query LuckPerms, using the vanilla fallback: " + e.getMessage());
             }
             return Tristate.UNDEFINED;
         }
@@ -66,7 +66,7 @@ public class PermissionManager {
             }
             return metaData.getMetaValue(key, Integer::parseInt).map(OptionalInt::of).orElseGet(OptionalInt::empty);
         } catch (Exception e) {
-            if (logger != null) logger.warning("LuckPerms integer metadata query failed: " + e.getMessage());
+            if (logger != null) logger.warning("Could not query LuckPerms integer meta: " + e.getMessage());
             return OptionalInt.empty();
         }
     }
@@ -79,7 +79,7 @@ public class PermissionManager {
             return luckPermsHook.getLuckPerms().getUserManager().getUser(player.getUniqueId());
         } catch (Exception e) {
             if (logger != null) {
-                logger.warning("LuckPerms user lookup failed: " + e.getMessage());
+                logger.warning("Could not look up the LuckPerms user: " + e.getMessage());
             }
             return null;
         }
@@ -94,7 +94,7 @@ public class PermissionManager {
             return sender.hasPermission(permission);
         } catch (Exception e) {
             if (logger != null) {
-                logger.warning("Permission check failed for non-player sender: " + e.getMessage());
+                logger.warning("Could not check a node for a non-player sender: " + e.getMessage());
             }
             return false;
         }
@@ -112,7 +112,7 @@ public class PermissionManager {
                         luckPerms.getContextManager().getQueryOptions(player)).checkPermission(permission).asBoolean();
             } catch (Exception e) {
                 if (logger != null) {
-                    logger.warning("LuckPerms permission check failed, falling back to Bukkit: " + e.getMessage());
+                    logger.warning("Could not check a node with LuckPerms, falling back to Bukkit: " + e.getMessage());
                 }
                 hasPermission = player.hasPermission(permission);
             }

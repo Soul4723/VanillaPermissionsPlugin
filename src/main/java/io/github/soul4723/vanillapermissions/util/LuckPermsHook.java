@@ -29,19 +29,19 @@ public class LuckPermsHook implements AutoCloseable {
     public void initialize(Plugin plugin) {
         Plugin luckPermsPlugin = plugin.getServer().getPluginManager().getPlugin("LuckPerms");
         if (luckPermsPlugin == null) {
-            plugin.getLogger().severe("LuckPerms is not installed; VanillaPermissionsPlugin requires LuckPerms 5.5 or newer");
+            plugin.getLogger().severe("Could not find LuckPerms; install LuckPerms 5.5 or newer");
             return;
         }
         // A LuckPerms that failed to start no longer provides its API classes, so do not touch them.
         if (!luckPermsPlugin.isEnabled()) {
-            plugin.getLogger().severe("LuckPerms is installed but not enabled; fix the LuckPerms errors earlier in the log");
+            plugin.getLogger().severe("Could not use LuckPerms because it is not enabled; fix the LuckPerms errors earlier in the log");
             return;
         }
         try {
             RegisteredServiceProvider<LuckPerms> provider =
                 plugin.getServer().getServicesManager().getRegistration(LuckPerms.class);
             if (provider == null) {
-                plugin.getLogger().severe("LuckPerms is installed but has not registered its API; check the LuckPerms startup log");
+                plugin.getLogger().severe("Could not use LuckPerms because it has not registered its API; check the LuckPerms startup log");
                 return;
             }
             this.luckPerms = provider.getProvider();

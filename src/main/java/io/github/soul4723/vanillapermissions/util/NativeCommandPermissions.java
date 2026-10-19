@@ -47,8 +47,8 @@ public final class NativeCommandPermissions {
             try {
                 install(event.registrar().getDispatcher());
             } catch (ReflectiveOperationException | RuntimeException error) {
-                owner.getLogger().log(Level.SEVERE, "Could not add LuckPerms checks to vanilla commands on this server build "
-                    + "(only Paper 1.20.6 is supported); disabling VanillaPermissionsPlugin so no command is left half-checked", error);
+                owner.getLogger().log(Level.SEVERE, "Could not add LuckPerms checks to vanilla commands (only Paper 1.20.6 is supported). "
+                    + "Vanilla commands were restored and VanillaPermissionsPlugin is disabling itself so no command is left half-checked", error);
                 uninstall();
                 // Disabling inside a lifecycle event removes handlers Paper is iterating, which crashes the server.
                 owner.getServer().getScheduler().runTask(owner, () -> owner.getServer().getPluginManager().disablePlugin(owner));
@@ -209,7 +209,7 @@ public final class NativeCommandPermissions {
                 player.updateCommands();
             } catch (RuntimeException error) {
                 if (owner != null) owner.getLogger().log(Level.WARNING,
-                    "Could not refresh command tree for " + player.getName(), error);
+                    "Could not refresh the command list for " + player.getName(), error);
             }
         }
     }
@@ -264,7 +264,7 @@ public final class NativeCommandPermissions {
                     mutation.field().set(mutation.node(), mutation.original());
                 }
             } catch (IllegalAccessException | RuntimeException ignored) {
-                if (plugin != null) plugin.getLogger().severe("Failed to roll back native command permission installation");
+                if (plugin != null) plugin.getLogger().severe("Could not roll back the native command permission installation");
             }
         }
     }
@@ -407,7 +407,7 @@ public final class NativeCommandPermissions {
                 sender = (CommandSender) getSender.invoke(source);
             } catch (ReflectiveOperationException | RuntimeException error) {
                 if (plugin != null && SENDER_LOOKUP_WARNING.compareAndSet(false, true)) {
-                    plugin.getLogger().warning("Native command sender lookup failed; using vanilla requirements: " + error.getMessage());
+                    plugin.getLogger().warning("Could not look up the command sender, using vanilla requirements: " + error.getMessage());
                 }
                 return fallback.test(source);
             }
