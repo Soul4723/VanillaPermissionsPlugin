@@ -8,8 +8,8 @@ import org.bukkit.event.player.PlayerLoginEvent;
 
 public class WhitelistBypassListener implements Listener {
 
-    private static final String WHITELIST_PERMISSION = "minecraft.bypass.whitelist";
-    private static final String PLAYER_LIMIT_PERMISSION = "minecraft.bypass.player-limit";
+    static final String WHITELIST_PERMISSION = "minecraft.bypass.whitelist";
+    static final String PLAYER_LIMIT_PERMISSION = "minecraft.bypass.player-limit";
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerLogin(PlayerLoginEvent event) {

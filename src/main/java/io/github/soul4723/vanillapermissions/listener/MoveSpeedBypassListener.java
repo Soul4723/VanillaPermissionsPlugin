@@ -7,7 +7,7 @@ import org.bukkit.event.Listener;
 
 public class MoveSpeedBypassListener implements Listener {
 
-    private static final String PLAYER_SPEED_PERMISSION = "minecraft.bypass.move-speed.player";
+    static final String PLAYER_SPEED_PERMISSION = "minecraft.bypass.move-speed.player";
 
     @EventHandler
     public void onPlayerFailMove(PlayerFailMoveEvent event) {

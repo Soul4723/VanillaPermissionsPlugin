@@ -23,3 +23,15 @@ permissions:
     default: op
     children:
       vanillapermissions.use: true
+  minecraft.bypass.whitelist:
+    description: Join while not whitelisted
+    default: false
+  minecraft.bypass.player-limit:
+    description: Join when the server is full
+    default: false
+  minecraft.bypass.force-gamemode:
+    description: Keep your game mode when the server forces the default game mode
+    default: false
+  minecraft.bypass.move-speed.player:
+    description: Skip the "moved too quickly" and "moved wrongly" checks
+    default: false

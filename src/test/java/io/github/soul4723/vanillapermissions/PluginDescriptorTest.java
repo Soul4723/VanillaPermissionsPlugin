@@ -1,6 +1,7 @@
 package io.github.soul4723.vanillapermissions;
 
 import org.bukkit.permissions.Permission;
+import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -9,6 +10,7 @@ import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -40,11 +42,17 @@ class PluginDescriptorTest {
     }
 
     @Test
-    void nativePermissionsAreNotRedefined() {
+    void onlyTheBypassNodesAreDeclaredUnderMinecraft() {
+        Set<String> expected = Set.of("minecraft.bypass.whitelist", "minecraft.bypass.player-limit",
+            "minecraft.bypass.force-gamemode", "minecraft.bypass.move-speed.player");
+        Set<String> declared = new HashSet<>();
         for (Permission permission : descriptor.getPermissions()) {
-            assertFalse(permission.getName().startsWith("minecraft."),
-                "Plugin must not redefine native permission defaults: " + permission.getName());
+            if (!permission.getName().startsWith("minecraft.")) continue;
+            declared.add(permission.getName());
+            assertEquals(PermissionDefault.FALSE, permission.getDefault(), permission.getName() + " must default to false");
+            assertFalse(permission.getDescription().isBlank(), permission.getName() + " has no description");
         }
+        assertEquals(expected, declared, "Plugin must declare only the bypass nodes under minecraft.");
     }
 
     @Test

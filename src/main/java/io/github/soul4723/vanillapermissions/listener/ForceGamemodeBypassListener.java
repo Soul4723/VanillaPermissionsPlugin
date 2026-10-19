@@ -8,7 +8,7 @@ import org.bukkit.event.player.PlayerGameModeChangeEvent;
 
 public class ForceGamemodeBypassListener implements Listener {
 
-    private static final String BYPASS_PERMISSION = "minecraft.bypass.force-gamemode";
+    static final String BYPASS_PERMISSION = "minecraft.bypass.force-gamemode";
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onGameModeChange(PlayerGameModeChangeEvent event) {
