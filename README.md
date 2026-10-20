@@ -1,189 +1,43 @@
 # VanillaPermissionsPlugin
 
-A drop-in Paper port of [DrexHD's VanillaPermissions](https://github.com/DrexHD/VanillaPermissions). It lets your permissions plugin (LuckPerms recommended) decide, node by node, who may use each part of every vanilla command (`/gamemode creative`, `/time set`, `/tp <player>`…), whom they may target with names and `@` selectors, and a few vanilla operator features.
+[![Build](https://github.com/Soul4723/VanillaPermissionsPlugin/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/Soul4723/VanillaPermissionsPlugin/actions/workflows/build.yml)
+[![Compatibility](https://github.com/Soul4723/VanillaPermissionsPlugin/actions/workflows/compat.yml/badge.svg?branch=main)](https://github.com/Soul4723/VanillaPermissionsPlugin/actions/workflows/compat.yml)
+[![Latest release](https://img.shields.io/github/v/release/Soul4723/VanillaPermissionsPlugin)](https://github.com/Soul4723/VanillaPermissionsPlugin/releases/latest)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Paper still parses and runs the commands itself. The plugin only adds checks to the existing vanilla command tree, and only vanilla commands are affected (see [Plugin commands](#plugin-commands-from-other-plugins)).
+Granular permissions for vanilla Minecraft commands on Paper: a drop-in port of [DrexHD's VanillaPermissions](https://github.com/DrexHD/VanillaPermissions).
 
-## Requirements and installation
+Your permissions plugin decides, node by node, who may use each part of a vanilla command (`/gamemode creative`, `/time set`, `/tp <player>`…), whom they may target with names and `@` selectors, and a few vanilla operator features. Paper still parses and runs the commands itself; the plugin only adds checks to the existing command tree.
 
-- Paper **1.20.6** (the only tested version) on Java 21
-- A permissions plugin. [LuckPerms](https://luckperms.net/) 5.5 or newer is recommended and gives everything below. Any other plugin that works through Bukkit's permission API (GroupManager, PermissionsEx, …) also works for nodes, but has no contexts, and the command list only refreshes after a change if that plugin resends it. Selector limits and weights then come from Vault chat meta (`Chat#getPlayerInfoInteger`) if [Vault](https://github.com/MilkBowl/Vault) and a chat meta provider are installed; otherwise they are off. With no permissions plugin, the plugin still runs, but every node follows Bukkit defaults and operator status, and it logs a warning.
+- **Per-command and per-argument nodes:** `minecraft.command.time`, `minecraft.command.time.set`, `minecraft.command.gamemode.creative`…
+- **Selector control:** allow `@` syntax, limit who can be targeted (self, other players, entities), cap the number of targets.
+- **Bypass nodes:** whitelist, player limit, forced game mode and movement checks.
+- **Operator blocks and the debug stick:** take away command blocks, structure blocks, jigsaws and per-block debug stick use.
+- **Works with LuckPerms or any Bukkit permissions plugin.** No CommandAPI, Java agent or startup flag.
 
-1. Put `VanillaPermissionsPlugin-<version>.jar` in `plugins/`. No other plugin (CommandAPI is not needed), Java agent or startup flag is required.
-2. Restart the server. The log should show both of these lines:
+## Compatibility
+
+| | Supported |
+| --- | --- |
+| Server software | [Paper](https://papermc.io/) |
+| Minecraft | **1.20.6 through 26.3**, one jar |
+| Java | 21 for 1.20.6 – 1.21.11, 25 for 26.x |
+| Permissions plugin | Optional. LuckPerms 5.5+ recommended; any Bukkit permissions plugin works |
+| Not supported | Paper 1.20.5 and older, Spigot, Folia |
+
+Every release in the range boots and installs cleanly in CI. Full behaviour checks ran on 1.20.6 and 1.21.11; 26.3 was checked at startup and on the console only. Details: [docs/compatibility.md](docs/compatibility.md).
+
+## Installation
+
+1. Put `VanillaPermissionsPlugin-<version>.jar` from the [latest release](https://github.com/Soul4723/VanillaPermissionsPlugin/releases/latest) in `plugins/`.
+2. Restart the server. The log should show:
    - `Installed vanilla /execute permission, feedback, and oplevel extensions`
    - `Added permission checks to <n> vanilla command nodes`
-3. Run `/vanillapermissions debug` to check the plugin and server version, the permissions plugin and selector meta source in use, and the number of checked nodes.
+3. Run `/vanillapermissions debug` to see the server version, the permissions plugin in use and the number of checked nodes.
 
-If the plugin cannot patch the command tree (another Paper version, or something removed a vanilla command), it logs why, restores the vanilla commands and disables itself on the next tick. The server keeps running. If LuckPerms is installed but failed to start, the plugin logs that and falls back to Bukkit permissions.
+## Quick start
 
-## How a node is resolved
-
-Every check asks the permissions plugin for the node in the player's current context (with LuckPerms; other plugins answer through Bukkit, where a node is unset unless the plugin or a registered default sets it). What the result means depends on the node family:
-
-| Node family | `true` | `false` | unset |
-| --- | --- | --- | --- |
-| Command nodes `minecraft.command.…` | Allowed, even for non-operators. | Denied, even for operators. | Vanilla behaviour (see below). |
-| Selector syntax `minecraft.selector` | `@` selectors allowed. | `@` selectors denied. | Vanilla behaviour: operators only (or Paper's `minecraft.command.selector`). |
-| Selector scope `minecraft.selector.<self\|player\|entity>.…` | Allowed. | Denied. | Allowed. |
-| Selector meta `minecraft.selector.<limit\|weight>.…` | Not used: these are integer meta values (`/lp … meta set`). | Not used. | No limit, or no weight check. |
-| Bypass `minecraft.bypass.…` | Bypass. | No bypass from this plugin. | No bypass from this plugin, even for operators (vanilla behaviour). |
-| Operator blocks `minecraft.operator_block.…` and debug stick `minecraft.debug_stick.use.…` | Vanilla/Paper behaviour (cannot give access). | Access taken away. | Vanilla/Paper behaviour. |
-
-Rules that apply everywhere:
-
-- **Unset command roots follow vanilla:** operators (level 2 or higher) only. Open to everyone on Paper by default: `/minecraft:help` (plain `/help` is Bukkit's), `/me`, `/msg` (`/tell`, `/w`), `/teammsg` (`/tm`) and `/trigger`. Our node names are the same strings as Paper's own Bukkit command permissions, so a value set in LuckPerms is also what Paper sees.
-- **Parent and child nodes are checked independently along the command path.** The player needs the root and every node on the path to be allowed. An unset sub-node follows vanilla, which usually means "open to anyone who can use the command". A few sub-commands keep their own vanilla operator requirement (for example `/random reset`); `/lp verbose` shows them. **Granting a root therefore exposes all of its sub-commands**; set the branches you don't want to `false`.
-- **Wildcards** work when LuckPerms `apply-wildcards` is on (the default). `minecraft.command.time.*` matches every node below `minecraft.command.time`, but not `minecraft.command.time` itself. A wildcard also covers sub-nodes, so `minecraft.command.* false` plus `minecraft.command.time true` still denies `/time query`; add `minecraft.command.time.* true` to allow the sub-commands. Wildcards do not apply to meta keys.
-- **Console and command blocks** are never affected by command or selector nodes.
-- **Operators have every other node that is not explicitly `false`.** With LuckPerms' default `apply-bukkit-default-permissions: true`, a node no plugin registers defaults to "operators", so LuckPerms answers `true` for operators and unset for everyone else. Nodes Paper registers use Paper's default instead: most command roots (`minecraft.command.time`) are `false` for non-operators, a few (`minecraft.command.me`) are `true` for everyone. For command nodes this gives the same result as vanilla. Through other permissions plugins, nodes no plugin registers are unset for operators instead, which also gives the vanilla result.
-- **The four bypass nodes are declared with default `false`,** so unset means vanilla behaviour for everyone, operators included. In vanilla, operators pass the whitelist anyway, only operators with `bypassesPlayerLimit` in `ops.json` pass the player limit, and nobody skips forced game mode or the movement check. Set a node to `true` to grant that bypass.
-- **Bypass nodes are grant-only.** `false` and unset both leave vanilla behaviour: not whitelisted means not joining, and a full server is full.
-- **To see every node a command checks,** run `/lp verbose on <player>`, have the player run or tab-complete the command, then `/lp verbose off`.
-
-## Permission reference
-
-LuckPerms syntax used below: `/lp group <group> permission set <node> true|false` and `/lp group <group> meta set <key> <value>`.
-
-### Commands
-
-| Node | Controls |
-| --- | --- |
-| `minecraft.command.<command>` | The command itself, e.g. `minecraft.command.time`. |
-| `minecraft.command.<command>.<node>…` | Each sub-command and argument, named as in the vanilla command tree, e.g. `minecraft.command.time.set`, `minecraft.command.time.set.time`, `minecraft.command.teleport.targets.destination`. |
-| `minecraft.command.gamemode.<survival\|creative\|adventure\|spectator>` | One game mode. |
-| `minecraft.command.gamemode.<mode>.target` | Setting that mode for another player (`/gamemode <mode> <player>`). |
-
-- **Gamemode:** the plugin replaces vanilla's single mode argument with one literal per mode, which is why the nodes above name the mode.
-- **`minecraft:<command>` aliases** (for example `/minecraft:gamemode`) use the same nodes as the command.
-- **Redirect aliases** (`/tp` → `teleport`, `/tell` and `/w` → `msg`, `/tm` → `teammsg`, `/xp` → `experience`) have their own root node (`minecraft.command.tp`), while their arguments use the target command's nodes (`minecraft.command.teleport.targets…`).
-
-### `/execute` additions
-
-Upstream's `/execute` extensions are added and use normal command nodes:
-
-| Syntax | Node | Effect |
-| --- | --- | --- |
-| `/execute if\|unless permission <entity> <node>` | `minecraft.command.execute.<if\|unless>.permission…` | Condition on whether the entity has a node (unset counts as not having it). |
-| `/execute feedback silent\|console` | `minecraft.command.execute.feedback.<silent\|console>` | Hide command output, or send it to the console. |
-| `/execute feedback entity <targets>` | `minecraft.command.execute.feedback.entity.targets` | Redirect vanilla command output to other entities. Permission and selector checks stay with the original player, and plugin commands still reply to the original player. |
-| `/execute oplevel <0-4>`, `oplevel entity <targets>` | `minecraft.command.execute.oplevel…` | Lower the vanilla operator level the rest of the command runs with, never above the caller's. Command and selector nodes are still checked for the caller. |
-
-### Selectors
-
-| Node | Type | Controls |
-| --- | --- | --- |
-| `minecraft.selector` | node | Typing `@` selectors at all. |
-| `minecraft.selector.self.<path>` | node | Targeting yourself. |
-| `minecraft.selector.player.<path>` | node | Targeting other players. |
-| `minecraft.selector.entity.<path>` | node | Targeting non-player entities. |
-| `minecraft.selector.limit.<path>` | integer meta | Maximum number of targets. |
-| `minecraft.selector.weight.<path>` | integer meta | You cannot target players whose weight for the same path is higher than yours. Only checked if you have a weight, and only for targets whose LuckPerms data is loaded (normally online players). |
-
-- `<path>` is the command name, then the argument name, then every other node of the command as typed, **including optional arguments**:
-  - `/gamemode survival @s` → `gamemode.target.survival.target`
-  - `/effect give @s speed` → `effect.targets.give.targets.effect`
-  - `/effect give @s speed 5` → `effect.targets.give.targets.effect.seconds`
-  - Aliases use the full command's path: `/minecraft:gamemode creative Bob` → `gamemode.target.creative.target`, `/tp Bob` → `teleport.destination.destination`.
-- Because the path changes with optional arguments, use wildcards for scope nodes (`minecraft.selector.player.effect.targets.*`) and set limit and weight meta for each form (meta has no wildcards).
-- Scope, limit and weight apply to every player or entity argument, whether a name or a selector was typed. `minecraft.selector` only controls `@` syntax.
-- Fake scoreboard names are not players or entities; only the limit applies to them.
-- The whole selection is checked before the command runs, so a partly denied `@a` changes nothing.
-
-### Bypass nodes
-
-Grant-only (see the table above). The whitelist and player-limit bypasses are checked while the player logs in. LuckPerms has loaded the player's data by then. Some other permissions plugins attach permissions only once the player has joined (GroupManager does), so for them the plugin also asks Vault's permission service, which reads the stored data; without Vault, those two bypasses need a plugin that attaches permissions at login.
-
-| Node | Lets the player… |
-| --- | --- |
-| `minecraft.bypass.whitelist` | Join while not whitelisted. |
-| `minecraft.bypass.player-limit` | Join when the server is full. |
-| `minecraft.bypass.force-gamemode` | Keep their game mode when the server forces the default game mode. |
-| `minecraft.bypass.move-speed.player` | Skip the "moved too quickly" and "moved wrongly" checks. |
-
-### Operator blocks and debug stick
-
-Deny-only: `false` takes access away; `true` and unset leave vanilla/Paper in charge.
-
-| Node | Controls |
-| --- | --- |
-| `minecraft.operator_block.<command_block\|structure_block\|jigsaw>.<place\|view\|break>` | Placing, opening and breaking the block. `command_block` also covers repeating and chain command blocks. |
-| `minecraft.debug_stick.use.<namespace>.<block>` | Using the debug stick on one block: the block id with `:` replaced by `.`, e.g. `minecraft.debug_stick.use.minecraft.oak_trapdoor`. `minecraft.debug_stick.use.*` covers every block. Applies to left and right clicks and to both hands. |
-
-`view` means opening the block's screen. It is only checked when a creative player right-clicks with the main hand and is not sneaking with an item, because that is the only click vanilla opens the screen for. Upstream also has `edit`; Paper has no API for it, so deny `view` instead.
-
-**How to grant these.** Use Paper's own nodes (registered by Paper, settable in LuckPerms). Our deny nodes still apply to players who got access this way.
-
-| Paper's own node | Default | Allows |
-| --- | --- | --- |
-| `minecraft.commandblock` | operator | A non-operator in creative mode to open, edit and break command blocks. Placing still needs operator. |
-| `minecraft.debugstick` | operator | The debug stick in creative mode. |
-| `minecraft.debugstick.always` | nobody | The debug stick in any game mode. |
-
-Structure blocks and jigsaws are operator and creative only, with no Paper node.
-
-Paper's own `minecraft.admin.command_feedback` (operators have it by default) controls who sees other players' "[Name: did X]" command feedback. It replaces upstream's `minecraft.adminbroadcast.receive`, which this plugin does not add.
-
-### Plugin nodes
-
-| Node | Default | Controls |
-| --- | --- | --- |
-| `vanillapermissions.use` | operator (`op`) | `/vanillapermissions` help. |
-| `vanillapermissions.admin` | operator (`op`) | `/vanillapermissions check` and `debug`. Includes `vanillapermissions.use`. |
-
-## Recipes
-
-Self-only survival mode for a non-operator group:
-
-```text
-/lp group member permission set minecraft.command.gamemode true
-/lp group member permission set minecraft.command.gamemode.creative false
-/lp group member permission set minecraft.command.gamemode.adventure false
-/lp group member permission set minecraft.command.gamemode.spectator false
-/lp group member permission set minecraft.selector true
-/lp group member permission set minecraft.selector.player.gamemode.target.survival.target false
-```
-
-`/gamemode survival` and `/gamemode survival @s` work; `/gamemode survival Steve` and `@a` are refused.
-
-`/tp` to coordinates only, not to or of other players:
-
-```text
-/lp group member permission set minecraft.command.tp true
-/lp group member permission set minecraft.command.teleport.destination false
-/lp group member permission set minecraft.command.teleport.targets false
-```
-
-Moderators can apply `/effect` to other players, at most five at a time:
-
-```text
-/lp group moderator permission set minecraft.command.effect true
-/lp group moderator permission set minecraft.selector true
-/lp group moderator meta set minecraft.selector.limit.effect.targets.give.targets.effect 5
-/lp group moderator meta set minecraft.selector.limit.effect.targets.give.targets.effect.seconds 5
-/lp group moderator meta set minecraft.selector.limit.effect.targets.give.targets.effect.seconds.amplifier 5
-/lp group moderator meta set minecraft.selector.limit.effect.targets.give.targets.effect.seconds.amplifier.hideParticles 5
-/lp group moderator meta set minecraft.selector.limit.effect.targets.give.targets.effect.infinite 5
-/lp group moderator meta set minecraft.selector.limit.effect.targets.give.targets.effect.infinite.amplifier 5
-/lp group moderator meta set minecraft.selector.limit.effect.targets.give.targets.effect.infinite.amplifier.hideParticles 5
-```
-
-Meta has no wildcards, so every way of typing `/effect give` needs its own line: with or without `<seconds>` or `infinite`, `<amplifier>` and `<hideParticles>`. A form without a line has no limit.
-
-Builders can use the debug stick in creative mode, except on oak trapdoors:
-
-```text
-/lp group builder permission set minecraft.debugstick true
-/lp group builder permission set minecraft.debug_stick.use.minecraft.oak_trapdoor false
-```
-
-Take operator blocks away from an operator group:
-
-```text
-/lp group admin permission set minecraft.operator_block.* false
-```
-
-Deny every vanilla command except `/time` (plugin commands are not affected):
+Let a `member` group use `/time`, and nothing else from vanilla (plugin commands are not affected):
 
 ```text
 /lp group member permission set minecraft.command.* false
@@ -191,55 +45,21 @@ Deny every vanilla command except `/time` (plugin commands are not affected):
 /lp group member permission set minecraft.command.time.* true
 ```
 
-`minecraft.command.time.*` does not match the root `minecraft.command.time`, so grant the root separately. The `.*` grant is needed because `minecraft.command.* false` also covers every sub-command of `/time`. See the wildcard rule in [How a node is resolved](#how-a-node-is-resolved). `minecraft.command.* false` also matches Paper's own `minecraft.command.selector`, so set `minecraft.selector true` if the group should keep `@` selectors.
+Check the result with `/vanillapermissions check <player> minecraft.command.time.set`. More copy-paste setups are in [Recipes](docs/recipes.md).
 
-## What players see when denied
+## Documentation
 
-- **Command nodes:** denied commands and branches disappear from the client's command list and tab completion. Typing one gives vanilla's "Unknown or incomplete command". With LuckPerms, the plugin re-sends the command list about half a second after user data, group data or contexts change. This overlaps with LuckPerms' own `update-client-command-list` option (default true); it works either way. With other permissions plugins, the list is refreshed when the player rejoins, when their operator status changes, or when the permissions plugin resends it (GroupManager does).
-- **Selector checks:** the command fails with a red message, one of:
-  - `You do not have permission to use target selectors`
-  - `You can select at most N targets here`
-  - `You do not have permission to target non-player entities here`
-  - `You do not have permission to target other players here`
-  - `You do not have permission to target yourself here`
-  - `You do not have permission to target players with a higher selector weight than yours`
-  - `This target cannot be checked against selector permissions, so it is not allowed`
-  - `The selected targets could not be checked against selector permissions`
-- **Operator blocks and debug stick:** the action is cancelled with a red chat message, for example `You do not have permission to open command blocks.` or `You do not have permission to use the debug stick on this block.`
+| | |
+| --- | --- |
+| [Permissions](docs/permissions.md) | How a node resolves, every node, wildcards, operator defaults |
+| [Recipes](docs/recipes.md) | Copy-paste setups |
+| [Permission plugins](docs/providers.md) | LuckPerms, other plugins, Vault, running without one |
+| [Compatibility](docs/compatibility.md) | Supported versions, how they were verified, what is not supported |
+| [Commands](docs/commands.md) | `/vanillapermissions` and the plugin's own nodes |
+| [Troubleshooting](docs/troubleshooting.md) | FAQ and limitations |
+| [Roadmap](docs/roadmap.md) | Other versions and platforms |
 
-## Plugin commands from other plugins
-
-Only vanilla commands get `minecraft.command.*` checks. Bukkit and plugin commands (`/lp`, Bukkit's `/help`, `/version`, EssentialsX…) keep their own permissions, even under `minecraft.command.*`.
-
-If a plugin takes over a vanilla name (for example EssentialsX `/gamemode` or `/time`), the plugin's version uses the plugin's permissions. The vanilla version stays reachable as `/minecraft:gamemode` with the normal `minecraft.command.gamemode…` nodes.
-
-## The `/vanillapermissions` command
-
-- `/vanillapermissions check <player> [node]` shows how a node resolves for an online player in their current context: `true`, `false`, or `unset` followed by what unset means for that node family:
-  - `unset (vanilla behaviour applies)` for `minecraft.command.…`, `minecraft.selector`, `minecraft.operator_block.…` and `minecraft.debug_stick.use.…`.
-  - `unset (allowed)` for `minecraft.selector.<self|player|entity>.…`.
-  - `unset (no bypass)` for `minecraft.bypass.…`.
-  - For limit and weight nodes, the meta value or `unset (no limit)` / `unset (no weight check)`.
-  - Any other node shows its value followed by `(not a node this plugin checks)`, which usually means a typo.
-
-  Without a node it shows a summary of a few nodes. It reports the permissions plugin's answer, including the defaults described in [How a node is resolved](#how-a-node-is-resolved): an operator shows `true` for almost every node (not the bypass nodes, which are `false` unless set), and a non-operator shows `false` for command roots that Paper gives to operators.
-- `/vanillapermissions debug` shows the plugin and server version (tested or not), where node values and selector limits and weights come from (LuckPerms and its version, a Bukkit permissions plugin, Vault chat meta, or nothing), and how many vanilla command nodes carry checks.
-
-## Limitations
-
-- Only Paper 1.20.6 is tested. On another version the plugin logs a warning, and disables itself if the command tree cannot be patched.
-- Operator block and debug stick nodes can only take access away.
-- Upstream nodes this plugin does not add, because Paper has no API for them: `minecraft.bypass.spawn-protection`, `minecraft.bypass.chat-speed`, `minecraft.bypass.move-speed.vehicle.<entity>`, `minecraft.debug_chart`, `minecraft.<query|load>.<entity|block>`, `minecraft.adminbroadcast.receive` (use Paper's `minecraft.admin.command_feedback`) and the operator block `edit` action.
-- Selector weight is only compared for targets whose LuckPerms data is loaded (normally online players).
-- With `/execute feedback console` the console may show a result twice (the direct output plus the admin log line).
-
-## Troubleshooting
-
-- **I granted a command but the player still can't use part of it.** Run `/lp verbose on <player>` and look for a `false` on a child node, or one inherited from a group. `@` selectors also need `minecraft.selector`, and the selector scope nodes must not be `false`.
-- **The player can do more than I wanted.** Granting a root grants every sub-command and target. Set the unwanted branches or selector scopes to `false`.
-- **An operator lost access.** An explicit `false` beats operator status. Look for the node in the operator's own and inherited groups, including wildcards.
-- **The plugin disabled itself at startup.** The log says why. Usually the server is not Paper 1.20.6.
-- **`/minecraft:<command>` behaves differently from `/<command>`.** Another plugin owns the plain name. See [Plugin commands from other plugins](#plugin-commands-from-other-plugins).
+The full index is [docs/README.md](docs/README.md).
 
 ## Building from source
 
@@ -247,7 +67,11 @@ If a plugin takes over a vanilla name (for example EssentialsX `/gamemode` or `/
 mvn verify
 ```
 
-Requires JDK 21 and Maven. The plugin jar is written to `target/`; the unit tests run as part of the build.
+Needs JDK 21 and Maven. The jar is written to `target/`. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Credits
+
+The permission model, node names and `/execute` extensions come from [DrexHD/VanillaPermissions](https://github.com/DrexHD/VanillaPermissions), a Fabric/Quilt mod. This plugin is an independent Paper implementation of the same idea. Node differences from upstream are listed in [docs/troubleshooting.md](docs/troubleshooting.md#limitations).
 
 ## License
 
