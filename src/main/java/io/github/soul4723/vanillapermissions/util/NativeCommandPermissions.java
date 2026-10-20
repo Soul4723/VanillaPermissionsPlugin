@@ -39,6 +39,11 @@ public final class NativeCommandPermissions {
     private static Field selectorBypass;
     private static NativePermissionLevels permissionLevels;
 
+    /** Log text that scripts/compat-smoke.sh greps for; a test keeps the two in step. */
+    public static final String ADDED_PREFIX = "Added permission checks to ";
+    public static final String ADDED_SUFFIX = " vanilla command nodes";
+    public static final String INSTALL_FAILED = "Could not add permission checks";
+
     private NativeCommandPermissions() {}
 
     public static void register(JavaPlugin owner) {
@@ -48,7 +53,7 @@ public final class NativeCommandPermissions {
             try {
                 install(event.registrar().getDispatcher());
             } catch (ReflectiveOperationException | RuntimeException error) {
-                owner.getLogger().log(Level.SEVERE, "Could not add permission checks to vanilla commands on Minecraft "
+                owner.getLogger().log(Level.SEVERE, INSTALL_FAILED + " to vanilla commands on Minecraft "
                     + Bukkit.getMinecraftVersion() + " (tested: Paper " + SupportedVersions.range() + "). "
                     + "Vanilla commands were restored and VanillaPermissionsPlugin is disabling itself so no command is left half-checked. "
                     + "Run it on a tested Paper version or remove it.", error);
@@ -167,7 +172,7 @@ public final class NativeCommandPermissions {
         INSTALLED.addAll(applied);
         // Counted over the live tree so a reload with a fresh dispatcher does not inflate the total.
         checkedNodes = (int) visited.stream().filter(node -> node.getRequirement() instanceof PermissionPredicate).count();
-        plugin.getLogger().info("Added permission checks to " + checkedNodes + " vanilla command nodes");
+        plugin.getLogger().info(ADDED_PREFIX + checkedNodes + ADDED_SUFFIX);
         if (!applied.isEmpty()) refreshOnlinePlayers(plugin);
     }
 

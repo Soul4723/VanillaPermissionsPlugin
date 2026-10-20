@@ -106,14 +106,14 @@ SERVER_PID=""
 exec 3>&-
 [[ -f $LOG ]] || LOG=$WORK_DIR/console.out
 
-NODES=$(sed -n 's/.*Added LuckPerms checks to \([0-9]*\) vanilla command nodes.*/\1/p' "$LOG" | head -1)
+NODES=$(sed -n 's/.*Added permission checks to \([0-9]*\) vanilla command nodes.*/\1/p' "$LOG" | head -1)
 NODES=${NODES:-0}
 notes=()
 [[ $booted == 1 ]] || notes+=("no-Done-line")
 (( NODES > 0 )) || notes+=("no-success-line")
 (( NODES == 0 || NODES >= MIN_NODES )) || notes+=("too-few-nodes")
 # Plugin failures: its WARN/ERROR lines (except the known version warning), explicit failure text, stack traces, self-disable.
-FAILS=$(grep -E '(WARN|ERROR).*VanillaPermissionsPlugin|Could not add LuckPerms checks|io\.github\.soul4723|Error occurred while enabling VanillaPermissionsPlugin' "$LOG" | grep -v 'has not been tested on' || true)
+FAILS=$(grep -E '(WARN|ERROR).*VanillaPermissionsPlugin|Could not add permission checks|io\.github\.soul4723|Error occurred while enabling VanillaPermissionsPlugin' "$LOG" | grep -v 'has not been tested on' || true)
 # Disabling is normal on shutdown, so only count it if it happens before the server finished booting.
 EARLY=$(awk '/Done \(/ {exit} /Disabling VanillaPermissionsPlugin/' "$LOG")
 FAILS+=$EARLY
