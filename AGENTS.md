@@ -11,3 +11,12 @@
   toolchain. Keep your own verification to light spot-checks plus the final build.
 - Prefer Claude workers (Opus 5.5, Sonnet 5.5). On Codex use only Luna or paid DeepSeek;
   the owner is low on Codex quota (2026-10-19). Re-check if they say it has recovered.
+
+## Referencing other projects
+
+- Every design, CI, release, Dependabot or repo-hygiene task must study established
+  projects first and cite what it adopted (file path or URL). Baseline set: DrexHD's mods,
+  gnembon/fabric-carpet, lucko/spark, lucko/LuckPerms, GeyserMC/Geyser, ViaVersion,
+  walterhiggins/ScriptCraft; add others that fit. Three repos with "nothing to borrow" is not
+  research; the owner rejected that (2026-10-20).
+- Verify a worker's "project X doesn't do Y" claims before relaying them.
