@@ -1,0 +1,75 @@
+name: Bug report
+description: A command, selector or bypass node does not behave as documented
+labels: [bug]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please check the [README](https://github.com/Soul4723/VanillaPermissionsPlugin#readme) first: it lists what an unset node means and what operators get.
+        Only Paper 1.20.6 is tested. Other versions are welcome, but say which one you use.
+
+  - type: input
+    attributes:
+      label: Plugin version
+      description: Run `/version VanillaPermissionsPlugin`, or read the jar name.
+      placeholder: "1.0.0"
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: Server software and version
+      description: Run `/version` in the console.
+      placeholder: "Paper 1.20.6-151-main@abcdef0"
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: LuckPerms version
+      description: Run `/lp info`.
+      placeholder: "5.4.150"
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Other permission or command plugins
+      description: Anything else that registers permissions or commands, or edits the command tree (Essentials, CommandAPI, WorldEdit, ...).
+    validations:
+      required: false
+
+  - type: textarea
+    attributes:
+      label: Bug description
+      description: What happened, and what did you expect instead?
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Steps to reproduce
+      description: Include the exact command, who ran it (operator or not), and the permissions that player has.
+      placeholder: |
+        1. `/lp user Steve permission set minecraft.command.gamemode.creative true`
+        2. Log in as Steve and run `/gamemode creative`
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: "`/vanillapermissions check` output"
+      description: Run `/vanillapermissions check <player> <node>` for the affected player and node, and paste the result.
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    attributes:
+      label: Logs
+      description: Startup log up to the plugin's "enabled" line, and any error. For long logs, paste to https://mclo.gs and link it.
+      render: text
+    validations:
+      required: false
