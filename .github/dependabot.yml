@@ -1,0 +1,21 @@
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      maven-minor-patch:
+        update-types: [minor, patch]
+    ignore:
+      # The Paper API version is the supported-version floor and is chosen deliberately.
+      - dependency-name: io.papermc.paper:paper-api
+        update-types: [version-update:semver-major]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions-minor-patch:
+        update-types: [minor, patch]
