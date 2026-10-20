@@ -4,7 +4,7 @@ Thanks for helping out. By contributing you agree that your changes are licensed
 
 ## Reporting problems and ideas
 
-Use the [issue templates](https://github.com/Soul4723/VanillaPermissionsPlugin/issues/new/choose). A bug report needs the plugin, server software and permissions plugin versions and the output of `/vanillapermissions check`. For anything security-related see [SECURITY.md](SECURITY.md) instead.
+Use the [issue templates](https://github.com/Soul4723/VanillaPermissionsPlugin/issues/new/choose). A bug report needs the plugin, server software and permissions plugin versions and the output of `/vanillapermissions debug` (and of `/vanillapermissions check` for the node involved). For anything security-related see [SECURITY.md](SECURITY.md) instead.
 
 For a larger change, open an issue first so the approach can be agreed before you write code.
 
@@ -16,7 +16,7 @@ You need JDK 21 and Maven.
 mvn verify
 ```
 
-This compiles, runs the tests and writes the jar to `target/VanillaPermissionsPlugin-<version>.jar`. Copy it to a Paper server's `plugins` folder together with a permissions plugin (LuckPerms is the usual choice) to try it. Say which Paper version you used when you open a pull request; the supported range is in [docs/compatibility.md](docs/compatibility.md). The full documentation index is [docs/README.md](docs/README.md).
+The first run needs network access to download the dependencies. It compiles, runs the tests and writes the jar to `target/VanillaPermissionsPlugin-<version>.jar`. Copy it to a Paper server's `plugins` folder together with a permissions plugin (LuckPerms is the usual choice) to try it. Say which Paper version you used when you open a pull request; the supported range is in [docs/compatibility.md](docs/compatibility.md). The full documentation index is [docs/README.md](docs/README.md).
 
 ## Pull requests
 

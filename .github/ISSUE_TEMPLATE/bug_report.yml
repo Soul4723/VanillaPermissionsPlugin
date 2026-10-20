@@ -69,6 +69,14 @@ body:
 
   - type: textarea
     attributes:
+      label: "`/vanillapermissions debug` output"
+      description: Run `/vanillapermissions debug` and paste the result. It shows the plugin and server version, the permissions plugin in use and the number of checked nodes.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
       label: "`/vanillapermissions check` output"
       description: Run `/vanillapermissions check <player> <node>` for the affected player and node, and paste the result.
       render: text
