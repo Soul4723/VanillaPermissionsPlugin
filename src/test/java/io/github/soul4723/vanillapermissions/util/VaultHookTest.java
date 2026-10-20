@@ -151,6 +151,12 @@ class VaultHookTest {
     }
 
     @Test
+    void groupManagerStyleMinusOneForAMissingKeyIsUnset() {
+        values.put(KEY, -1);
+        assertEquals(OptionalInt.empty(), connect().get(id, player(id), KEY));
+    }
+
+    @Test
     void absentValueIsEmpty() {
         assertEquals(OptionalInt.empty(), connect().get(id, player(id), KEY), "Vault default leaked as a value");
     }

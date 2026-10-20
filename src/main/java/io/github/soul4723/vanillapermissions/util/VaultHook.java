@@ -19,8 +19,10 @@ public final class VaultHook implements BukkitPermissionProvider.IntegerMeta {
 
     /** Vault's own permission service, which only wraps Bukkit's API and so names no permissions plugin. */
     private static final String SUPERPERMS = "SuperPerms";
-    /** Vault's integer getter has no unset state, so ask with a default that no limit or weight uses. */
+    /** Vault's integer getter has no unset state, so ask with a default that no limit or weight uses (a text value of -1 is still read as -1). */
     private static final int UNSET = Integer.MIN_VALUE;
+    /** GroupManager's integer getter ignores the default and answers -1 for a missing key, which no limit or weight uses. */
+    private static final int MISSING_KEY = -1;
 
     private final Server server;
     private final Chat chat;
@@ -74,7 +76,7 @@ public final class VaultHook implements BukkitPermissionProvider.IntegerMeta {
                 }
             }
             int value = chat.getPlayerInfoInteger(player, key, UNSET);
-            return value == UNSET ? OptionalInt.empty() : OptionalInt.of(value);
+            return value == UNSET || value == MISSING_KEY ? OptionalInt.empty() : OptionalInt.of(value);
         } catch (RuntimeException e) {
             if (logger != null) logger.warning("Could not query Vault integer meta: " + e.getMessage());
             return OptionalInt.empty();
