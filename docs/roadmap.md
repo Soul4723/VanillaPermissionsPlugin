@@ -19,6 +19,6 @@ Status: **planned** (intended, approach known), **research** (feasibility unknow
 
 Supporting a second platform would move the build to a Gradle core plus one module per platform, as spark and Geyser do. That is adopted when the second platform starts, not before. See [Multi-platform layout](development/releasing.md#multi-platform-layout-later).
 
-## Known gap
+## Pending verification
 
 Player-level checks on Paper 26.3 are pending a test client; see [Compatibility](compatibility.md#how-each-level-was-verified).

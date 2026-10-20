@@ -1,6 +1,6 @@
 # Compatibility
 
-One jar, `VanillaPermissionsPlugin-<version>.jar`, covers Paper **1.20.6 through 26.3**.
+One jar, `VanillaPermissionsPlugin-<version>.jar`, covers Paper **1.20.6 through 26.3**: every release in that range except three that Paper never published. Paper's download API (`fill.papermc.io`) has no builds for 1.21.2, 26.1 or 26.1.0, so those versions cannot be run on Paper at all (1.21.1 is followed by 1.21.3, and the 26.1 line starts at 26.1.1).
 
 ## Supported versions
 
@@ -12,25 +12,18 @@ One jar, `VanillaPermissionsPlugin-<version>.jar`, covers Paper **1.20.6 through
 | 1.21.5, 1.21.9 | 21 | Boot and install in CI. Paper only published experimental builds. |
 | 26.1.1 | 25 | Boot and install in CI. Paper only published an experimental build. |
 | 26.1.2, 26.2 | 25 | Boot and install in CI |
-| 26.3 | 25 | Boot and install in CI; startup and console checks only, because no test client exists yet |
+| 26.3 | 25 | Boot and install in CI; startup and console checks only (see below) |
 
 ## How each level was verified
 
 - **Boot and install:** the [Compatibility workflow](../.github/workflows/compat.yml) downloads a pinned Paper build for each version, starts it with the plugin and LuckPerms 5.5, and checks that the plugin installs its permission checks (`scripts/compat-smoke.sh`). It runs on every push and pull request.
 - **Full live behaviour checks:** commands, selectors, bypasses, operator blocks and the debug stick were exercised on live servers on 1.20.6 and 1.21.11.
 - **Startup and console only (26.3):** the plugin was checked at startup and on the console. Player-level checks are pending a test client for 26.3.
-- **Experimental builds:** Paper published only ALPHA builds for 1.21.5, 1.21.9 and 26.1.1. They are tested, but Paper itself marks them experimental.
+- **Experimental builds:** Paper published only ALPHA builds for 1.21.5, 1.21.9 and 26.1.1. They are boot-tested only, and Paper itself marks them experimental.
 
 The plugin logs a warning once at startup on a Minecraft version outside the tested list. Support is decided by feature detection when the plugin installs, so an untested version may work; if the command tree cannot be patched, the plugin logs why, restores the vanilla commands and disables itself.
 
-## Java
-
-| Minecraft | Java |
-| --- | --- |
-| 1.20.6 – 1.21.11 | 21 |
-| 26.x | 25 |
-
-The jar targets Java 21 bytecode; the Java version is whatever your Paper version requires.
+The jar targets Java 21 bytecode; the Java version is whatever your Paper version requires (the Java column above).
 
 ## Other server software
 
@@ -42,8 +35,8 @@ The jar targets Java 21 bytecode; the Java version is whatever your Paper versio
 | Spigot, CraftBukkit | Not supported |
 | Paper 1.20.5 and older | Not supported |
 
-Paper 1.20.5 lacks Paper's Brigadier lifecycle API; the plugin refuses to load there with "Unsupported API version". Older Paper versions and other server types are discussed in the [Roadmap](roadmap.md).
+On Paper 1.20.5 (build 22, booted for this page) the server refuses to load the plugin, because plugin.yml declares `api-version: '1.20.6'`. The log shows `Could not load plugin 'VanillaPermissionsPlugin-1.0.0.jar' in folder 'plugins'` followed by `org.bukkit.plugin.InvalidPluginException: Unsupported API version 1.20.6`. Older Paper versions and other server types are discussed in the [Roadmap](roadmap.md).
 
 ## Permissions plugins
 
-See [Permission plugins](providers.md). LuckPerms 5.5 is what CI runs with.
+See [Permissions plugins](providers.md). LuckPerms 5.5 is what CI runs with.
