@@ -1,0 +1,31 @@
+name: Feature request
+description: Suggest a vanilla command, node or feature the plugin should cover
+labels: [enhancement]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This plugin ports [DrexHD's VanillaPermissions](https://github.com/DrexHD/VanillaPermissions) to Paper. Requests that match a node in the original mod are most likely to be accepted.
+
+  - type: textarea
+    attributes:
+      label: What do you want to control?
+      description: The command, selector or feature, and who should or should not be able to use it.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Suggested node
+      description: The permission node you would expect, if the original mod has one.
+      placeholder: "minecraft.command.example"
+    validations:
+      required: false
+
+  - type: textarea
+    attributes:
+      label: Alternatives
+      description: What you do today, for example with LuckPerms contexts or another plugin.
+    validations:
+      required: false

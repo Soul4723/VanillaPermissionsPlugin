@@ -1,0 +1,28 @@
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /
+    schedule:
+      interval: weekly
+    # Wait a week before proposing a brand-new release (ViaVersion/ViaVersion dependabot.yml).
+    cooldown:
+      default-days: 7
+    groups:
+      maven-minor-patch:
+        update-types: [minor, patch]
+    ignore:
+      # The Paper API version is the supported-version floor and is chosen deliberately.
+      # Its versions look like 1.20.6-R0.1-SNAPSHOT, so a new Minecraft version reads as a
+      # minor bump; ignore every update instead of only majors.
+      - dependency-name: io.papermc.paper:paper-api
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    # Wait a week before proposing a brand-new release (ViaVersion/ViaVersion dependabot.yml).
+    cooldown:
+      default-days: 7
+    groups:
+      actions-minor-patch:
+        update-types: [minor, patch]

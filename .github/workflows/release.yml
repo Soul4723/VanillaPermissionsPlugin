@@ -1,0 +1,59 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Check tag matches pom version
+        id: version
+        run: |
+          pom_version=$(mvn -B -ntp -q help:evaluate -Dexpression=project.version -DforceStdout)
+          echo "version=$pom_version" >> "$GITHUB_OUTPUT"
+          if [[ "$GITHUB_REF_TYPE" == "tag" && "${GITHUB_REF_NAME#v}" != "$pom_version" ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match pom version $pom_version"
+            exit 1
+          fi
+
+      - run: mvn -B -ntp verify
+
+      - name: Checksum and release notes
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          cd target
+          sha256sum "VanillaPermissionsPlugin-$VERSION.jar" > "VanillaPermissionsPlugin-$VERSION.jar.sha256"
+          cd ..
+          awk -v v="$VERSION" '
+            /^## \[/ { if (found) exit; if (index($0, "## [" v "]") == 1) { found = 1; next } }
+            /^\[[^]]+\]: / { if (found) exit }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+          [ -s release-notes.md ] || rm release-notes.md
+
+      - uses: softprops/action-gh-release@v3.0.3
+        if: github.ref_type == 'tag'
+        with:
+          files: |
+            target/VanillaPermissionsPlugin-${{ steps.version.outputs.version }}.jar
+            target/VanillaPermissionsPlugin-${{ steps.version.outputs.version }}.jar.sha256
+          body_path: ${{ hashFiles('release-notes.md') != '' && 'release-notes.md' || '' }}
+          generate_release_notes: ${{ hashFiles('release-notes.md') == '' }}
+          prerelease: ${{ contains(github.ref_name, '-') }}
