@@ -1,5 +1,6 @@
 package io.github.soul4723.vanillapermissions.util;
 
+import io.github.soul4723.vanillapermissions.listener.ProviderReselectListener;
 import io.papermc.paper.plugin.configuration.PluginMeta;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.event.EventBus;
@@ -7,6 +8,7 @@ import net.luckperms.api.event.EventSubscription;
 import net.milkbowl.vault.chat.Chat;
 import net.milkbowl.vault.permission.Permission;
 import org.bukkit.Server;
+import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.RegisteredServiceProvider;
@@ -27,7 +29,9 @@ import static io.github.soul4723.vanillapermissions.util.TestLuckPerms.proxy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Provider choice from proxied plugin, service and logging fixtures; no live LuckPerms or Vault. */
@@ -175,14 +179,77 @@ class PermissionProviderSelectionTest {
     }
 
     @Test
-    void noPermissionsPluginWarnsOnce() {
+    void noPermissionsPluginWarnsOnceAfterFinalSelection() {
         BukkitPermissionProvider provider =
             assertInstanceOf(BukkitPermissionProvider.class, PermissionManager.selectProvider(owner));
         assertNull(provider.getPermissionsPlugin());
         assertFalse(provider.hasMeta(), "Meta without a source");
+        assertTrue(at(Level.WARNING).isEmpty(), "Early selection warned");
+        PermissionManager.initialize(provider, owner);
+        PermissionManager.reselectProvider(owner);
         List<LogRecord> warnings = at(Level.WARNING);
         assertEquals(1, warnings.size(), "Expected exactly one warning");
         assertTrue(warnings.get(0).getMessage().contains("No permissions plugin found"));
+        assertSame(provider, PermissionManager.getProvider(), "Unchanged selection swapped the provider");
+        assertTrue(at(Level.INFO).stream().noneMatch(r -> r.getMessage().startsWith("Selected after")), "Logged a swap");
+    }
+
+    @Test
+    void pluginEnablingLaterIsPickedUpOnReselect() {
+        BukkitPermissionProvider early =
+            assertInstanceOf(BukkitPermissionProvider.class, PermissionManager.selectProvider(owner));
+        PermissionManager.initialize(early, owner);
+        records.clear();
+
+        installed("Vault", true);
+        services.put(Permission.class, VaultHookTest.permission("GroupManager"));
+        services.put(Chat.class, chatNamed("GroupManager"));
+        PermissionManager.reselectProvider(owner);
+
+        BukkitPermissionProvider late = assertInstanceOf(BukkitPermissionProvider.class, PermissionManager.getProvider());
+        assertNotSame(early, late, "Provider was not swapped");
+        assertEquals("GroupManager", late.getPermissionsPlugin());
+        assertTrue(late.hasMeta(), "Vault chat meta not connected");
+        assertEquals(1, at(Level.INFO).size(), "Expected one info line");
+        assertTrue(logged("GroupManager") && logged("Vault chat meta (GroupManager)"), "Line misses provider or meta");
+        assertTrue(at(Level.WARNING).isEmpty(), "Warned although a permissions plugin was found");
+    }
+
+    @Test
+    void unchangedSelectionDoesNotSwapOrLog() {
+        installed("PermissionsEx", true);
+        PermissionProvider early = PermissionManager.selectProvider(owner);
+        PermissionManager.initialize(early, owner);
+        records.clear();
+        PermissionManager.reselectProvider(owner);
+        assertSame(early, PermissionManager.getProvider(), "Provider was swapped");
+        assertTrue(records.isEmpty(), "Logged although nothing changed");
+    }
+
+    @Test
+    void runningLuckPermsIsKeptOnReselect() throws Exception {
+        installed("LuckPerms", true);
+        registerLuckPerms();
+        PermissionProvider early = PermissionManager.selectProvider(owner);
+        PermissionManager.initialize(early, owner);
+        records.clear();
+        try {
+            PermissionManager.reselectProvider(owner);
+            assertSame(early, PermissionManager.getProvider(), "LuckPerms provider was swapped");
+            assertTrue(records.isEmpty(), "Logged although nothing changed");
+        } finally {
+            early.close();
+        }
+    }
+
+    @Test
+    void onlyStartupLoadReselects() {
+        PermissionManager.initialize(PermissionManager.selectProvider(owner), owner);
+        ProviderReselectListener listener = new ProviderReselectListener(owner);
+        listener.reselectOn(ServerLoadEvent.LoadType.RELOAD);
+        assertTrue(at(Level.WARNING).isEmpty(), "A reload selected again");
+        listener.reselectOn(ServerLoadEvent.LoadType.STARTUP);
+        assertEquals(1, at(Level.WARNING).size(), "Startup did not select again");
     }
 
     private static Chat chatNamed(String name) {

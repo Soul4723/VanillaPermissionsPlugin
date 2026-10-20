@@ -6,6 +6,7 @@ import io.github.soul4723.vanillapermissions.listener.ForceGamemodeBypassListene
 import io.github.soul4723.vanillapermissions.listener.LuckPermsPreLoginListener;
 import io.github.soul4723.vanillapermissions.listener.MoveSpeedBypassListener;
 import io.github.soul4723.vanillapermissions.listener.OperatorBlockListener;
+import io.github.soul4723.vanillapermissions.listener.ProviderReselectListener;
 import io.github.soul4723.vanillapermissions.listener.WhitelistBypassListener;
 import io.github.soul4723.vanillapermissions.util.LuckPermsPermissionProvider;
 import io.github.soul4723.vanillapermissions.util.NativeCommandPermissions;
@@ -27,6 +28,8 @@ public class VanillaPermissionsPlugin extends JavaPlugin {
                 + "it disables itself and leaves vanilla commands unchanged");
         }
 
+        // Chosen now because the commands below need a provider at once; ProviderReselectListener repeats the choice
+        // on ServerLoadEvent, which fires after every plugin has enabled.
         permissionProvider = PermissionManager.selectProvider(this);
         PermissionManager.initialize(permissionProvider, this);
 
@@ -40,6 +43,7 @@ public class VanillaPermissionsPlugin extends JavaPlugin {
             getServer().getPluginManager().registerEvents(
                 new LuckPermsPreLoginListener(luckPerms.getHook().getLuckPerms(), getLogger()), this);
         }
+        getServer().getPluginManager().registerEvents(new ProviderReselectListener(this), this);
         getServer().getPluginManager().registerEvents(new DebugStickListener(), this);
         getServer().getPluginManager().registerEvents(new OperatorBlockListener(), this);
         getServer().getPluginManager().registerEvents(new WhitelistBypassListener(), this);
@@ -49,7 +53,7 @@ public class VanillaPermissionsPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        if (permissionProvider != null) permissionProvider.close();
+        PermissionManager.getProvider().close();
         NativeCommandPermissions.uninstall();
     }
 }

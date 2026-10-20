@@ -7,6 +7,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.OptionalInt;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -23,7 +24,7 @@ public class PermissionManager {
         "UltraPermissions", "PowerRanks", "bPermissions", "zPermissions", "PermissionsBukkit", "SimplyPerms",
         "Privileges", "DroxPerms", "xPerms");
 
-    private static PermissionProvider provider = new BukkitPermissionProvider(null, null, null);
+    private static volatile PermissionProvider provider = new BukkitPermissionProvider(null, null, null);
     private static Logger logger;
 
     public static void initialize(PermissionProvider provider, Plugin plugin) {
@@ -33,11 +34,11 @@ public class PermissionManager {
 
     /**
      * LuckPerms when it is running, otherwise Bukkit's API with Vault chat meta if available. Logs one line for the
-     * permission source and one for selector meta, so admins can see what works without LuckPerms.
+     * permission source and one for selector meta, so admins can see what works without LuckPerms. This runs in
+     * {@code onEnable}, before plugins that enable after this one; {@link #reselectProvider} runs once they all have.
      */
     public static PermissionProvider selectProvider(Plugin plugin) {
-        Server server = plugin.getServer();
-        PluginManager plugins = server.getPluginManager();
+        PluginManager plugins = plugin.getServer().getPluginManager();
         Logger log = plugin.getLogger();
 
         Plugin luckPerms = plugins.getPlugin("LuckPerms");
@@ -51,34 +52,70 @@ public class PermissionManager {
             log.severe("Falling back to Bukkit permissions without LuckPerms; fix LuckPerms to restore its nodes");
         }
 
+        BukkitSelection selection = selectBukkitProvider(plugin, true);
+        if (selection.provider().getPermissionsPlugin() != null) {
+            log.info("Using Bukkit permissions from " + selection.provider().getPermissionsPlugin()
+                + "; whether command lists refresh after a permission change depends on that plugin");
+        }
+        log.info(selection.metaLine());
+        return selection.provider();
+    }
+
+    /**
+     * Selects again once every plugin has enabled, because a permissions plugin that enables after this one is missed
+     * by {@link #selectProvider}. Swaps the provider only if the source changed, logging one line for the result, and
+     * then warns, once and only here, if there is still no permissions plugin.
+     */
+    public static void reselectProvider(Plugin plugin) {
+        PermissionProvider current = provider;
+        Plugin luckPerms = plugin.getServer().getPluginManager().getPlugin("LuckPerms");
+        // LuckPerms is a softdepend, so it enabled before this plugin and nothing that loads later replaces it.
+        boolean keepLuckPerms = current instanceof LuckPermsPermissionProvider && luckPerms != null && luckPerms.isEnabled();
+        if (!keepLuckPerms) {
+            BukkitSelection selection = selectBukkitProvider(plugin, false);
+            if (!(current instanceof BukkitPermissionProvider bukkit) || !bukkit.sameSourceAs(selection.provider())) {
+                provider = selection.provider();
+                current.close();
+                plugin.getLogger().info("Selected after all plugins enabled: " + selection.summary());
+            }
+        }
+        if (provider instanceof BukkitPermissionProvider bukkit && bukkit.getPermissionsPlugin() == null) {
+            plugin.getLogger().warning("No permissions plugin found, so every node follows Bukkit defaults and operator status; "
+                + "install a permissions plugin such as LuckPerms for granular control");
+        }
+    }
+
+    /** A Bukkit provider with the text to log for it. */
+    private record BukkitSelection(BukkitPermissionProvider provider, String summary, String metaLine) {}
+
+    /** {@code log} is false when selecting again after startup, so a repeated Vault failure is not reported twice. */
+    private static BukkitSelection selectBukkitProvider(Plugin plugin, boolean log) {
+        Server server = plugin.getServer();
+        PluginManager plugins = server.getPluginManager();
+        Logger logger = plugin.getLogger();
+
         VaultHook vault = null;
         BukkitPermissionProvider.LoginPermissions loginPermissions = null;
         String permissionsPlugin = null;
         Plugin vaultPlugin = plugins.getPlugin("Vault");
         if (vaultPlugin != null && vaultPlugin.isEnabled()) {
             try {
-                vault = VaultHook.connect(server, log);
+                vault = VaultHook.connect(server, logger);
                 permissionsPlugin = VaultHook.permissionsPlugin(server);
                 loginPermissions = VaultHook.loginPermissions(server);
             } catch (RuntimeException | LinkageError e) {
-                log.warning("Could not use the Vault API: " + e);
+                if (log) logger.warning("Could not use the Vault API: " + e);
             }
         }
         if (permissionsPlugin == null) permissionsPlugin = detectPermissionsPlugin(plugins);
 
-        if (permissionsPlugin == null) {
-            log.warning("No permissions plugin found, so every node follows Bukkit defaults and operator status; "
-                + "install a permissions plugin such as LuckPerms for granular control");
-        } else {
-            log.info("Using Bukkit permissions from " + permissionsPlugin
-                + "; whether command lists refresh after a permission change depends on that plugin");
-        }
-        if (vault != null) {
-            log.info("Selector limits and weights come from Vault chat meta (" + vault.getChatName() + ")");
-        } else {
-            log.info("Selector limits and weights are off: they need LuckPerms, or Vault with a chat meta provider");
-        }
-        return new BukkitPermissionProvider(permissionsPlugin, vault, loginPermissions, log);
+        String metaLine = vault != null
+            ? "Selector limits and weights come from Vault chat meta (" + vault.getChatName() + ")"
+            : "Selector limits and weights are off: they need LuckPerms, or Vault with a chat meta provider";
+        String summary = (permissionsPlugin == null ? "Bukkit defaults only" : "Bukkit permissions from " + permissionsPlugin)
+            + "; " + metaLine.substring(0, 1).toLowerCase(Locale.ROOT) + metaLine.substring(1);
+        return new BukkitSelection(new BukkitPermissionProvider(permissionsPlugin, vault, loginPermissions, logger),
+            summary, metaLine);
     }
 
     static String detectPermissionsPlugin(PluginManager plugins) {

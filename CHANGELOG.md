@@ -19,6 +19,7 @@ First public release: a drop-in Paper port of [DrexHD's VanillaPermissions](http
 - Deny nodes for command blocks, structure blocks and jigsaws, and a per-block debug stick node (`minecraft.debug_stick.use.<namespace>.<block>`).
 - Support for Paper 1.20.6 through 26.3 with one jar (Java 21 for 1.20.6 to 1.21.11, Java 25 for 26.x). A warning is logged once at startup on versions outside the tested list.
 - LuckPerms is optional. Any Bukkit permissions plugin works for nodes, and Vault supplies selector limits and weights and the login bypasses. With no permissions plugin the plugin runs on Bukkit defaults and logs a warning.
+- The permissions source is chosen again once every plugin has enabled, so a permissions plugin that loads after this one is still picked up, with Vault meta, and the no-permissions-plugin warning is logged once, after that final choice.
 - `/vanillapermissions check` and `debug` to see how a node resolves and which permissions source is in use.
 - Documentation under `docs/`, a Paper boot check for every supported version in CI, and tagged releases published with a SHA-256 checksum.
 

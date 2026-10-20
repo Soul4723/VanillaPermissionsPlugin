@@ -3,6 +3,7 @@ package io.github.soul4723.vanillapermissions.util;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -91,6 +92,14 @@ public final class BukkitPermissionProvider implements PermissionProvider {
     @Override
     public String describeMeta() {
         return meta == null ? "§eoff §7(needs LuckPerms, or Vault with a chat meta provider)" : meta.describe();
+    }
+
+    /** Whether {@code other} reads node values and meta from the same places, so swapping to it changes nothing. */
+    boolean sameSourceAs(BukkitPermissionProvider other) {
+        return Objects.equals(permissionsPlugin, other.permissionsPlugin)
+            && (meta == null) == (other.meta == null)
+            && (loginPermissions == null) == (other.loginPermissions == null)
+            && describeMeta().equals(other.describeMeta());
     }
 
     public String getPermissionsPlugin() {
