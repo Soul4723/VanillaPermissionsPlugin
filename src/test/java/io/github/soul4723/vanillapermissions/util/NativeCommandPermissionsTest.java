@@ -181,10 +181,68 @@ class NativeCommandPermissionsTest {
         assertEquals("tp", roots.get(root.getChild("minecraft:tp")));
         assertEquals("teleport", roots.get(teleport));
         assertEquals("gamemode", roots.get(gamemode), "Vanilla command replaced by a plugin lost its checks");
-        assertSame(gamemode, NativeCommandPermissions.vanillaCommand(dispatcher, "gamemode"));
+        assertEquals(List.of(gamemode), NativeCommandPermissions.vanillaCommands(dispatcher, "gamemode"));
         for (CommandNode<?> plugin : List.of(pluginGamemode, lp, namespacedLp)) {
             assertFalse(roots.containsKey(plugin), "Plugin command got vanilla nodes: " + plugin.getName());
         }
+    }
+
+    /** Paper 1.21.4+ registers minecraft: aliases as copies of the command node that share its children. */
+    @Test
+    void copiedMinecraftAliasesAreChecked() throws ReflectiveOperationException {
+        CommandDispatcher<Object> dispatcher = new CommandDispatcher<>();
+        LiteralCommandNode<Object> time = dispatcher.register(literal("time").then(literal("set")));
+        LiteralCommandNode<Object> seed = dispatcher.register(literal("seed").executes(c -> 1));
+        LiteralCommandNode<Object> teleport = dispatcher.register(literal("teleport"));
+        LiteralCommandNode<Object> tp = dispatcher.register(literal("tp").redirect(teleport));
+        LiteralCommandNode<Object> gamemode = dispatcher.register(literal("gamemode").then(literal("creative")));
+        RootCommandNode<Object> root = dispatcher.getRoot();
+        for (CommandNode<Object> node : List.copyOf(root.getChildren())) {
+            root.addChild(copy("minecraft:" + node.getName(), node));
+        }
+        assertTrue(NativeGameModeTree.removeNode(root, gamemode));
+        LiteralCommandNode<Object> pluginGamemode = dispatcher.register(literal("gamemode").then(literal("creative")));
+
+        Map<CommandNode<?>, String> roots = new IdentityHashMap<>();
+        for (NativeCommandPermissions.VanillaRoot vanilla : NativeCommandPermissions.vanillaRoots(root)) {
+            assertNull(roots.put(vanilla.node(), vanilla.path()), "Node collected twice: " + vanilla.path());
+        }
+
+        assertEquals("time", roots.get(time));
+        assertEquals("time", roots.get(root.getChild("minecraft:time")), "Copied minecraft: alias bypasses the command node");
+        assertEquals("seed", roots.get(seed));
+        assertEquals("seed", roots.get(root.getChild("minecraft:seed")));
+        assertEquals("tp", roots.get(tp));
+        assertEquals("tp", roots.get(root.getChild("minecraft:tp")));
+        assertEquals("teleport", roots.get(teleport));
+        assertEquals("gamemode", roots.get(root.getChild("minecraft:gamemode")));
+        assertFalse(roots.containsKey(pluginGamemode), "Plugin command that shadows a vanilla one got vanilla nodes");
+
+        assertEquals(List.of(time, root.getChild("minecraft:time")), NativeCommandPermissions.vanillaCommands(dispatcher, "time"));
+        assertEquals(List.of(root.getChild("minecraft:gamemode")), NativeCommandPermissions.vanillaCommands(dispatcher, "gamemode"));
+        assertEquals(List.of(teleport), NativeCommandPermissions.vanillaCommands(dispatcher, "tp"));
+    }
+
+    @Test
+    void copiedAliasPathDropsTheNamespace() {
+        CommandDispatcher<Object> dispatcher = new CommandDispatcher<>();
+        LiteralCommandNode<Object> gamemode = dispatcher.register(literal("gamemode")
+            .then(literal("creative").then(argument("target", word()).executes(c -> 1))));
+        dispatcher.getRoot().addChild(copy("minecraft:gamemode", gamemode));
+
+        assertEquals(List.of("gamemode", "creative", "target"), leafPath(dispatcher, "minecraft:gamemode creative Bob"));
+        assertEquals("gamemode.target.creative.target",
+            SelectorPolicy.selectorPath(leafPath(dispatcher, "minecraft:gamemode creative Bob"), "target"));
+    }
+
+    /** As PaperBrigadier.copyLiteral: same requirement, executor and redirect, and the same child nodes. */
+    private static LiteralCommandNode<Object> copy(String name, CommandNode<Object> source) {
+        LiteralArgumentBuilder<Object> builder = LiteralArgumentBuilder.literal(name)
+            .requires(source.getRequirement())
+            .forward(source.getRedirect(), source.getRedirectModifier(), source.isFork());
+        if (source.getCommand() != null) builder.executes(source.getCommand());
+        for (CommandNode<Object> child : source.getChildren()) builder.then(child);
+        return builder.build();
     }
 
     @Test

@@ -57,8 +57,9 @@ public final class NativeExecuteCommandExtensions {
 
         try {
             initializeReflection(owner, permissionLevels);
-            CommandNode<?> execute = NativeCommandPermissions.vanillaCommand(dispatcher, "execute");
-            if (execute == null) throw new IllegalStateException("Vanilla /execute command was not registered");
+            List<CommandNode<?>> roots = NativeCommandPermissions.vanillaCommands(dispatcher, "execute");
+            if (roots.isEmpty()) throw new IllegalStateException("Vanilla /execute command was not registered");
+            CommandNode<?> execute = originalExecute(roots.get(0));
             CommandNode<?> conditional = execute.getChild("if");
             CommandNode<?> unless = execute.getChild("unless");
             if (conditional == null || unless == null) {
@@ -71,10 +72,23 @@ public final class NativeExecuteCommandExtensions {
             addPermissionCondition(executeRoot, unless, false);
             addFeedbackModifiers(executeRoot);
             addPermissionModifiers(executeRoot);
+            // A copied minecraft:execute alias shares the subcommands but not nodes added to the original afterwards.
+            for (CommandNode<?> root : roots) {
+                for (String name : List.of("feedback", "oplevel")) {
+                    if (root.getChild(name) == null) addChild(root, executeRoot.getChild(name));
+                }
+            }
             owner.getLogger().info("Installed vanilla /execute permission, feedback, and oplevel extensions");
         } catch (ReflectiveOperationException | RuntimeException error) {
             throw new IllegalStateException("Could not install native /execute extensions", error);
         }
+    }
+
+    /** The node vanilla's {@code /execute} subcommands redirect back to, which the extensions must target too. */
+    private static CommandNode<?> originalExecute(CommandNode<?> execute) {
+        CommandNode<?> as = execute.getChild("as");
+        CommandNode<?> targets = as == null ? null : as.getChild("targets");
+        return targets != null && targets.getRedirect() != null ? targets.getRedirect() : execute;
     }
 
     private static void initializeReflection(JavaPlugin owner, NativePermissionLevels permissionLevels)

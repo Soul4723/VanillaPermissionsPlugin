@@ -173,19 +173,24 @@ public final class NativeCommandPermissions {
     /**
      * The vanilla command nodes to check, with their permission paths. Paper's dispatcher also holds Bukkit and
      * plugin commands, so vanilla commands are found through the {@code minecraft:<name>} alias Paper registers for
-     * each of them. The alias shares the command's node, so it cannot bypass {@code minecraft.command.<name>}, and
-     * its redirect still reaches the vanilla command when a plugin has taken over the plain name.
+     * each of them, which still reaches the vanilla command when a plugin has taken over the plain name. Up to
+     * 1.21.3 the alias redirects to the command's node; from 1.21.4 it is a copy of that node sharing its
+     * children. Either way it gets the command's path, so it cannot bypass {@code minecraft.command.<name>}.
      */
     static List<VanillaRoot> vanillaRoots(CommandNode<?> dispatcherRoot) {
         List<VanillaRoot> roots = new ArrayList<>();
         // Identity, not equals: Brigadier nodes compare by structure.
         Set<CommandNode<?>> seen = Collections.newSetFromMap(new IdentityHashMap<>());
         for (CommandNode<?> alias : dispatcherRoot.getChildren()) {
-            if (!alias.getName().startsWith(VANILLA_NAMESPACE) || alias.getRedirect() == null) continue;
+            if (!alias.getName().startsWith(VANILLA_NAMESPACE)) continue;
             String name = alias.getName().substring(VANILLA_NAMESPACE.length());
             CommandNode<?> target = alias.getRedirect();
             CommandNode<?> plain = dispatcherRoot.getChild(name);
             if (seen.add(alias)) roots.add(new VanillaRoot(alias, name));
+            if (target == null) {
+                if (plain != null && isCopy(alias, plain) && seen.add(plain)) roots.add(new VanillaRoot(plain, name));
+                continue;
+            }
             if (seen.add(target)) roots.add(new VanillaRoot(target, target.getName()));
             if (plain != null && flatten(plain) == target && seen.add(plain)) roots.add(new VanillaRoot(plain, name));
         }
@@ -194,10 +199,36 @@ public final class NativeCommandPermissions {
 
     record VanillaRoot(CommandNode<?> node, String path) {}
 
-    /** The vanilla node behind {@code minecraft:<name>}, even if a plugin command now owns the plain name. */
-    static CommandNode<?> vanillaCommand(CommandDispatcher<?> dispatcher, String name) {
+    /**
+     * The root nodes of vanilla command {@code name}, even if a plugin command now owns the plain name: the target
+     * of a redirecting {@code minecraft:} alias, or a copied alias and the plain node it was copied from.
+     */
+    static List<CommandNode<?>> vanillaCommands(CommandDispatcher<?> dispatcher, String name) {
         CommandNode<?> alias = dispatcher.getRoot().getChild(VANILLA_NAMESPACE + name);
-        return alias != null && alias.getRedirect() != null ? alias.getRedirect() : dispatcher.getRoot().getChild(name);
+        CommandNode<?> plain = dispatcher.getRoot().getChild(name);
+        if (alias == null) return plain == null ? List.of() : List.of(plain);
+        if (alias.getRedirect() != null) return List.of(alias.getRedirect());
+        return plain != null && isCopy(alias, plain) ? List.of(plain, alias) : List.of(alias);
+    }
+
+    /** Whether {@code plain} is the vanilla node Paper copied {@code alias} from, rather than a plugin command. */
+    static boolean isCopy(CommandNode<?> alias, CommandNode<?> plain) {
+        if (plain == alias || plain.getRedirect() != null
+                || unwrap(alias.getRequirement()) != unwrap(plain.getRequirement())
+                || unwrap(alias.getCommand()) != unwrap(plain.getCommand())
+                || alias.getChildren().size() != plain.getChildren().size()) return false;
+        for (CommandNode<?> child : alias.getChildren()) {
+            if (plain.getChild(child.getName()) != child) return false;
+        }
+        return true;
+    }
+
+    private static Object unwrap(Predicate<?> requirement) {
+        return requirement instanceof PermissionPredicate wrapper ? wrapper.fallback : requirement;
+    }
+
+    private static Object unwrap(Command<?> command) {
+        return command instanceof SelectorCommand wrapper ? wrapper.fallback : command;
     }
 
     private static CommandNode<?> flatten(CommandNode<?> node) {
@@ -353,12 +384,16 @@ public final class NativeCommandPermissions {
     /**
      * Node names of the command being executed. After a redirect (a {@code minecraft:<name>} or {@code /tp}
      * alias, {@code /execute as …}) the executing context is a child that starts below the redirect target, so
-     * its own nodes lack the command name; the target is its root node and is prepended here.
+     * its own nodes lack the command name; the target is its root node and is prepended here. A copied
+     * {@code minecraft:<name>} alias (Paper 1.21.4+) is named without its namespace, like the command.
      */
     static List<String> parsedPath(CommandContext<?> context) {
         List<String> path = new ArrayList<>();
         if (!(context.getRootNode() instanceof RootCommandNode<?>)) path.add(context.getRootNode().getName());
         for (ParsedCommandNode<?> parsed : context.getNodes()) path.add(parsed.getNode().getName());
+        if (!path.isEmpty() && path.get(0).startsWith(VANILLA_NAMESPACE)) {
+            path.set(0, path.get(0).substring(VANILLA_NAMESPACE.length()));
+        }
         return path;
     }
 

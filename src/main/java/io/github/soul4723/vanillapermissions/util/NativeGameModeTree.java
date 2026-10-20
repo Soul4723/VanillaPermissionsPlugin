@@ -51,9 +51,21 @@ final class NativeGameModeTree {
     }
 
     static void install(CommandDispatcher<?> dispatcher) throws ReflectiveOperationException {
-        CommandNode<?> root = NativeCommandPermissions.vanillaCommand(dispatcher, "gamemode");
-        if (root == null) throw new IllegalStateException("Native gamemode command is missing");
+        List<CommandNode<?>> roots = NativeCommandPermissions.vanillaCommands(dispatcher, "gamemode");
+        if (roots.isEmpty()) throw new IllegalStateException("Native gamemode command is missing");
 
+        // A copied minecraft:gamemode alias (Paper 1.21.4+) has its own child map, so each root gets the same literals.
+        List<CommandNode<?>> replacement = null;
+        for (CommandNode<?> root : roots) {
+            CommandNode<?> original = modeArgument(root);
+            if (original == null) continue;
+            if (replacement == null) replacement = literalModes(dispatcher);
+            replace(root, original, replacement);
+        }
+    }
+
+    /** The GameModeArgument node to replace, or null if the root already has the literal modes. */
+    private static CommandNode<?> modeArgument(CommandNode<?> root) {
         List<CommandNode<?>> modeArguments = new ArrayList<>();
         for (CommandNode<?> child : root.getChildren()) {
             if (child instanceof ArgumentCommandNode<?, ?> argument
@@ -68,12 +80,15 @@ final class NativeGameModeTree {
                     throw new IllegalStateException("Unrecognized native gamemode tree; missing mode node " + mode);
                 }
             }
-            return;
+            return null;
         }
         if (modeArguments.size() != 1) {
             throw new IllegalStateException("Unrecognized native gamemode tree; expected one GameModeArgument node");
         }
+        return modeArguments.get(0);
+    }
 
+    private static List<CommandNode<?>> literalModes(CommandDispatcher<?> dispatcher) throws ReflectiveOperationException {
         ClassLoader loader = dispatcher.getClass().getClassLoader();
         Class<?> gameTypeClass = Class.forName("net.minecraft.world.level.GameType", false, loader);
         Object[] gameTypes = (Object[]) gameTypeClass.getMethod("values").invoke(null);
@@ -100,8 +115,11 @@ final class NativeGameModeTree {
             modeBuilder.then(target);
             replacement.add(modeBuilder.build());
         }
+        return replacement;
+    }
 
-        CommandNode<?> original = modeArguments.get(0);
+    private static void replace(CommandNode<?> root, CommandNode<?> original, List<CommandNode<?>> replacement)
+            throws ReflectiveOperationException {
         try {
             removeNode(root, original);
             for (CommandNode<?> node : replacement) {
