@@ -30,11 +30,9 @@ public final class NativeExecuteCommandExtensions {
     private static Method entitiesArgument;
     private static Method getEntity;
     private static Method getEntities;
-    private static Method entityPermissionLevel;
-    private static Field permissionLevel;
+    private static NativePermissionLevels levels;
     private static Field silent;
     private static Field selectorBypass;
-    private static Class<?> commandSourceStack;
     private static Class<?> commandSource;
 
     private NativeExecuteCommandExtensions() {}
@@ -52,13 +50,13 @@ public final class NativeExecuteCommandExtensions {
         plugin = null;
     }
 
-    public static void install(JavaPlugin owner, Object dispatcherValue) {
+    static void install(JavaPlugin owner, Object dispatcherValue, NativePermissionLevels permissionLevels) {
         if (!(dispatcherValue instanceof CommandDispatcher<?> dispatcher)) {
             throw new IllegalStateException("Paper returned an unexpected native command dispatcher");
         }
 
         try {
-            initializeReflection(owner);
+            initializeReflection(owner, permissionLevels);
             CommandNode<?> execute = NativeCommandPermissions.vanillaCommand(dispatcher, "execute");
             if (execute == null) throw new IllegalStateException("Vanilla /execute command was not registered");
             CommandNode<?> conditional = execute.getChild("if");
@@ -79,8 +77,10 @@ public final class NativeExecuteCommandExtensions {
         }
     }
 
-    private static void initializeReflection(JavaPlugin owner) throws ReflectiveOperationException {
+    private static void initializeReflection(JavaPlugin owner, NativePermissionLevels permissionLevels)
+            throws ReflectiveOperationException {
         plugin = owner;
+        levels = permissionLevels;
         ClassLoader loader = org.bukkit.Bukkit.getServer().getClass().getClassLoader();
         Class<?> entityArgumentClass = Class.forName("net.minecraft.commands.arguments.EntityArgument", false, loader);
         entityArgument = entityArgumentClass.getMethod("entity");
@@ -89,20 +89,14 @@ public final class NativeExecuteCommandExtensions {
         getEntities = entityArgumentClass.getMethod("getOptionalEntities", CommandContext.class, String.class);
 
         Class<?> sourceClass = Class.forName("net.minecraft.commands.CommandSourceStack", false, loader);
-        commandSourceStack = sourceClass;
         Class<?> commandSourceClass = Class.forName("net.minecraft.commands.CommandSource", false, loader);
         commandSource = commandSourceClass;
         commandSourceClass.getMethod("getBukkitSender", sourceClass);
-        Class<?> entityClass = Class.forName("net.minecraft.world.entity.Entity", false, loader);
-        permissionLevel = sourceClass.getDeclaredField("permissionLevel");
-        if (!permissionLevel.trySetAccessible()) throw new IllegalAccessException("CommandSourceStack.permissionLevel is inaccessible");
-        entityPermissionLevel = entityClass.getDeclaredMethod("getPermissionLevel");
-        if (!entityPermissionLevel.trySetAccessible()) throw new IllegalAccessException("Entity.getPermissionLevel is inaccessible");
+        Class.forName("net.minecraft.world.entity.Entity", false, loader).getMethod("getBukkitEntity");
         silent = sourceClass.getDeclaredField("silent");
         if (!silent.trySetAccessible()) throw new IllegalAccessException("CommandSourceStack.silent is inaccessible");
         selectorBypass = sourceClass.getField("bypassSelectorPermissions");
         sourceClass.getMethod("withSuppressedOutput");
-        sourceClass.getMethod("withPermission", int.class);
         sourceClass.getMethod("getServer");
         sourceClass.getMethod("withSource", commandSourceClass);
         sourceClass.getMethod("getBukkitSender");
@@ -145,9 +139,8 @@ public final class NativeExecuteCommandExtensions {
     }
 
     private static boolean hasPermission(Object entity, String permission) throws ReflectiveOperationException {
-        Object source = findMethod(entity.getClass(), "createCommandSourceStack").invoke(entity);
-        Object bukkitSender = findMethod(source.getClass(), "getBukkitSender").invoke(source);
-        return bukkitSender instanceof CommandSender sender && PermissionManager.hasPermission(sender, permission);
+        Object bukkitEntity = findMethod(entity.getClass(), "getBukkitEntity").invoke(entity);
+        return bukkitEntity instanceof CommandSender sender && PermissionManager.hasPermission(sender, permission);
     }
 
     private static void addFeedbackModifiers(CommandNode<Object> executeRoot) throws ReflectiveOperationException {
@@ -206,11 +199,9 @@ public final class NativeExecuteCommandExtensions {
         oplevel.then(LiteralArgumentBuilder.<Object>literal("entity")
                 .then(RequiredArgumentBuilder.<Object, Object>argument("targets", entitiesType)
                         .fork(executeRoot, context -> {
-                            int callerLevel = permissionLevel(context.getSource());
                             List<Object> sources = new ArrayList<>();
                             for (Object target : entities(context)) {
-                                sources.add(invoke(context.getSource(), "withPermission",
-                                        Math.min(callerLevel, permissionLevel(target))));
+                                sources.add(withPermissionAtMost(context.getSource(), permissionLevel(target)));
                             }
                             return sources;
                         })));
@@ -250,14 +241,16 @@ public final class NativeExecuteCommandExtensions {
     }
 
     private static Object withPermissionAtMost(Object source, int requestedLevel) {
-        return invoke(source, "withPermission", Math.min(permissionLevel(source), requestedLevel));
+        try {
+            return levels.withLevelAtMost(source, requestedLevel);
+        } catch (ReflectiveOperationException | RuntimeException error) {
+            throw new IllegalStateException("Could not lower native permission level", error);
+        }
     }
 
     private static int permissionLevel(Object source) {
         try {
-            return commandSourceStack.isInstance(source)
-                ? permissionLevel.getInt(source)
-                : (int) entityPermissionLevel.invoke(source);
+            return levels.level(source);
         } catch (ReflectiveOperationException | RuntimeException error) {
             warn("Could not read native permission level", error);
             return 0;
@@ -287,7 +280,7 @@ public final class NativeExecuteCommandExtensions {
                 && NativeCommandPermissions.isSelectorArgument(context, name);
         boolean previous = selector && selectorBypass.getBoolean(source);
         if (selector) {
-            boolean vanillaAllowed = previous || (boolean) invoke(source, "hasPermission", 2, "minecraft.command.selector");
+            boolean vanillaAllowed = previous || levels.allowsSelectors(source);
             SelectorNativePermissions.validateSelectorSyntax(sender, vanillaAllowed);
             if (!previous) selectorBypass.setBoolean(source, true);
         }

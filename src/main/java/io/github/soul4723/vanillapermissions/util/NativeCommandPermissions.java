@@ -37,7 +37,7 @@ public final class NativeCommandPermissions {
     private static JavaPlugin plugin;
     private static int checkedNodes;
     private static Field selectorBypass;
-    private static Method nativePermission;
+    private static NativePermissionLevels permissionLevels;
 
     private NativeCommandPermissions() {}
 
@@ -121,14 +121,14 @@ public final class NativeCommandPermissions {
 
     private static synchronized void install(CommandDispatcher<?> apiDispatcher) throws ReflectiveOperationException {
         CommandDispatcher<?> nativeDispatcher = getNativeDispatcher(apiDispatcher);
-        NativeExecuteCommandExtensions.install(plugin, nativeDispatcher);
-        NativeGameModeTree.install(nativeDispatcher);
-
         ClassLoader serverLoader = Bukkit.getServer().getClass().getClassLoader();
         Class<?> sourceClass = Class.forName("net.minecraft.commands.CommandSourceStack", false, serverLoader);
+        permissionLevels = NativePermissionLevels.detect(sourceClass);
+        NativeExecuteCommandExtensions.install(plugin, nativeDispatcher, permissionLevels);
+        NativeGameModeTree.install(nativeDispatcher);
+
         Method getSender = sourceClass.getMethod("getBukkitSender");
         selectorBypass = sourceClass.getField("bypassSelectorPermissions");
-        nativePermission = sourceClass.getMethod("hasPermission", int.class, String.class);
         if (!CommandSender.class.isAssignableFrom(getSender.getReturnType())) {
             throw new IllegalStateException("Native command source has unexpected Bukkit sender type");
         }
@@ -300,8 +300,7 @@ public final class NativeCommandPermissions {
 
             try {
                 boolean previous = selectorBypass.getBoolean(source);
-                boolean vanillaAllowed = previous || (boolean) nativePermission.invoke(
-                    source, 2, "minecraft.command.selector");
+                boolean vanillaAllowed = previous || permissionLevels.allowsSelectors(source);
                 SelectorNativePermissions.validateSelectorSyntax(sender, vanillaAllowed);
                 selectorBypass.setBoolean(source, true);
                 try {
@@ -312,7 +311,7 @@ public final class NativeCommandPermissions {
                 }
             } catch (InvocationTargetException error) {
                 throw reflectionFailure(error);
-            } catch (IllegalAccessException error) {
+            } catch (ReflectiveOperationException error) {
                 throw new IllegalStateException("Could not apply native selector permission", error);
             }
         }
