@@ -27,6 +27,7 @@ class VaultHookTest {
 
     private final UUID id = UUID.randomUUID();
     private final Map<String, Integer> values = new HashMap<>();
+    private final Map<String, String> strings = new HashMap<>();
     private boolean chatFails;
     private int chatCalls;
     private final Plugin owner = proxy(Plugin.class, (p, m, a) -> { throw new AssertionError(m); });
@@ -68,7 +69,9 @@ class VaultHookTest {
         @Override public void setPlayerInfoBoolean(String world, String player, String node, boolean value) { throw new AssertionError(); }
         @Override public boolean getGroupInfoBoolean(String world, String group, String node, boolean def) { throw new AssertionError(); }
         @Override public void setGroupInfoBoolean(String world, String group, String node, boolean value) { throw new AssertionError(); }
-        @Override public String getPlayerInfoString(String world, String player, String node, String def) { throw new AssertionError(); }
+        @Override public String getPlayerInfoString(String world, String player, String node, String def) {
+            return strings.getOrDefault(node, def);
+        }
         @Override public void setPlayerInfoString(String world, String player, String node, String value) { throw new AssertionError(); }
         @Override public String getGroupInfoString(String world, String group, String node, String def) { throw new AssertionError(); }
         @Override public void setGroupInfoString(String world, String group, String node, String value) { throw new AssertionError(); }
@@ -105,6 +108,46 @@ class VaultHookTest {
         values.put(KEY, 12);
         Player player = player(id);
         assertEquals(OptionalInt.of(12), connect().get(id, player, KEY));
+    }
+
+    @Test
+    void stringValueIsParsed() {
+        strings.put(KEY, "7");
+        assertEquals(OptionalInt.of(7), connect().get(id, player(id), KEY));
+    }
+
+    @Test
+    void stringValueIsTrimmed() {
+        strings.put(KEY, "  9\t");
+        assertEquals(OptionalInt.of(9), connect().get(id, player(id), KEY));
+    }
+
+    @Test
+    void malformedStringIsUnsetWithoutIntegerFallback() {
+        strings.put(KEY, "many");
+        values.put(KEY, 4);
+        assertEquals(OptionalInt.empty(), connect().get(id, player(id), KEY));
+        assertEquals(0, chatCalls, "Malformed string fell through to the integer lookup");
+    }
+
+    @Test
+    void blankStringFallsBackToInteger() {
+        strings.put(KEY, "  ");
+        values.put(KEY, 3);
+        assertEquals(OptionalInt.of(3), connect().get(id, player(id), KEY));
+        assertEquals(1, chatCalls, "Integer lookup was skipped");
+    }
+
+    @Test
+    void nullStringFallsBackToInteger() {
+        values.put(KEY, 6);
+        assertEquals(OptionalInt.of(6), connect().get(id, player(id), KEY));
+    }
+
+    @Test
+    void integerSentinelIsUnset() {
+        values.put(KEY, Integer.MIN_VALUE);
+        assertEquals(OptionalInt.empty(), connect().get(id, player(id), KEY));
     }
 
     @Test

@@ -64,6 +64,15 @@ public final class VaultHook implements BukkitPermissionProvider.IntegerMeta {
             ? online : server.getPlayer(subjectId);
         if (player == null) return OptionalInt.empty();
         try {
+            // Most providers store meta as text, which their integer getter may not resolve, so read text first.
+            String text = chat.getPlayerInfoString(player, key, null);
+            if (text != null && !text.isBlank()) {
+                try {
+                    return OptionalInt.of(Integer.parseInt(text.trim()));
+                } catch (NumberFormatException e) {
+                    return OptionalInt.empty();
+                }
+            }
             int value = chat.getPlayerInfoInteger(player, key, UNSET);
             return value == UNSET ? OptionalInt.empty() : OptionalInt.of(value);
         } catch (RuntimeException e) {
