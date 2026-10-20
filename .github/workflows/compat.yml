@@ -73,7 +73,7 @@ jobs:
         with:
           name: VanillaPermissionsPlugin-compat
           path: plugin
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: ~/.cache/vpp-compat
           key: paper-${{ matrix.minecraft }}-${{ matrix.build }}-lp-5.5.87
