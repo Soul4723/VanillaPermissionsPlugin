@@ -6,8 +6,8 @@ body:
   - type: markdown
     attributes:
       value: |
-        Please check the [README](https://github.com/Soul4723/VanillaPermissionsPlugin#readme) first: it lists what an unset node means and what operators get.
-        Only Paper 1.20.6 is tested. Other versions are welcome, but say which one you use.
+        Please check the [documentation](https://github.com/Soul4723/VanillaPermissionsPlugin/tree/main/docs) first: it lists what an unset node means and what operators get.
+        Paper 1.20.6 through 26.3 is supported; see the [compatibility page](https://github.com/Soul4723/VanillaPermissionsPlugin/blob/main/docs/compatibility.md).
 
   - type: input
     attributes:
@@ -27,9 +27,18 @@ body:
 
   - type: input
     attributes:
-      label: LuckPerms version
-      description: Run `/lp info`.
-      placeholder: "5.4.150"
+      label: Permissions plugin and version (or none)
+      description: For example LuckPerms (`/lp info`) or GroupManager. Write "none" if you have no permissions plugin.
+      placeholder: "LuckPerms 5.5.87"
+    validations:
+      required: true
+
+  - type: dropdown
+    attributes:
+      label: Vault installed?
+      options:
+        - "Yes"
+        - "No"
     validations:
       required: true
 

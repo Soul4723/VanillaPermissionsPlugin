@@ -10,7 +10,7 @@
     <packaging>jar</packaging>
 
     <name>VanillaPermissionsPlugin</name>
-    <description>Drop-in Paper port of DrexHD's VanillaPermissions: granular permissions for vanilla commands and selectors</description>
+    <description>Drop-in Paper port of DrexHD's VanillaPermissions: granular permissions for vanilla commands, selectors and operator features, for any permissions plugin (Paper 1.20.6 to 26.3)</description>
     <url>https://github.com/Soul4723/VanillaPermissionsPlugin</url>
 
     <properties>
