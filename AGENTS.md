@@ -20,3 +20,10 @@
   walterhiggins/ScriptCraft; add others that fit. Three repos with "nothing to borrow" is not
   research; the owner rejected that (2026-10-20).
 - Verify a worker's "project X doesn't do Y" claims before relaying them.
+
+## Reporting to the owner
+
+- Keep updates during work to a line or two. The owner doesn't read progress messages
+  (2026-10-20), so assume nothing said mid-task was seen.
+- When a task ends, give one complete, standalone summary: what was done, current state,
+  and what the owner must decide or do.
