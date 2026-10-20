@@ -48,9 +48,10 @@ public final class NativeCommandPermissions {
             try {
                 install(event.registrar().getDispatcher());
             } catch (ReflectiveOperationException | RuntimeException error) {
-                owner.getLogger().log(Level.SEVERE, "Could not add permission checks to vanilla commands (only Paper 1.20.6 is tested). "
+                owner.getLogger().log(Level.SEVERE, "Could not add permission checks to vanilla commands on Minecraft "
+                    + Bukkit.getMinecraftVersion() + " (tested: Paper " + SupportedVersions.range() + "). "
                     + "Vanilla commands were restored and VanillaPermissionsPlugin is disabling itself so no command is left half-checked. "
-                    + "Run it on Paper 1.20.6 or remove it.", error);
+                    + "Run it on a tested Paper version or remove it.", error);
                 uninstall();
                 // Disabling inside a lifecycle event removes handlers Paper is iterating, which crashes the server.
                 owner.getServer().getScheduler().runTask(owner, () -> owner.getServer().getPluginManager().disablePlugin(owner));

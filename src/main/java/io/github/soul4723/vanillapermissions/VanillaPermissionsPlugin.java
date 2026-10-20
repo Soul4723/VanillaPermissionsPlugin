@@ -11,21 +11,20 @@ import io.github.soul4723.vanillapermissions.util.LuckPermsPermissionProvider;
 import io.github.soul4723.vanillapermissions.util.NativeCommandPermissions;
 import io.github.soul4723.vanillapermissions.util.PermissionManager;
 import io.github.soul4723.vanillapermissions.util.PermissionProvider;
+import io.github.soul4723.vanillapermissions.util.SupportedVersions;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class VanillaPermissionsPlugin extends JavaPlugin {
-
-    /** The only Paper version whose native command tree this plugin has been verified against. */
-    public static final String TESTED_MINECRAFT_VERSION = "1.20.6";
 
     private PermissionProvider permissionProvider;
 
     @Override
     public void onEnable() {
         String minecraftVersion = getServer().getMinecraftVersion();
-        if (!TESTED_MINECRAFT_VERSION.equals(minecraftVersion)) {
-            getLogger().warning("This server runs Minecraft " + minecraftVersion + ", but VanillaPermissionsPlugin is only tested on Paper "
-                + TESTED_MINECRAFT_VERSION + ", so adding the vanilla command checks may fail");
+        if (!SupportedVersions.isVerified(minecraftVersion)) {
+            getLogger().warning("This server runs Minecraft " + minecraftVersion + ", which VanillaPermissionsPlugin has not been tested on "
+                + "(tested: Paper " + String.join(", ", SupportedVersions.VERIFIED) + "). If the vanilla command checks cannot be added, "
+                + "it disables itself and leaves vanilla commands unchanged");
         }
 
         permissionProvider = PermissionManager.selectProvider(this);

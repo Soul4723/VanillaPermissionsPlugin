@@ -4,6 +4,7 @@ import io.github.soul4723.vanillapermissions.VanillaPermissionsPlugin;
 import io.github.soul4723.vanillapermissions.util.NativeCommandPermissions;
 import io.github.soul4723.vanillapermissions.util.PermissionManager;
 import io.github.soul4723.vanillapermissions.util.PermissionProvider;
+import io.github.soul4723.vanillapermissions.util.SupportedVersions;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -127,9 +128,9 @@ public final class VanillaPermissionsPluginCommand implements TabExecutor {
     private void sendDebug(CommandSender sender) {
         sender.sendMessage("§6VanillaPermissionsPlugin " + plugin.getPluginMeta().getVersion());
         String minecraft = Bukkit.getMinecraftVersion();
-        String tested = VanillaPermissionsPlugin.TESTED_MINECRAFT_VERSION;
         sender.sendMessage("§7Server: §f" + Bukkit.getName() + " " + minecraft
-            + (tested.equals(minecraft) ? " §a(tested)" : " §e(untested; only Paper " + tested + " is tested)"));
+            + (SupportedVersions.isVerified(minecraft) ? " §a(tested)"
+                : " §e(untested; tested on Paper " + SupportedVersions.range() + ")"));
 
         PermissionProvider provider = PermissionManager.getProvider();
         sender.sendMessage("§7Permissions: " + provider.describePermissions());
