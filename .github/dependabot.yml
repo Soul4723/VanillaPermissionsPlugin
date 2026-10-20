@@ -4,6 +4,9 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # Wait a week before proposing a brand-new release (ViaVersion/ViaVersion dependabot.yml).
+    cooldown:
+      default-days: 7
     groups:
       maven-minor-patch:
         update-types: [minor, patch]
@@ -17,6 +20,9 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # Wait a week before proposing a brand-new release (ViaVersion/ViaVersion dependabot.yml).
+    cooldown:
+      default-days: 7
     groups:
       actions-minor-patch:
         update-types: [minor, patch]
