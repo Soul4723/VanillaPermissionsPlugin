@@ -1,10 +1,9 @@
 package io.github.soul4723.vanillapermissions.command;
 
 import io.github.soul4723.vanillapermissions.VanillaPermissionsPlugin;
-import io.github.soul4723.vanillapermissions.util.LuckPermsHook;
 import io.github.soul4723.vanillapermissions.util.NativeCommandPermissions;
 import io.github.soul4723.vanillapermissions.util.PermissionManager;
-import net.luckperms.api.util.Tristate;
+import io.github.soul4723.vanillapermissions.util.PermissionProvider;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -16,7 +15,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.OptionalInt;
 
-/** {@code /vanillapermissions}: inspect how LuckPerms resolves this plugin's nodes. */
+/** {@code /vanillapermissions}: inspect how this plugin's nodes resolve. */
 public final class VanillaPermissionsPluginCommand implements TabExecutor {
 
     public static final String ADMIN_PERMISSION = "vanillapermissions.admin";
@@ -75,14 +74,14 @@ public final class VanillaPermissionsPluginCommand implements TabExecutor {
     private void sendHelp(CommandSender sender, String label) {
         sender.sendMessage("§6VanillaPermissionsPlugin " + plugin.getPluginMeta().getVersion());
         String requires = sender.hasPermission(ADMIN_PERMISSION) ? "" : " §7(requires " + ADMIN_PERMISSION + ")";
-        sender.sendMessage("§e/" + label + " check <player> [node] §7- show how LuckPerms resolves a node for an online player" + requires);
-        sender.sendMessage("§e/" + label + " debug §7- show plugin, server and LuckPerms status" + requires);
+        sender.sendMessage("§e/" + label + " check <player> [node] §7- show how a node resolves for an online player" + requires);
+        sender.sendMessage("§e/" + label + " debug §7- show plugin, server and permissions plugin status" + requires);
     }
 
     private void check(CommandSender sender, String playerName, String node) {
         Player target = Bukkit.getPlayerExact(playerName);
         if (target == null) {
-            sender.sendMessage("§cPlayer " + playerName + " is not online. Only online players can be checked, in their current LuckPerms context.");
+            sender.sendMessage("§cPlayer " + playerName + " is not online. Only online players can be checked, in their current context.");
             return;
         }
         if (node != null) {
@@ -132,14 +131,11 @@ public final class VanillaPermissionsPluginCommand implements TabExecutor {
         sender.sendMessage("§7Server: §f" + Bukkit.getName() + " " + minecraft
             + (tested.equals(minecraft) ? " §a(tested)" : " §e(untested; only Paper " + tested + " is tested)"));
 
-        LuckPermsHook hook = PermissionManager.getLuckPermsHook();
-        if (hook != null && hook.isEnabled()) {
-            sender.sendMessage("§7LuckPerms: §aconnected §7(" + hook.getLuckPerms().getPluginMetadata().getVersion() + ")");
-        } else {
-            sender.sendMessage("§7LuckPerms: §cnot connected");
-        }
+        PermissionProvider provider = PermissionManager.getProvider();
+        sender.sendMessage("§7Permissions: " + provider.describePermissions());
+        sender.sendMessage("§7Selector limits and weights: " + provider.describeMeta());
         int nodes = NativeCommandPermissions.installedNodeCount();
-        sender.sendMessage("§7Vanilla command nodes with LuckPerms checks: "
+        sender.sendMessage("§7Vanilla command nodes with permission checks: "
             + (nodes > 0 ? "§f" + nodes : "§c0 (see the startup log)"));
     }
 

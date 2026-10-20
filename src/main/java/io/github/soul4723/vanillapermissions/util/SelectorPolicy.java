@@ -42,7 +42,7 @@ public final class SelectorPolicy {
         public enum Kind { PLAYER, ENTITY, SCORE_HOLDER, UNSUPPORTED }
     }
 
-    /** LuckPerms lookup seam keeps NMS target resolution outside this policy. */
+    /** Permission lookup seam keeps NMS target resolution outside this policy. */
     public interface Permissions {
         boolean hasPermission(CommandSender sender, String node, boolean fallback);
         OptionalInt getIntegerMeta(UUID subjectId, CommandSender onlineSubject, String node);

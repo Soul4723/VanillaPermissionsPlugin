@@ -21,7 +21,7 @@ import java.util.Map;
 public final class TestLuckPerms implements AutoCloseable {
     public final Map<String, Tristate> nodes = new HashMap<>();
     private final Field hookField;
-    private final Object previousHook;
+    private final Object previousProvider;
 
     public TestLuckPerms() throws ReflectiveOperationException {
         QueryOptions options = proxy(QueryOptions.class, (p, m, a) -> { throw new AssertionError(m); });
@@ -49,15 +49,15 @@ public final class TestLuckPerms implements AutoCloseable {
             @Override public boolean isEnabled() { return true; }
             @Override public LuckPerms getLuckPerms() { return luckPerms; }
         };
-        hookField = PermissionManager.class.getDeclaredField("luckPermsHook");
+        hookField = PermissionManager.class.getDeclaredField("provider");
         hookField.setAccessible(true);
-        previousHook = hookField.get(null);
-        hookField.set(null, hook);
+        previousProvider = hookField.get(null);
+        hookField.set(null, new LuckPermsPermissionProvider(hook, null));
     }
 
     @Override
     public void close() throws IllegalAccessException {
-        hookField.set(null, previousHook);
+        hookField.set(null, previousProvider);
     }
 
     public static <T> T proxy(Class<T> type, InvocationHandler handler) {

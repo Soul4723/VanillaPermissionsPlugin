@@ -100,10 +100,10 @@ class NativeCommandPermissionsTest {
             @Override public boolean isEnabled() { return true; }
             @Override public LuckPerms getLuckPerms() { return luckPerms; }
         };
-        hookField = PermissionManager.class.getDeclaredField("luckPermsHook");
+        hookField = PermissionManager.class.getDeclaredField("provider");
         hookField.setAccessible(true);
         previousHook = hookField.get(null);
-        hookField.set(null, hook);
+        hookField.set(null, new LuckPermsPermissionProvider(hook, null));
 
         source = new TestSource(player);
         Predicate<Object> fallback = value -> {

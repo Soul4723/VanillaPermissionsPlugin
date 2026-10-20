@@ -18,7 +18,7 @@ public class WhitelistBypassListener implements Listener {
             case KICK_FULL -> PLAYER_LIMIT_PERMISSION;
             default -> null;
         };
-        if (permission != null && PermissionManager.hasPermission(event.getPlayer(), permission)) {
+        if (permission != null && PermissionManager.hasPermissionAtLogin(event.getPlayer(), permission)) {
             event.allow();
         }
     }

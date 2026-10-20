@@ -14,7 +14,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 
 /**
- * Lets LuckPerms take operator block access away. Vanilla still requires op and creative mode
+ * Lets the permissions plugin take operator block access away. Vanilla still requires op and creative mode
  * (or Paper's own minecraft.commandblock for command blocks), so an unset node keeps vanilla
  * behaviour and only an explicit false changes anything.
  */

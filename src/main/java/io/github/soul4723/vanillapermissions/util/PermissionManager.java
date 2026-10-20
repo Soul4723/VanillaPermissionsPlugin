@@ -1,88 +1,105 @@
 package io.github.soul4723.vanillapermissions.util;
 
-import net.luckperms.api.LuckPerms;
-import net.luckperms.api.cacheddata.CachedMetaData;
-import net.luckperms.api.model.user.User;
-import net.luckperms.api.util.Tristate;
+import org.bukkit.Server;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginManager;
 
+import java.util.List;
 import java.util.OptionalInt;
 import java.util.UUID;
 import java.util.logging.Logger;
 
 /**
- * LuckPerms lookups in the player's current context. {@link #queryPermission} keeps the unset state so callers
- * can fall back to vanilla; {@link #hasPermission(Player, String)} treats unset as not granted.
+ * Node lookups through the selected {@link PermissionProvider}. {@link #queryPermission} keeps the unset state so
+ * callers can fall back to vanilla; {@link #hasPermission(Player, String)} treats unset as the provider's default.
+ * Console and other non-player senders are never affected by command or selector nodes.
  */
 public class PermissionManager {
 
-    private static LuckPermsHook luckPermsHook;
+    /** Permissions plugins recognised without Vault, as in EssentialsX's superperms handler. */
+    static final List<String> KNOWN_PERMISSIONS_PLUGINS = List.of("LuckPerms", "PermissionsEx", "GroupManager",
+        "UltraPermissions", "PowerRanks", "bPermissions", "zPermissions", "PermissionsBukkit", "SimplyPerms",
+        "Privileges", "DroxPerms", "xPerms");
+
+    private static PermissionProvider provider = new BukkitPermissionProvider(null, null, null);
     private static Logger logger;
 
-    public static void initialize(LuckPermsHook luckPermsHook, JavaPlugin plugin) {
-        PermissionManager.luckPermsHook = luckPermsHook;
+    public static void initialize(PermissionProvider provider, Plugin plugin) {
+        PermissionManager.provider = provider;
         PermissionManager.logger = plugin.getLogger();
     }
 
-    public static Tristate queryPermission(CommandSender sender, String permission) {
-        User user = getUser(sender);
-        if (user == null) return Tristate.UNDEFINED;
+    /**
+     * LuckPerms when it is running, otherwise Bukkit's API with Vault chat meta if available. Logs one line for the
+     * permission source and one for selector meta, so admins can see what works without LuckPerms.
+     */
+    public static PermissionProvider selectProvider(Plugin plugin) {
+        Server server = plugin.getServer();
+        PluginManager plugins = server.getPluginManager();
+        Logger log = plugin.getLogger();
 
-        try {
-            LuckPerms luckPerms = luckPermsHook.getLuckPerms();
-            return user.getCachedData().getPermissionData(
-                luckPerms.getContextManager().getQueryOptions((Player) sender)
-            ).queryPermission(permission).result();
-        } catch (Exception e) {
-            if (logger != null) {
-                logger.warning("Could not query LuckPerms, using the vanilla fallback: " + e.getMessage());
+        Plugin luckPerms = plugins.getPlugin("LuckPerms");
+        if (luckPerms != null) {
+            PermissionProvider connected = LuckPermsPermissionProvider.connect(plugin);
+            if (connected != null) {
+                log.info("Using LuckPerms " + luckPerms.getPluginMeta().getVersion()
+                    + " for permission checks, contexts, selector limits and weights, and command list refresh");
+                return connected;
             }
-            return Tristate.UNDEFINED;
+            log.severe("Falling back to Bukkit permissions without LuckPerms; fix LuckPerms to restore its nodes");
         }
+
+        VaultHook vault = null;
+        BukkitPermissionProvider.LoginPermissions loginPermissions = null;
+        String permissionsPlugin = null;
+        Plugin vaultPlugin = plugins.getPlugin("Vault");
+        if (vaultPlugin != null && vaultPlugin.isEnabled()) {
+            try {
+                vault = VaultHook.connect(server, log);
+                permissionsPlugin = VaultHook.permissionsPlugin(server);
+                loginPermissions = VaultHook.loginPermissions(server);
+            } catch (RuntimeException | LinkageError e) {
+                log.warning("Could not use the Vault API: " + e);
+            }
+        }
+        if (permissionsPlugin == null) permissionsPlugin = detectPermissionsPlugin(plugins);
+
+        if (permissionsPlugin == null) {
+            log.warning("No permissions plugin found, so every node follows Bukkit defaults and operator status; "
+                + "install a permissions plugin such as LuckPerms for granular control");
+        } else {
+            log.info("Using Bukkit permissions from " + permissionsPlugin
+                + "; whether command lists refresh after a permission change depends on that plugin");
+        }
+        if (vault != null) {
+            log.info("Selector limits and weights come from Vault chat meta (" + vault.getChatName() + ")");
+        } else {
+            log.info("Selector limits and weights are off: they need LuckPerms, or Vault with a chat meta provider");
+        }
+        return new BukkitPermissionProvider(permissionsPlugin, vault, loginPermissions, log);
+    }
+
+    static String detectPermissionsPlugin(PluginManager plugins) {
+        for (String name : KNOWN_PERMISSIONS_PLUGINS) {
+            Plugin plugin = plugins.getPlugin(name);
+            if (plugin != null && plugin.isEnabled()) return name;
+        }
+        return null;
+    }
+
+    public static PermissionValue queryPermission(CommandSender sender, String permission) {
+        if (!(sender instanceof Player player)) return PermissionValue.UNDEFINED;
+        return provider.getPermissionValue(player, permission);
     }
 
     public static boolean hasPermissionOrFallback(CommandSender sender, String permission, boolean fallback) {
-        return switch (queryPermission(sender, permission)) {
-            case TRUE -> true;
-            case FALSE -> false;
-            case UNDEFINED -> fallback;
-        };
+        return queryPermission(sender, permission).orElse(fallback);
     }
 
     public static OptionalInt getIntegerMeta(UUID subjectId, CommandSender onlineSubject, String key) {
-        if (luckPermsHook == null || !luckPermsHook.isEnabled()) return OptionalInt.empty();
-        try {
-            LuckPerms luckPerms = luckPermsHook.getLuckPerms();
-            User user = luckPerms.getUserManager().getUser(subjectId);
-            if (user == null) return OptionalInt.empty();
-
-            CachedMetaData metaData;
-            if (onlineSubject instanceof Player player && player.getUniqueId().equals(subjectId)) {
-                metaData = user.getCachedData().getMetaData(luckPerms.getContextManager().getQueryOptions(player));
-            } else {
-                metaData = user.getCachedData().getMetaData(user.getQueryOptions());
-            }
-            return metaData.getMetaValue(key, Integer::parseInt).map(OptionalInt::of).orElseGet(OptionalInt::empty);
-        } catch (Exception e) {
-            if (logger != null) logger.warning("Could not query LuckPerms integer meta: " + e.getMessage());
-            return OptionalInt.empty();
-        }
-    }
-
-    private static User getUser(CommandSender sender) {
-        if (!(sender instanceof Player player) || luckPermsHook == null || !luckPermsHook.isEnabled()) {
-            return null;
-        }
-        try {
-            return luckPermsHook.getLuckPerms().getUserManager().getUser(player.getUniqueId());
-        } catch (Exception e) {
-            if (logger != null) {
-                logger.warning("Could not look up the LuckPerms user: " + e.getMessage());
-            }
-            return null;
-        }
+        return provider.getIntegerMeta(subjectId, onlineSubject, key);
     }
 
     public static boolean hasPermission(CommandSender sender, String permission) {
@@ -102,29 +119,16 @@ public class PermissionManager {
 
     public static boolean hasPermission(Player player, String permission) {
         if (player == null) return false;
-
-        boolean hasPermission;
-        if (luckPermsHook != null && luckPermsHook.isEnabled()) {
-            try {
-                LuckPerms luckPerms = luckPermsHook.getLuckPerms();
-                User user = luckPerms.getUserManager().getUser(player.getUniqueId());
-                hasPermission = user != null && user.getCachedData().getPermissionData(
-                        luckPerms.getContextManager().getQueryOptions(player)).checkPermission(permission).asBoolean();
-            } catch (Exception e) {
-                if (logger != null) {
-                    logger.warning("Could not check a node with LuckPerms, falling back to Bukkit: " + e.getMessage());
-                }
-                hasPermission = player.hasPermission(permission);
-            }
-        } else {
-            hasPermission = player.hasPermission(permission);
-        }
-
-        return hasPermission;
+        return provider.hasPermission(player, permission);
     }
 
-    public static LuckPermsHook getLuckPermsHook() {
-        return luckPermsHook;
+    /** For checks during {@code PlayerLoginEvent}; see {@link PermissionProvider#hasPermissionAtLogin}. */
+    public static boolean hasPermissionAtLogin(Player player, String permission) {
+        return player != null && provider.hasPermissionAtLogin(player, permission);
+    }
+
+    public static PermissionProvider getProvider() {
+        return provider;
     }
 
 }

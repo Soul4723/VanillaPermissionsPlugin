@@ -9,7 +9,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * Lets LuckPerms take debug stick use away, per block like upstream. Vanilla still requires op and creative
+ * Lets the permissions plugin take debug stick use away, per block like upstream. Vanilla still requires op and creative
  * mode (or Paper's own minecraft.debugstick permissions), so an unset node keeps vanilla behaviour.
  */
 public class DebugStickListener implements Listener {

@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -39,6 +40,13 @@ class PluginDescriptorTest {
         assertEquals(System.getProperty("project.version"), descriptor.getVersion(), "plugin.yml version differs from pom.xml");
         assertEquals(VanillaPermissionsPlugin.class.getName(), descriptor.getMain());
         assertEquals("VanillaPermissionsPlugin", descriptor.getName());
+    }
+
+    @Test
+    void permissionsPluginsAreOptional() {
+        assertTrue(descriptor.getDepend().isEmpty(), "plugin.yml hard-depends on " + descriptor.getDepend());
+        assertTrue(descriptor.getSoftDepend().containsAll(List.of("LuckPerms", "Vault")),
+            "plugin.yml must soft-depend on LuckPerms and Vault, was " + descriptor.getSoftDepend());
     }
 
     @Test

@@ -10,7 +10,7 @@
     <packaging>jar</packaging>
 
     <name>VanillaPermissionsPlugin</name>
-    <description>Drop-in Paper port of DrexHD's VanillaPermissions: granular LuckPerms permissions for vanilla commands and selectors</description>
+    <description>Drop-in Paper port of DrexHD's VanillaPermissions: granular permissions for vanilla commands and selectors</description>
     <url>https://github.com/Soul4723/VanillaPermissionsPlugin</url>
 
     <properties>
@@ -52,6 +52,10 @@
             <id>papermc-repo</id>
             <url>https://repo.papermc.io/repository/maven-public/</url>
         </repository>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -66,6 +70,18 @@
             <artifactId>api</artifactId>
             <version>5.5</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.MilkBowl</groupId>
+            <artifactId>VaultAPI</artifactId>
+            <version>1.7.1</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.bukkit</groupId>
+                    <artifactId>bukkit</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

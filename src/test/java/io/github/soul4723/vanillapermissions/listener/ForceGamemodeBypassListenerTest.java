@@ -1,6 +1,8 @@
 package io.github.soul4723.vanillapermissions.listener;
 
+import io.github.soul4723.vanillapermissions.util.BukkitPermissionProvider;
 import io.github.soul4723.vanillapermissions.util.LuckPermsHook;
+import io.github.soul4723.vanillapermissions.util.LuckPermsPermissionProvider;
 import io.github.soul4723.vanillapermissions.util.PermissionManager;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.cacheddata.CachedDataManager;
@@ -89,10 +91,10 @@ class ForceGamemodeBypassListenerTest {
         LuckPermsHook hook = new LuckPermsHook();
         set(hook, "luckPerms", luckPerms);
         set(hook, "enabled", true);
-        hookField = PermissionManager.class.getDeclaredField("luckPermsHook");
+        hookField = PermissionManager.class.getDeclaredField("provider");
         hookField.setAccessible(true);
         previousHook = hookField.get(null);
-        hookField.set(null, hook);
+        hookField.set(null, new LuckPermsPermissionProvider(hook, null));
     }
 
     @AfterEach
@@ -159,7 +161,7 @@ class ForceGamemodeBypassListenerTest {
         bukkitGrant = true;
         contextFailure = true;
         assertTrue(PermissionManager.hasPermission(player, LEAF), "Exception Bukkit fallback lost");
-        hookField.set(null, null);
+        hookField.set(null, new BukkitPermissionProvider(null, null, null));
         assertTrue(cancelled(PlayerGameModeChangeEvent.Cause.DEFAULT_GAMEMODE), "Bukkit grant ignored without LuckPerms");
         bukkitGrant = false;
         assertFalse(cancelled(PlayerGameModeChangeEvent.Cause.DEFAULT_GAMEMODE), "Bukkit denial ignored without LuckPerms");

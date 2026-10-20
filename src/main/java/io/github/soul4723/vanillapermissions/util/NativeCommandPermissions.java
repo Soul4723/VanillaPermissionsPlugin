@@ -48,7 +48,7 @@ public final class NativeCommandPermissions {
             try {
                 install(event.registrar().getDispatcher());
             } catch (ReflectiveOperationException | RuntimeException error) {
-                owner.getLogger().log(Level.SEVERE, "Could not add LuckPerms checks to vanilla commands (only Paper 1.20.6 is tested). "
+                owner.getLogger().log(Level.SEVERE, "Could not add permission checks to vanilla commands (only Paper 1.20.6 is tested). "
                     + "Vanilla commands were restored and VanillaPermissionsPlugin is disabling itself so no command is left half-checked. "
                     + "Run it on Paper 1.20.6 or remove it.", error);
                 uninstall();
@@ -166,7 +166,7 @@ public final class NativeCommandPermissions {
         INSTALLED.addAll(applied);
         // Counted over the live tree so a reload with a fresh dispatcher does not inflate the total.
         checkedNodes = (int) visited.stream().filter(node -> node.getRequirement() instanceof PermissionPredicate).count();
-        plugin.getLogger().info("Added LuckPerms checks to " + checkedNodes + " vanilla command nodes");
+        plugin.getLogger().info("Added permission checks to " + checkedNodes + " vanilla command nodes");
         if (!applied.isEmpty()) refreshOnlinePlayers(plugin);
     }
 

@@ -6,11 +6,11 @@ author: Soul4723
 description: "${project.description}"
 website: ${project.url}
 
-depend: [LuckPerms]
+softdepend: [LuckPerms, Vault]
 
 commands:
   vanillapermissions:
-    description: Inspect how LuckPerms resolves VanillaPermissionsPlugin nodes
+    description: Inspect how VanillaPermissionsPlugin nodes resolve
     usage: "/<command> check <player> [node] | /<command> debug"
     permission: vanillapermissions.use
 
