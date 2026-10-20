@@ -24,8 +24,21 @@ class VanillaPermissionsPluginCommandTest {
     }
 
     @Test
+    void nodesTheDocsTellAdminsToSetHaveAnUnsetMeaning() {
+        for (String node : new String[] {"minecraft.commandblock", "minecraft.debugstick", "minecraft.admin.command_feedback"}) {
+            assertEquals("Paper's default: operators", VanillaPermissionsPluginCommand.unsetMeaning(node), node);
+        }
+        assertEquals("Paper's default: nobody", VanillaPermissionsPluginCommand.unsetMeaning("minecraft.debugstick.always"));
+        for (String node : new String[] {"vanillapermissions.use", "vanillapermissions.admin"}) {
+            assertEquals("this plugin's default: operators", VanillaPermissionsPluginCommand.unsetMeaning(node), node);
+        }
+    }
+
+    @Test
     void unknownNodesAreNotChecked() {
-        assertNull(VanillaPermissionsPluginCommand.unsetMeaning("minecraft.commandblock"));
+        assertNull(VanillaPermissionsPluginCommand.unsetMeaning("minecraft.commandblocks"));
+        assertNull(VanillaPermissionsPluginCommand.unsetMeaning("minecraft.debugstick.sometimes"));
+        assertNull(VanillaPermissionsPluginCommand.unsetMeaning("vanillapermissions.root"));
         assertNull(VanillaPermissionsPluginCommand.unsetMeaning("minecraft.selectors"));
         assertNull(VanillaPermissionsPluginCommand.unsetMeaning("minecraft.comand.gamemode"));
     }

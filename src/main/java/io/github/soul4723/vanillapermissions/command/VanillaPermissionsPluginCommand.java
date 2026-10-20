@@ -15,6 +15,7 @@ import org.bukkit.entity.Player;
 import java.util.List;
 import java.util.Locale;
 import java.util.OptionalInt;
+import java.util.Set;
 
 /** {@code /vanillapermissions}: inspect how this plugin's nodes resolve. */
 public final class VanillaPermissionsPluginCommand implements TabExecutor {
@@ -33,6 +34,11 @@ public final class VanillaPermissionsPluginCommand implements TabExecutor {
         "minecraft.command.", "minecraft.selector", "minecraft.selector.self.", "minecraft.selector.player.",
         "minecraft.selector.entity.", "minecraft.selector.limit.", "minecraft.selector.weight.",
         "minecraft.bypass.", "minecraft.operator_block.", "minecraft.debug_stick.use.");
+
+    /** Paper's own nodes that the docs tell admins to set; Paper registers them, so Paper's default is the unset meaning. */
+    private static final Set<String> PAPER_OPERATOR_NODES = Set.of(
+        "minecraft.commandblock", "minecraft.debugstick", "minecraft.admin.command_feedback");
+    private static final Set<String> PLUGIN_OPERATOR_NODES = Set.of("vanillapermissions.use", ADMIN_PERMISSION);
 
     private static final String NOT_CHECKED = " §7(not a node this plugin checks)";
 
@@ -111,7 +117,7 @@ public final class VanillaPermissionsPluginCommand implements TabExecutor {
         };
     }
 
-    /** What an unset value means for the node's family, or {@code null} if this plugin never checks the node. */
+    /** What an unset value means for the node's family, or {@code null} if neither this plugin nor Paper's documented nodes cover it. */
     static String unsetMeaning(String node) {
         if (node.startsWith("minecraft.selector.limit.")) return "no limit";
         if (node.startsWith("minecraft.selector.weight.")) return "no weight check";
@@ -122,6 +128,9 @@ public final class VanillaPermissionsPluginCommand implements TabExecutor {
                 || node.startsWith("minecraft.operator_block.") || node.startsWith("minecraft.debug_stick.use.")) {
             return "vanilla behaviour applies";
         }
+        if (PAPER_OPERATOR_NODES.contains(node)) return "Paper's default: operators";
+        if (node.equals("minecraft.debugstick.always")) return "Paper's default: nobody";
+        if (PLUGIN_OPERATOR_NODES.contains(node)) return "this plugin's default: operators";
         return null;
     }
 
