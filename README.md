@@ -20,16 +20,23 @@ Your permissions plugin decides, node by node, who may use each part of a vanill
 | | Supported |
 | --- | --- |
 | Server software | [Paper](https://papermc.io/) |
-| Minecraft | **1.20.6 through 26.3**, one jar |
+| Minecraft | **1.20.6 through 26.3**, one jar (Paper never published 1.21.2, 26.1 or 26.1.0) |
 | Java | 21 for 1.20.6 – 1.21.11, 25 for 26.x |
 | Permissions plugin | Optional. LuckPerms 5.5+ recommended; any Bukkit permissions plugin works |
 | Not supported | Paper 1.20.5 and older, Spigot, Folia |
 
-Every release in the range boots and installs cleanly in CI. Full behaviour checks ran on 1.20.6 and 1.21.11; 26.3 was checked at startup and on the console only. Details: [docs/compatibility.md](docs/compatibility.md).
+Every Paper release in the range boots and installs cleanly in CI (1.21.5, 1.21.9 and 26.1.1 only have experimental Paper builds, so they are boot-tested only). Full behaviour checks ran on 1.20.6 and 1.21.11. Details: [docs/compatibility.md](docs/compatibility.md).
 
 ## Installation
 
-1. Put `VanillaPermissionsPlugin-<version>.jar` from the [latest release](https://github.com/Soul4723/VanillaPermissionsPlugin/releases/latest) in `plugins/`.
+Before you install:
+
+- It needs [Paper](https://papermc.io/) (or a Paper fork); Spigot is not supported.
+- It does nothing useful without a permissions plugin such as LuckPerms: it adds the checks, your permissions plugin decides who passes them.
+- There is no config file; everything is set through your permissions plugin.
+
+
+1. Put `VanillaPermissionsPlugin-<version>.jar` from the [latest release](https://github.com/Soul4723/VanillaPermissionsPlugin/releases/latest) in `plugins/`. Each release also has a `.sha256` file to check the download with `sha256sum -c`.
 2. Restart the server. The log should show:
    - `Installed vanilla /execute permission, feedback, and oplevel extensions`
    - `Added permission checks to <n> vanilla command nodes`
@@ -45,6 +52,31 @@ Let a `member` group use `/time`, and nothing else from vanilla (plugin commands
 /lp group member permission set minecraft.command.time.* true
 ```
 
+`minecraft.command.* false` also turns off `/me`, `/msg`, `/tell`, `/w`, `/teammsg`, `/tm`, `/trigger`, `/minecraft:help` and, through Paper's `minecraft.command.selector`, `@` selectors. To keep them, run these lines (the last one keeps `@` selectors; also see [Recipes](docs/recipes.md#what-minecraftcommand-false-also-turns-off)):
+
+<details>
+<summary>Lines to keep the everyday commands and <code>@</code> selectors</summary>
+
+```text
+/lp group member permission set minecraft.command.me true
+/lp group member permission set minecraft.command.me.* true
+/lp group member permission set minecraft.command.msg true
+/lp group member permission set minecraft.command.msg.* true
+/lp group member permission set minecraft.command.tell true
+/lp group member permission set minecraft.command.w true
+/lp group member permission set minecraft.command.teammsg true
+/lp group member permission set minecraft.command.teammsg.* true
+/lp group member permission set minecraft.command.tm true
+/lp group member permission set minecraft.command.trigger true
+/lp group member permission set minecraft.command.trigger.* true
+/lp group member permission set minecraft.command.help true
+/lp group member permission set minecraft.selector true
+```
+
+</details>
+
+Granting a root also opens every sub-command you have not set: [Read this first](docs/permissions.md) explains that and how to find a node with `/lp verbose`.
+
 Check the result with `/vanillapermissions check <player> minecraft.command.time.set`. More copy-paste setups are in [Recipes](docs/recipes.md).
 
 ## Documentation
@@ -53,13 +85,17 @@ Check the result with `/vanillapermissions check <player> minecraft.command.time
 | --- | --- |
 | [Permissions](docs/permissions.md) | How a node resolves, every node, wildcards, operator defaults |
 | [Recipes](docs/recipes.md) | Copy-paste setups |
-| [Permission plugins](docs/providers.md) | LuckPerms, other plugins, Vault, running without one |
+| [Permissions plugins](docs/providers.md) | LuckPerms, other plugins, Vault, running without one |
 | [Compatibility](docs/compatibility.md) | Supported versions, how they were verified, what is not supported |
 | [Commands](docs/commands.md) | `/vanillapermissions` and the plugin's own nodes |
-| [Troubleshooting](docs/troubleshooting.md) | FAQ and limitations |
+| [Troubleshooting and limitations](docs/troubleshooting.md) | FAQ and limitations |
 | [Roadmap](docs/roadmap.md) | Other versions and platforms |
 
 The full index is [docs/README.md](docs/README.md).
+
+## Support
+
+Ask questions and report bugs on [GitHub Issues](https://github.com/Soul4723/VanillaPermissionsPlugin/issues/new/choose); the issue templates say what to include.
 
 ## Building from source
 
