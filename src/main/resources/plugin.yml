@@ -23,6 +23,11 @@ permissions:
     default: op
     children:
       vanillapermissions.use: true
+  minecraft.selector:
+    description: Type @ selectors; also passes Paper's parse-time selector check (1.21.3+)
+    default: op
+    children:
+      minecraft.command.selector: true
   minecraft.bypass.whitelist:
     description: Join while not whitelisted
     default: false

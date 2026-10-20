@@ -50,17 +50,30 @@ class PluginDescriptorTest {
     }
 
     @Test
-    void onlyTheBypassNodesAreDeclaredUnderMinecraft() {
-        Set<String> expected = Set.of("minecraft.bypass.whitelist", "minecraft.bypass.player-limit",
+    void onlyTheBypassAndSelectorNodesAreDeclaredUnderMinecraft() {
+        Set<String> expected = Set.of("minecraft.selector", "minecraft.bypass.whitelist", "minecraft.bypass.player-limit",
             "minecraft.bypass.force-gamemode", "minecraft.bypass.move-speed.player");
         Set<String> declared = new HashSet<>();
         for (Permission permission : descriptor.getPermissions()) {
             if (!permission.getName().startsWith("minecraft.")) continue;
             declared.add(permission.getName());
-            assertEquals(PermissionDefault.FALSE, permission.getDefault(), permission.getName() + " must default to false");
+            // minecraft.selector mirrors vanilla (operators only); the bypass nodes mirror vanilla by defaulting to false.
+            PermissionDefault expectedDefault = permission.getName().equals("minecraft.selector") ? PermissionDefault.OP : PermissionDefault.FALSE;
+            assertEquals(expectedDefault, permission.getDefault(), permission.getName() + " must default to " + expectedDefault);
             assertFalse(permission.getDescription().isBlank(), permission.getName() + " has no description");
         }
-        assertEquals(expected, declared, "Plugin must declare only the bypass nodes under minecraft.");
+        assertEquals(expected, declared, "Plugin must declare only the bypass and selector nodes under minecraft.");
+    }
+
+    /**
+     * From 1.21.3 vanilla checks selector syntax while parsing, before the plugin's executor runs, through Paper's
+     * minecraft.command.selector node. minecraft.selector grants it so the plugin's node is enough.
+     */
+    @Test
+    void selectorNodeGrantsPapersParseTimeNode() {
+        Permission selector = descriptor.getPermissions().stream()
+            .filter(permission -> permission.getName().equals("minecraft.selector")).findFirst().orElseThrow();
+        assertEquals(Map.of("minecraft.command.selector", true), selector.getChildren());
     }
 
     @Test
