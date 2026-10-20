@@ -7,7 +7,7 @@ Maintainer notes. Contributor-facing rules are in [CONTRIBUTING.md](../../CONTRI
 - **Semantic Versioning**, `MAJOR.MINOR.PATCH`, set once in `pom.xml` (`<version>`). Pre-releases use a hyphen: `1.1.0-rc.1`.
 - **Git tag** is `v` + the pom version: `v1.0.0`. The tag is the only thing that triggers a release.
 - **The jar name has no Minecraft version**: `VanillaPermissionsPlugin-1.0.0.jar`. One jar covers the whole supported Paper range, as with ViaVersion (`ViaVersion-5.12.1.jar`), EssentialsX (`EssentialsX-2.22.0.jar`) and CommandAPI (`CommandAPI-12.1.0-Paper.jar`). Projects that put the Minecraft version in the version (`0.164.0+26.3` for Fabric API, `0.3.6+26.1.2` for DrexHD/VanillaPermissions) do so because they ship a different jar per Minecraft version, which this plugin does not.
-- **The supported range is documented, not encoded**: `api-version` in `plugin.yml`, the "tested on" line in the README, and a line in the changelog whenever it changes (the pattern of Geyser's and ViaVersion's README "Supported Versions" sections).
+- **The supported range is documented, not encoded**: `api-version` in `plugin.yml`, the version table in `docs/compatibility.md` and `SupportedVersions`, and a line in the changelog whenever it changes (the pattern of Geyser's and ViaVersion's README "Supported Versions" sections).
 - Bump MAJOR when a Paper version is dropped or a node changes meaning, MINOR for new nodes and features, PATCH for fixes.
 
 ## Cutting a release
@@ -50,7 +50,7 @@ Notes come from the changelog, as in DrexHD/VanillaPermissions (`fetchChangelog(
 
 Recommendation: never start with per-Minecraft branches. Fabric API and Carpet need them because mods are compiled against one exact Minecraft version; a Paper plugin built against the oldest supported Paper API is not. DrexHD/VanillaPermissions still has the old `1.19.2` ... `1.21.5` branches, but current releases build from `main` with Stonecutter.
 
-**Support policy.** Say in the README which Paper versions are tested and which are only expected to work, and drop old versions by a MAJOR bump. Fabric API's rule ("the latest stable version and the latest snapshot are always supported; older ones as far as feasible") is a workable template.
+**Support policy.** Say in `docs/compatibility.md` which Paper versions are tested and which are only expected to work, and drop old versions by a MAJOR bump. Fabric API's rule ("the latest stable version and the latest snapshot are always supported; older ones as far as feasible") is a workable template.
 
 ## Multi-platform layout (later)
 
