@@ -18,9 +18,6 @@ If a plugin takes over a vanilla name (for example EssentialsX `/gamemode` or `/
 
 ## Limitations
 
-The limits are listed once, in [Compatibility](compatibility.md#limits): unsupported and untested versions, features missing on some servers, and the extra limits on 1.8.8 - 1.12.2 and 1.13 - 1.16. Notes on Folia are in [Compatibility](compatibility.md#folia).
-
-- **Disabling at runtime:** if a plugin manager disables this plugin while the server keeps running (Spigot and Paper before 1.20.6), the plugin re-syncs commands to remove its checks from the `minecraft:` copies. It skips the re-sync only when the server is known to be stopping; an unavailable shutdown probe does not prevent the re-sync. Enabling or disabling the plugin while players are online may race the server's asynchronous command-tree send and cause a command-list update to fail.
-- With `/execute feedback console` the console may show a result twice (the direct output plus the admin log line).
+The limits are listed once, in [Compatibility](compatibility.md#limits): unsupported and untested versions, features missing on some servers, runtime enabling and disabling, and the extra limits on 1.8.8 - 1.12.2. Notes on Folia are in [Compatibility](compatibility.md#folia).
 
 Reporting a problem: use the [issue templates](https://github.com/Soul4723/VanillaPermissionsPlugin/issues/new/choose) and include the output of `/vanillapermissions debug` (and `/vanillapermissions check` for the node involved).

@@ -165,7 +165,7 @@ Other rules:
 - **Console and command blocks** are never checked, as on newer versions.
 - **A denied sub-node** answers "You do not have permission to use this command". A malformed selector gets the plugin's denial.
 
-Operator blocks cover command blocks, structure blocks from 1.10 and jigsaws from 1.14. The `/execute` additions and the debug stick nodes are 1.13+ features; the force-gamemode and move-speed bypasses work. The grammars were written against 1.12.2 and not run on 1.9.4 - 1.11.2. What these versions do not check (commands from other plugins, signs, 1.8.8 tab completion, `/execute` with a changed position) is listed in [Compatibility](compatibility.md#limits).
+Operator blocks cover command blocks and structure blocks (from 1.10). The `/execute` additions and the debug stick nodes are 1.13+ features; the force-gamemode and move-speed bypasses work. The grammars were written against 1.12.2 and not run on 1.9.4 - 1.11.2. What these versions do not check (commands from other plugins, signs, 1.8.8 tab completion, `/execute` with a changed position) is listed in [Compatibility](compatibility.md#limits).
 
 ## What players see when denied
 

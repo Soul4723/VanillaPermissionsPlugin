@@ -46,9 +46,8 @@ jobs:
   # Spigot cannot be downloaded or redistributed, so each revision is built once with BuildTools and kept only in
   # actions/cache (never uploaded as an artifact). Adopted from SpraxDev/Action-SpigotMC (action.yml, src/index.ts)
   # and Jannyboy11/InvSee-plus-plus (workflows/build.yml): `java -jar BuildTools.jar --rev <v> --compile ...` under
-  # the JDK each revision needs, skipped when the output already exists. Neither caches with actions/cache (Sprax uses
-  # an SFTP cache), and every workflow read (InvSee++, AngelChest, Drop2Inventory-Plus) fetches the unpinned
-  # lastSuccessfulBuild; this one pins BuildTools by build number and sha256 and keys the cache on both.
+  # the JDK each revision needs, skipped when the output already exists. BuildTools is pinned by build number and sha256,
+  # and the cache is keyed on both.
   spigot-jar:
     name: spigot jar ${{ matrix.minecraft }}
     runs-on: ubuntu-latest

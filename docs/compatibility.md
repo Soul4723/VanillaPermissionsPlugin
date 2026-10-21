@@ -83,7 +83,7 @@ Command nodes and selector control work on every supported version. Some feature
 | Whitelist and player-limit bypasses | All versions |
 | Force-gamemode bypass | Paper 1.16.5+; 1.8.8 - 1.12.2 |
 | Move-speed bypass | Paper 1.20.4+; 1.8.8 - 1.12.2 |
-| Operator blocks | All versions. On 1.8.8 - 1.12.2: command blocks, plus structure blocks from 1.10 and jigsaws from 1.14. |
+| Operator blocks | All versions. On 1.8.8 - 1.12.2: command blocks, plus structure blocks from 1.10. |
 | Debug stick per-block nodes | 1.13+ |
 
 The rows for Paper 1.16.5+ and 1.20.4+ also apply to the forks of the matching Paper version.
@@ -115,6 +115,11 @@ The plugin logs a warning once at startup on a (software, version) pair outside 
 - **Selectors:** random selectors (`@r`, `sort=random`) are checked on a separate draw from the command, so the checked targets can differ from those affected. On 1.13+, selectors in `/execute` forks (`as`, `at`) are not checked per fork. See [Selectors](permissions.md#selectors).
 - **Upstream nodes not added**, because the server has no API for them: `minecraft.bypass.spawn-protection`, `minecraft.bypass.chat-speed`, `minecraft.bypass.move-speed.vehicle.<entity>`, `minecraft.debug_chart`, `minecraft.<query|load>.<entity|block>`, `minecraft.adminbroadcast.receive` (use Paper's `minecraft.admin.command_feedback`) and the operator block `edit` action.
 
+### Runtime
+
+- **Disabling at runtime:** if a plugin manager disables this plugin while the server keeps running (Spigot and Paper before 1.20.6), the plugin re-syncs commands to remove its checks from the `minecraft:` copies. It skips the re-sync only when the server is known to be stopping; an unavailable shutdown probe does not prevent the re-sync. Enabling or disabling the plugin while players are online may race the server's asynchronous command-tree send and cause a command-list update to fail.
+- **Console feedback:** with `/execute feedback console` the console may show a result twice (the direct output plus the admin log line).
+
 ### 1.8.8 - 1.12.2
 
 - Only ten commands have sub-nodes ([list](permissions.md#188---1122-legacy-servers)); all others keep `minecraft.command.<name>`.
@@ -123,10 +128,6 @@ The plugin logs a warning once at startup on a (software, version) pair outside 
 - Selectors inside `/execute` are resolved from each target's position; if any execution coordinate is not exactly `~` and the inner command (after alias expansion) uses a selector in a selector-capable argument, the command is denied with the normal no-permission message.
 - The move-speed bypass does not cover vehicle moves.
 - The `view` deny of operator blocks is only partly enforced on 1.8.8 command blocks and 1.12.2 structure blocks: part of it is client-side, and edit packets still pass.
-
-### 1.13 - 1.16
-
-Commands that other plugins inject into the vanilla command dispatcher (LuckPerms' `/lp` through commodore, CommandAPI commands) are left unchecked, and listed in one log line at startup.
 
 ## Other server software
 

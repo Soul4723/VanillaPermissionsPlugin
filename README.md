@@ -21,7 +21,7 @@ Your permissions plugin decides, node by node, who may use each part of a vanill
 | --- | --- |
 | Server software | [Paper](https://papermc.io/), [Folia](https://papermc.io/software/folia) (1.20.6 – 26.3), [Spigot](https://www.spigotmc.org/), [Purpur](https://purpurmc.org/) (1.20.6 – 26.3) and Pufferfish (1.21 – 1.21.10) |
 | Minecraft | **1.8.8 through 26.3**, one jar, except Spigot 1.21.11 and 26.x (Paper never published 1.21.2, 26.1 or 26.1.0) |
-| Java | 8 for 1.8.8 – 1.16.5, 17 for 1.17 – 1.20.4, 21 for 1.20.5 – 1.21.11, 25 for 26.x (whatever your server needs; the jar itself is Java 8 bytecode) |
+| Java | 8 for 1.8.8 – 1.16.5, 17 for 1.17 – 1.20.4, 21 for 1.20.5 – 1.21.11, 25 for 26.x (whatever your server needs; the jar is Java 8 bytecode except the `paper` adapter, which is Java 21) |
 | Permissions plugin | Optional. LuckPerms recommended (5.5 needs Java 11+; on Java 8 use 5.4.x); any Bukkit permissions plugin works |
 | Not supported | Spigot 1.21.11 and 26.x; Folia before 1.20.6 |
 

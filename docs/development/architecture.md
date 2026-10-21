@@ -76,17 +76,17 @@ Listeners, by where they live:
 
 1. It skips the candidate if the running JVM is older than its minimum Java version. `java.specification.version` is `1.8` on Java 8 and `21` on Java 21. Loading a Java 21 class on an older JVM fails with `UnsupportedClassVersionError`; this gate means it is never attempted.
 2. It runs the probe. Probes live in `core` and only use `Class.forName` and `getField` on server classes, never the adapter's own classes.
-3. It loads the first match by name and instantiates it (with a public no-argument constructor). A `LinkageError` or reflection failure moves on to the next candidate.
+3. It loads the first match by name and instantiates it (with a public no-argument constructor). A probe that throws is logged and moves on to the next candidate. If instantiation fails (`LinkageError` or reflection failure), the plugin logs it and uses no adapter rather than falling through to a less specific one.
 
 The order is most specific first. As committed in `core/.../platform/Adapters.java`:
 
 | Order | Id | Minimum Java | Probe |
 | --- | --- | --- | --- |
 | 1 | `paper` | 21 | `LifecycleEvents.COMMANDS` exists and is a static field |
-| 2 | `spigot` | 8 | The server object is CraftBukkit's (`org.bukkit.craftbukkit.…`) and `com.mojang.brigadier.CommandDispatcher` loads through **the server's own class loader** |
-| 3 | `legacy` | 8 | CraftBukkit, with no Brigadier in the server's class loader, and `<craftbukkit package>.command.VanillaCommandWrapper` present |
+| 2 | `spigot` | 8 | The server object is CraftBukkit's (`org.bukkit.craftbukkit.…`), it is not Folia, and `com.mojang.brigadier.CommandDispatcher` loads through **the server's own class loader** |
+| 3 | `legacy` | 8 | Not Folia; CraftBukkit, with no Brigadier in the server's class loader, and `<craftbukkit package>.command.VanillaCommandWrapper` present |
 
-The `spigot` and `legacy` probes use the server's class loader, not the plugin's, because the plugin's loader also sees classes that other plugins bundle, and a 1.8 - 1.12 plugin may ship Brigadier unrelocated. If nothing matches, the plugin logs one SEVERE line naming the server software and version, then disables itself.
+The `spigot` and `legacy` probes use the server's class loader, not the plugin's, because the plugin's loader also sees classes that other plugins bundle, and a 1.8 - 1.12 plugin may ship Brigadier unrelocated. Folia is excluded from both so that a Folia without the lifecycle API is never treated as Spigot. If nothing matches, or the matched adapter cannot be instantiated, the plugin logs one SEVERE line naming the server software and version, then disables itself.
 
 A second safety net: an adapter that loads but cannot patch the tree restores vanilla commands and disables the plugin.
 
