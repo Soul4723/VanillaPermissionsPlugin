@@ -20,5 +20,7 @@ Start with the [project README](../README.md) for what the plugin does and how t
 | [Roadmap](roadmap.md) | Other versions and platforms, and what each would take |
 | [Contributing](../CONTRIBUTING.md) | Building, tests, pull requests |
 | [Releasing](development/releasing.md) | Versioning, release process, CI, branching |
+| [Architecture](development/architecture.md) | Modules, adapters per server version, Java targets, build and CI design |
+| [Live permission tests](development/testing.md) | The live-test harness: boot a server, join a bot, check allowed/denied commands |
 | [Changelog](../CHANGELOG.md) | What changed in each release |
 | [Security policy](../SECURITY.md) | Reporting vulnerabilities |

@@ -16,13 +16,15 @@ You need JDK 21 and Maven.
 mvn verify
 ```
 
-The first run needs network access to download the dependencies. It compiles, runs the tests and writes the jar to `target/VanillaPermissionsPlugin-<version>.jar`. Copy it to a Paper server's `plugins` folder together with a permissions plugin (LuckPerms is the usual choice) to try it. Say which Paper version you used when you open a pull request; the supported range is in [docs/compatibility.md](docs/compatibility.md). The full documentation index is [docs/README.md](docs/README.md).
+Unit tests are part of `mvn verify`; `mvn -pl core -am test` runs the core module’s tests. Boot smoke tests and live tests need additional server JDKs; commands are in [Testing](docs/development/testing.md).
+
+The first run needs network access to download the dependencies. It compiles, runs the tests and writes the jar to `target/VanillaPermissionsPlugin-<version>.jar`. Copy it to a Paper or Spigot server's `plugins` folder together with a permissions plugin (LuckPerms is the usual choice) to try it. Say which server software and version you used when you open a pull request; the supported range is in [docs/compatibility.md](docs/compatibility.md). The full documentation index is [docs/README.md](docs/README.md).
 
 ## Pull requests
 
 - Branch from `main` and open the pull request against `main`.
 - Keep one change per pull request, and follow the style of the code around it. `.editorconfig` covers indentation (4 spaces in Java and XML, 2 in YAML).
-- Add or update tests. CI runs `mvn verify` on every pull request.
+- Add or update tests. CI runs `mvn verify` and the Compatibility boot matrix on every pull request; see [Testing](docs/development/testing.md).
 - Add a line under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md) for anything users will notice.
 - Write commit messages in the imperative mood ("Check selector permissions after redirects"), with the reason in the body if it is not obvious.
 

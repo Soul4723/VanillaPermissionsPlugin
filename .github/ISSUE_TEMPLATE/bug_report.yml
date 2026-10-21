@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         Please check the [documentation](https://github.com/Soul4723/VanillaPermissionsPlugin/tree/main/docs) first: it lists what an unset node means and what operators get.
-        Paper 1.20.6 through 26.3 is supported; see the [compatibility page](https://github.com/Soul4723/VanillaPermissionsPlugin/blob/main/docs/compatibility.md).
+        Paper, Spigot, Purpur and Pufferfish are supported from 1.8.8 (ranges differ by software); see the [compatibility page](https://github.com/Soul4723/VanillaPermissionsPlugin/blob/main/docs/compatibility.md).
 
   - type: input
     attributes:
@@ -21,7 +21,7 @@ body:
     attributes:
       label: Server software and version
       description: Run `/version` in the console.
-      placeholder: "Paper 1.20.6-151-main@abcdef0"
+      placeholder: "Paper 1.20.6-151-main@abcdef0 or Spigot 1.20.4"
     validations:
       required: true
 

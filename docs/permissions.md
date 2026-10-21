@@ -1,6 +1,6 @@
 # Permissions
 
-How a node resolves, and every node the plugin checks. LuckPerms syntax is used for examples: `/lp group <group> permission set <node> true|false` and `/lp group <group> meta set <key> <value>`. For other plugins see [Permissions plugins](providers.md).
+How a node resolves, and every node the plugin checks. LuckPerms syntax is used for examples: `/lp group <group> permission set <node> true|false` and `/lp group <group> meta set <key> <value>`. For other plugins see [Permissions plugins](providers.md). The tables below describe 1.13 and later; servers on 1.8.8 - 1.12.2 differ, see [1.8.8 - 1.12.2 (legacy servers)](#188---1122-legacy-servers). Which features exist on which versions is in [Compatibility](compatibility.md#feature-availability).
 
 Terms used on every page: an **operator** is a player with op status; a **node** is a permission string such as `minecraft.command.time`; a node is **unset** when the permissions plugin has no value for it.
 
@@ -60,6 +60,8 @@ Wildcards work when LuckPerms `apply-wildcards` is on (the default).
 - **Gamemode:** the plugin replaces vanilla's single mode argument with one literal per mode, which is why the nodes above name the mode.
 - **`minecraft:<command>` aliases** (for example `/minecraft:gamemode`) use the same nodes as the command.
 - **Redirect aliases** (`/tp` → `teleport`, `/tell` and `/w` → `msg`, `/tm` → `teammsg`, `/xp` → `experience`) have their own root node (`minecraft.command.tp`), while their arguments use the target command's nodes (`minecraft.command.teleport.targets…`).
+  - When an alias's own node is unset, the target command's node decides: `/tell` stays open while `minecraft.command.msg` is unset or `true`, and `/tp` opens with `minecraft.command.teleport`. Exception: on Spigot and Paper 1.19 - 1.20.5, a `/tell`, `/w` or `/tm` typed by a player ignores `minecraft.command.msg` (or `teammsg`) `false` when its own node is unset; set the alias node to `false` too.
+  - On Spigot and Paper up to 1.20.5 the plugin changes the Bukkit permission of CraftBukkit's alias commands from the target's node (`minecraft.command.teleport` for `/tp`) to `minecraft.command.tp;minecraft.command.teleport`, either of which opens it. Without that, CraftBukkit refused `/tp` with "I'm sorry, but you do not have permission…" unless `minecraft.command.teleport` was granted.
 - Only vanilla commands get these checks; see [Commands from other plugins](troubleshooting.md#commands-from-other-plugins).
 
 ### `/execute` additions
@@ -95,6 +97,8 @@ Upstream's `/execute` extensions are added and use normal command nodes:
 - The whole selection is checked before the command runs, so a partly denied `@a` changes nothing.
 - Limit and weight are read from LuckPerms meta, or from Vault chat info with other plugins; see [Permissions plugins](providers.md).
 
+Random selectors and selectors in `/execute` forks are not fully checked; see [Limits](compatibility.md#limits).
+
 ### Bypass nodes
 
 Grant-only (see the table above). The whitelist and player-limit bypasses are checked while the player logs in. LuckPerms has loaded the player's data by then. Some other permissions plugins attach permissions only once the player has joined (GroupManager does), so for them the plugin also asks Vault's permission service, which reads the stored data; without Vault, those two bypasses need a plugin that attaches permissions at login.
@@ -112,7 +116,7 @@ Deny-only: `false` takes access away; `true` and unset leave vanilla/Paper in ch
 
 | Node | Controls |
 | --- | --- |
-| `minecraft.operator_block.<command_block\|structure_block\|jigsaw>.<place\|view\|break>` | Placing, opening and breaking the block. `command_block` also covers repeating and chain command blocks. |
+| `minecraft.operator_block.<command_block\|structure_block\|jigsaw\|test_block\|test_instance_block>.<place\|view\|break>` | Placing, opening and breaking the block. `command_block` also covers repeating and chain command blocks; `test_block` and `test_instance_block` apply where those materials exist (1.21.5+). |
 | `minecraft.debug_stick.use.<namespace>.<block>` | Using the debug stick on one block: the block id with `:` replaced by `.`, e.g. `minecraft.debug_stick.use.minecraft.oak_trapdoor`. `minecraft.debug_stick.use.*` covers every block. Applies to left and right clicks and to both hands. |
 
 `view` means opening the block's screen. It is only checked when a creative player right-clicks with the main hand and is not sneaking with an item, because that is the only click vanilla opens the screen for. Upstream also has `edit`; Paper has no API for it, so deny `view` instead.
@@ -132,6 +136,36 @@ Paper's own `minecraft.admin.command_feedback` (operators have it by default) co
 ### This plugin's own nodes
 
 `vanillapermissions.use` and `vanillapermissions.admin` are listed in [Nodes this plugin adds](commands.md#nodes-this-plugin-adds).
+
+## 1.8.8 - 1.12.2 (legacy servers)
+
+Before 1.13 vanilla has no command tree to patch. CraftBukkit already checks one node per command, `minecraft.command.<name>`, and nothing finer. The plugin adds the modern sub-nodes for **ten commands** by checking each typed command before it runs; every other command keeps `minecraft.command.<name>` and nothing more. Resolution, wildcards, operator defaults, selector nodes and the bypass nodes work as described above.
+
+Commands with sub-nodes (all start with `minecraft.command.`):
+
+| Command | Nodes |
+| --- | --- |
+| `gamemode` | `gamemode.{survival,creative,adventure,spectator}` and `.target` for another player. The legacy spellings `s`, `c`, `a`, `sp`, `0` - `3` and `01` use the node of their mode. |
+| `time` | `time.set.{day,night,time}`, `time.add.time`, `time.query.{daytime,gametime}`, and `time.query.day` (1.12) |
+| `weather` | `weather.{clear,rain,thunder}`, and `.duration` |
+| `kill` | `kill.targets` |
+| `effect` | `effect.clear.targets`, `.effect`; `effect.give.targets.effect`, then `.seconds`, `.amplifier`, `.hideParticles` |
+| `give` | `give.targets.item.count` |
+| `clear` | `clear.targets.item.maxCount` |
+| `tp` / `teleport` | `teleport.destination`, `teleport.targets.destination`, `teleport.location`, `teleport.targets.location`, `teleport.targets.location.rotation`. The root node stays `tp` or `teleport`, as typed. |
+| `execute` | `execute.as.targets`, `execute.if.block.pos.block` (the `detect` form), `execute.run`. The inner command is checked for the caller. |
+| `scoreboard` | `scoreboard.objectives.…`, `scoreboard.players.…`; `scoreboard teams` uses `team.…` and `scoreboard players tag` uses `tag.…` |
+
+The names are the modern ones, so a configuration written for 1.13 and later works unchanged. Selector nodes (`minecraft.selector`, scope, limit, weight) apply to these ten commands. In any other legacy command, `@` selectors are controlled only by CraftBukkit's `minecraft.command.selector`, which `minecraft.selector` grants.
+
+Other rules:
+
+- **Roots that differ:** `/tell` (and `/msg` and `/w` on 1.12) is checked as `minecraft.command.tell`, and also denied when `minecraft.command.msg` is `false`. `/xp` is checked as `minecraft.command.xp`, and also denied when `minecraft.command.experience` is `false`. `/tp` is also denied when `minecraft.command.teleport` is `false`, unless `minecraft.command.tp` is explicitly `true`. A modern `minecraft.command.* false` setup therefore keeps working. `/msg` and `/w` do not exist on 1.8.8.
+- **Aliases:** `minecraft:<command>` and aliases from `commands.yml` use the same nodes.
+- **Console and command blocks** are never checked, as on newer versions.
+- **A denied sub-node** answers "You do not have permission to use this command". A malformed selector gets the plugin's denial.
+
+Operator blocks cover command blocks, structure blocks from 1.10 and jigsaws from 1.14. The `/execute` additions and the debug stick nodes are 1.13+ features; the force-gamemode and move-speed bypasses work. The grammars were written against 1.12.2 and not run on 1.9.4 - 1.11.2. What these versions do not check (commands from other plugins, signs, 1.8.8 tab completion, `/execute` with a changed position) is listed in [Compatibility](compatibility.md#limits).
 
 ## What players see when denied
 

@@ -1,42 +1,171 @@
 # Compatibility
 
-One jar, `VanillaPermissionsPlugin-<version>.jar`, covers Paper **1.20.6 through 26.3**: every release in that range except three that Paper never published. Paper's download API (`fill.papermc.io`) has no builds for 1.21.2, 26.1 or 26.1.0, so those versions cannot be run on Paper at all (1.21.1 is followed by 1.21.3, and the 26.1 line starts at 26.1.1).
+One jar, `VanillaPermissionsPlugin-<version>.jar`, covers **Minecraft 1.8.8 through 26.3** on Paper, Folia, Spigot, Purpur and Pufferfish, with one exception: Spigot 1.21.11 and 26.x are not supported (see [Limits](#limits)). Folia is supported from 1.20.6. Paper's download API (`fill.papermc.io`) has no builds for 1.21.2, 26.1 or 26.1.0, so those versions cannot be run on Paper at all (1.21.1 is followed by 1.21.3, and the 26.1 line starts at 26.1.1).
+
+The jar contains three adapters. The plugin picks one at startup by looking at the server (not at the version string), most specific first:
+
+| Adapter | Serves | How it reaches vanilla commands |
+| --- | --- | --- |
+| `paper` | Paper and Folia 1.20.6 and later, and forks (Purpur, Pufferfish) | Paper's lifecycle `COMMANDS` event. Needs Java 21 (Java 25 for 26.x). |
+| `spigot` | Spigot 1.13 through 1.21.10 (1.20.5 and later untested), Paper 1.13 through 1.20.5 | The Brigadier dispatcher inside CraftBukkit, patched in `onEnable`. |
+| `legacy` | Spigot and Paper 1.8.8 through 1.12.2 | No Brigadier. Typed commands are checked before they run; see [1.8.8 - 1.12.2](permissions.md#188---1122-legacy-servers). |
+
+See [Architecture](development/architecture.md) for how they are chosen.
 
 ## Supported versions
 
-| Minecraft (Paper) | Java | Verified |
-| --- | --- | --- |
-| 1.20.6 | 21 | Boot and install in CI; full live behaviour checks |
-| 1.21, 1.21.1, 1.21.3, 1.21.4, 1.21.6, 1.21.7, 1.21.8, 1.21.10 | 21 | Boot and install in CI |
-| 1.21.11 | 21 | Boot and install in CI; full live behaviour checks |
-| 1.21.5, 1.21.9 | 21 | Boot and install in CI. Paper only published experimental builds. |
-| 26.1.1 | 25 | Boot and install in CI. Paper only published an experimental build. |
-| 26.1.2, 26.2 | 25 | Boot and install in CI |
-| 26.3 | 25 | Boot and install in CI; startup and console checks only (see below) |
+Java is the version the server software needs (the jar itself is Java 8 bytecode, except the `paper` adapter, which only loads on Java 21 and later). LuckPerms 5.5 needs Java 11 or later; on a Java 8 server use LuckPerms 5.4.x (CI uses 5.4.158) or another permissions plugin.
+
+### Paper
+
+| Minecraft | Java | Adapter | Verified |
+| --- | --- | --- | --- |
+| 1.8.8, 1.12.2 | 8 | legacy | Boot and install in CI |
+| 1.13.2, 1.16.5 | 8 | spigot | Boot and install in CI. Live behaviour checks on 1.16.5. |
+| 1.17.1 | 17 | spigot | Boot and install in CI |
+| 1.18.2, 1.19.4, 1.20.4 | 17 | spigot | Boot and install in CI |
+| 1.20.5 | 21 | spigot | Boot and install in CI. Paper only published experimental builds. |
+| 1.20.6 | 21 | paper | Boot and install in CI; full live behaviour checks |
+| 1.21, 1.21.1, 1.21.3, 1.21.4, 1.21.6, 1.21.7, 1.21.8, 1.21.10 | 21 | paper | Boot and install in CI |
+| 1.21.11 | 21 | paper | Boot and install in CI; full live behaviour checks |
+| 1.21.5, 1.21.9 | 21 | paper | Boot and install in CI. Paper only published experimental builds. |
+| 26.1.1 | 25 | paper | Boot and install in CI. Paper only published an experimental build. |
+| 26.1.2, 26.2 | 25 | paper | Boot and install in CI |
+| 26.3 | 25 | paper | Boot and install in CI; live player checks ([how](development/testing.md#minecraft-26x)) |
+
+Paper 1.8.8 - 1.16.5 also run on newer Java (11 or later) if you prefer; 1.17.x accepts Java 16 or 17.
+
+### Spigot
+
+| Minecraft | Java | Adapter | Verified |
+| --- | --- | --- | --- |
+| 1.8.8, 1.12.2 | 8 | legacy | Boot and install in CI; live behaviour checks |
+| 1.13.2 | 8 | spigot | Boot and install in CI |
+| 1.16.5 | 8 | spigot | Boot and install in CI |
+| 1.17.1 | 17 | spigot | Boot and install in CI |
+| 1.18.2, 1.19.4 | 17 | spigot | Boot and install in CI |
+| 1.20.4 | 17 | spigot | Boot and install in CI; live behaviour checks |
+
+Spigot cannot be downloaded, so CI builds each jar once with BuildTools and caches it.
+
+### Folia
+
+All four builds booted and installed cleanly with LuckPerms 5.5.87 and are pinned in the Compatibility workflow.
+
+| Minecraft | Folia build | Java | Nodes | CI minimum |
+| --- | --- | --- | --- | --- |
+| 1.20.6 | 6 (ALPHA) | 21 | 884 | 795 |
+| 1.21.11 | 14 (STABLE) | 21 | 1062 | 950 |
+| 26.1.2 | 8 (STABLE) | 25 | 1086 | 975 |
+| 26.3 | 3 (ALPHA) | 25 | 1116 | 1000 |
+
+Folia 1.21.11 build 14 passed the `gamemode`, `execute`, `selectors`, `aliases` and `folia` live scenarios with LuckPerms, including user and group changes refreshing both bots' command trees. No `UnsupportedOperationException` was logged.
+
+Folia's own behaviour applies, with or without this plugin:
+
+- A full Folia server refuses an extra player even when the player-limit bypass is granted ([connection-capacity check](https://github.com/PaperMC/Folia/blob/ver/1.21.11/folia-server/minecraft-patches/features/0001-Region-Threading-Base.patch)).
+- A `permissions.yml` node with `default: true` is not applied; `default: notop` works ([permission-default calculation](https://github.com/PaperMC/Folia/blob/ver/1.21.11/folia-server/paper-patches/features/0001-Region-Threading-Base.patch)).
+- Commands Folia removes (for example `/scoreboard`, `/data` and `/reload`) have no permission nodes to check; the exact set depends on the Folia version.
+- Non-player selectors only see region-local entities, as in Folia's vanilla command handling.
+
+Purpur and Pufferfish are Paper forks and use the `paper` adapter; their boot rows are listed under [Purpur and Pufferfish builds](#purpur-and-pufferfish-builds).
+
+### Feature availability
+
+Command nodes and selector control work on every supported version. Some features depend on the Minecraft version or on what the server software offers:
+
+| Feature | Where it works |
+| --- | --- |
+| Command nodes, `minecraft.selector`, selector scope, limit and weight | All versions. On 1.8.8 - 1.12.2 for the ten commands with sub-nodes; selectors in other legacy commands only through CraftBukkit's `minecraft.command.selector`. |
+| `/gamemode` per-mode nodes | All versions |
+| `/execute if\|unless permission`, `feedback silent`, `oplevel` | 1.13+ |
+| `/execute feedback console\|entity` | 1.17+ |
+| Whitelist and player-limit bypasses | All versions |
+| Force-gamemode bypass | Paper 1.16.5+; 1.8.8 - 1.12.2 |
+| Move-speed bypass | Paper 1.20.4+; 1.8.8 - 1.12.2 |
+| Operator blocks | All versions. On 1.8.8 - 1.12.2: command blocks, plus structure blocks from 1.10 and jigsaws from 1.14. |
+| Debug stick per-block nodes | 1.13+ |
+
+The rows for Paper 1.16.5+ and 1.20.4+ also apply to the forks of the matching Paper version.
 
 ## How each level was verified
 
-- **Boot and install:** the [Compatibility workflow](../.github/workflows/compat.yml) downloads a pinned Paper build for each version, starts it with the plugin and LuckPerms 5.5, and checks that the plugin installs its permission checks (`scripts/compat-smoke.sh`). It runs on every push and pull request.
-- **Full live behaviour checks:** commands, selectors, bypasses, operator blocks and the debug stick were exercised on live servers on 1.20.6 and 1.21.11.
-- **Startup and console only (26.3):** the plugin was checked at startup and on the console. Player-level checks are pending a test client for 26.3.
-- **Experimental builds:** Paper published only ALPHA builds for 1.21.5, 1.21.9 and 26.1.1. They are boot-tested only, and Paper itself marks them experimental.
+- **Boot and install:** the [Compatibility workflow](../.github/workflows/compat.yml) starts each listed server with the plugin and LuckPerms (5.5 on Java 11 and later, 5.4.158 on Java 8), and checks that the plugin installs its permission checks and that the number of checked nodes reaches a per-row minimum (`scripts/compat-smoke.sh`). It runs on every push and pull request. Spigot rows use jars built with BuildTools and cached.
+- **Live behaviour checks:** commands, selectors, bypasses, operator blocks and the debug stick were exercised on live servers with a bot player ([live tests](development/testing.md)). Done on Paper 1.20.6 and 1.21.11 (paper adapter, full), Spigot 1.20.4 and Paper 1.16.5 (spigot adapter), and Spigot 1.8.8 and 1.12.2 (legacy adapter). Folia 1.21.11 also passed command, selector, alias and LuckPerms-refresh checks.
+- **Experimental builds:** Paper published only ALPHA builds for 1.20.5, 1.21.5, 1.21.9 and 26.1.1. They are boot-tested only, and Paper itself marks them experimental.
 
-The plugin logs a warning once at startup on a Minecraft version outside the tested list. Support is decided by feature detection when the plugin installs, so an untested version may work; if the command tree cannot be patched, the plugin logs why, restores the vanilla commands and disables itself.
+Versions not listed in the tables were not booted, for example 1.14.x, 1.15.x, 1.9.4 - 1.11.2, and Spigot 1.18 and 1.19.x other than 1.18.2 and 1.19.4.
 
-The jar targets Java 21 bytecode; the Java version is whatever your Paper version requires (the Java column above).
+The plugin logs a warning once at startup on a (software, version) pair outside the tested list, and `/vanillapermissions debug` marks your version as tested or untested, with the tested range for your server software. Support is decided by feature detection when the plugin installs, so an untested version may work; if the command tree cannot be patched, the plugin logs why, restores the vanilla commands and disables itself.
+
+## Limits
+
+### Not supported
+
+| Software and versions | What happens |
+| --- | --- |
+| Spigot 1.21.11 and 26.x | Not supported yet; use Paper or a Paper fork. These servers replace the numeric operator level with Minecraft's `PermissionSet`, which the `spigot` adapter does not handle yet. The plugin logs the SEVERE line `Could not add permission checks`, restores the vanilla commands and disables itself; the server keeps running. See the [Roadmap](roadmap.md). |
+| Spigot 1.20.5 - 1.21.10 | Untested. The `spigot` adapter has name-table rows for these versions but they were never booted, so the startup warning appears. The plugin may work. |
+| Folia before 1.20.6 | Not supported. The Paper lifecycle command API required by the adapter is unavailable. |
+| Minecraft before 1.8.8 | Not supported. |
+
+### Features
+
+- **Bypasses:** the force-gamemode bypass is not available on Spigot 1.13+ and Paper 1.13.2; the move-speed bypass is not available on Spigot 1.13+ and Paper 1.13.2 - 1.19.4. Both need Paper's events.
+- **Selectors:** random selectors (`@r`, `sort=random`) are checked on a separate draw from the command, so the checked targets can differ from those affected. On 1.13+, selectors in `/execute` forks (`as`, `at`) are not checked per fork. See [Selectors](permissions.md#selectors).
+- **Upstream nodes not added**, because the server has no API for them: `minecraft.bypass.spawn-protection`, `minecraft.bypass.chat-speed`, `minecraft.bypass.move-speed.vehicle.<entity>`, `minecraft.debug_chart`, `minecraft.<query|load>.<entity|block>`, `minecraft.adminbroadcast.receive` (use Paper's `minecraft.admin.command_feedback`) and the operator block `edit` action.
+
+### 1.8.8 - 1.12.2
+
+- Only ten commands have sub-nodes ([list](permissions.md#188---1122-legacy-servers)); all others keep `minecraft.command.<name>`.
+- 1.8.8 has no tab completion filtering; denied completions are refused when run.
+- Commands run by other plugins (`performCommand`, `dispatchCommand`) and commands run by clicking signs are not checked. `commands.yml` aliases are.
+- Selectors inside `/execute` are resolved from each target's position; if any execution coordinate is not exactly `~` and the inner command (after alias expansion) uses a selector in a selector-capable argument, the command is denied with the normal no-permission message.
+- The move-speed bypass does not cover vehicle moves.
+- The `view` deny of operator blocks is only partly enforced on 1.8.8 command blocks and 1.12.2 structure blocks: part of it is client-side, and edit packets still pass.
+
+### 1.13 - 1.16
+
+Commands that other plugins inject into the vanilla command dispatcher (LuckPerms' `/lp` through commodore, CommandAPI commands) are left unchecked, and listed in one log line at startup.
 
 ## Other server software
 
 | Software | Status |
 | --- | --- |
-| Paper | Supported (range above) |
-| Purpur, Pufferfish | Paper forks. Expected to work, untested |
-| Folia | Not supported |
-| Spigot, CraftBukkit | Not supported |
-| Paper 1.20.5 and older | Not supported |
+| Paper | Supported (1.8.8 through 26.3) |
+| Spigot, CraftBukkit-based builds | Supported 1.8.8 through 1.20.4; see [Limits](#limits) for later versions |
+| Purpur | Supported: 1.20.6 through 26.3, every version Purpur published (see below) |
+| Pufferfish | Supported on 1.21 through 1.21.10 (see below) |
+| Folia | Supported from 1.20.6; four boot-tested builds are listed [above](#folia). |
 
-On Paper 1.20.5 (build 22, booted for this page) the server refuses to load the plugin, because plugin.yml declares `api-version: '1.20.6'`. The log shows `Could not load plugin 'VanillaPermissionsPlugin-1.0.0.jar' in folder 'plugins'` followed by `org.bukkit.plugin.InvalidPluginException: Unsupported API version 1.20.6`. Older Paper versions and other server types are discussed in the [Roadmap](roadmap.md).
+### Purpur and Pufferfish builds
+
+Both are Paper forks. Each build below was booted with the plugin and LuckPerms 5.5.87; every boot installed the permission checks (the "Added permission checks to N vanilla command nodes" line, N ≥ 1000) with no plugin errors and no untested-version warning.
+
+| Minecraft | Purpur build | Nodes | Pufferfish build | Nodes |
+| --- | --- | --- | --- | --- |
+| 1.20.6 | 2233 | 1882 | none | |
+| 1.21 | 2284 | 1876 | 8 | 1861 |
+| 1.21.1 | 2329 | 1876 | 21 | 1861 |
+| 1.21.3 | 2358 | 1893 | 27 | 1872 |
+| 1.21.4 | 2416 | 1892 | none | |
+| 1.21.5 | 2450 | 2008 | none | |
+| 1.21.6 | 2465 | 2043 | none | |
+| 1.21.7 | 2477 | 2044 | 30 | 2023 |
+| 1.21.8 | 2497 | 2044 | 33 | 2023 |
+| 1.21.9 | 2505 | 2058 | none | |
+| 1.21.10 | 2535 | 2058 | 39 | 2037 |
+| 1.21.11 | 2568 | 2189 | none | |
+| 26.1.2 | 2592 | 2213 | none | |
+| 26.2 | 2633 | 2214 | none | |
+| 26.3 | 2652 | 2598 | none | |
+
+- **Purpur** (`api.purpurmc.org/v2/purpur`) has no build for 1.21.2 (as with Paper) or 26.1.1, which Paper does have. Java requirements match Paper's.
+- **Pufferfish** publishes only through its Jenkins (`ci.pufferfish.host`, job `Pufferfish-1.21`); the table lists the versions that have a build.
+- **CI** boots Purpur 1.20.6, 1.21.11, 26.1.2, 26.2 and 26.3 and Pufferfish 1.21.1 and 1.21.10 on every push and pull request: the newest build of each Purpur minor line, and the oldest and newest Pufferfish release in range. The other versions in the table were booted by hand with `scripts/compat-smoke.sh --software purpur|pufferfish`.
+
+Paper 1.20.5 (build 22) runs with Mojang names but has no lifecycle `COMMANDS` event, so it is served by the `spigot` adapter.
 
 ## Permissions plugins
 
-See [Permissions plugins](providers.md). LuckPerms 5.5 is what CI runs with.
+See [Permissions plugins](providers.md). CI runs LuckPerms 5.5 on Java 11 and later and LuckPerms 5.4.158 on Java 8; LuckPerms 5.5 needs Java 11 or later.

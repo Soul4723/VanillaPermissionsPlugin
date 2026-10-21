@@ -10,4 +10,4 @@ Please do not open a public issue for a security problem, for example a way to r
 
 Report it privately through GitHub: open the repository's **Security** tab and choose **Report a vulnerability**, or go to <https://github.com/Soul4723/VanillaPermissionsPlugin/security/advisories/new>.
 
-Include the plugin, Paper and LuckPerms versions, the permissions involved and the steps to reproduce.
+Include the plugin version, server software and version, and permissions plugin and version, the permissions involved and the steps to reproduce.

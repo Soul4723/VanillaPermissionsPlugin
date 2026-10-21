@@ -5,5 +5,5 @@
 ## Checklist
 
 - [ ] `mvn verify` passes
-- [ ] Tested on a Paper server where the change affects behaviour (state which version)
+- [ ] Tested on a server where the change affects behaviour (state software and version), or covered by the Compatibility workflow
 - [ ] Added a line under `## [Unreleased]` in `CHANGELOG.md` for user-visible changes
