@@ -13,8 +13,8 @@ Maintainer notes. Contributor-facing rules are in [CONTRIBUTING.md](../../CONTRI
 ## Cutting a release
 
 1. Open a release PR: move the entries under `## [Unreleased]` in `CHANGELOG.md` to a new `## [X.Y.Z] - YYYY-MM-DD` section, and update the compare links at the bottom of the file.
-2. In that PR, run `mvn versions:set -DnewVersion=X.Y.Z -DgenerateBackupPoms=false`; it updates the root version and every module's parent reference.
-3. Merge the release PR, then wait for both **Build** and **Compatibility** on that merge commit on `main` to pass.
+2. In that PR, run `mvn versions:set -DnewVersion=X.Y.Z -DgenerateBackupPoms=false`; it updates the root version and every module's parent reference. Also set `project.build.outputTimestamp` in the root `pom.xml` (used for reproducible jars) to the release date, in the same PR.
+3. Merge the release PR, then wait for **Build** (including its boot matrix and the `compat` check) on that merge commit on `main` to pass.
 4. Tag that merge commit: `git tag -a vX.Y.Z <merge-sha> -m "VanillaPermissionsPlugin X.Y.Z"`, then `git push origin vX.Y.Z`.
 5. Run the same command with the next development version (`1.2.0-SNAPSHOT` after `1.1.0`; development builds are `1.1.0-SNAPSHOT` until then).
 
@@ -33,13 +33,13 @@ Running the workflow by hand (`workflow_dispatch`) only builds and checks; it ne
 ## CI
 
 - **Build** (`build.yml`): runs on pushes to `main`, pull requests and manual dispatch; superseded PR runs are cancelled; the jar is uploaded as the `VanillaPermissionsPlugin` artifact. It uses one JDK, 21, which compiles both the Java 8 modules (`--release 8`) and the Java 21 `paper` module; see [Architecture](architecture.md#java-targets).
-- **Compatibility** (`compat.yml`): runs on main pushes, every PR, manual dispatch and twice-weekly scheduled runs. It builds the compat jar and boots the supported software/version matrix. Spigot jars are built with pinned BuildTools and cached, never uploaded. The `compat` aggregate check follows [setuptools’ `check` job](https://github.com/pypa/setuptools/blob/main/.github/workflows/main.yml) using alls-green. PRs restore download caches; non-PR runs save them (Spigot jar builds also save on PR misses for downstream jobs).
-- If you make a check "required" in branch protection, do not add `paths` or `paths-ignore` to Build or Compatibility (`build` and `compat` required checks); a skipped required check blocks merging.
-- Dependabot (`.github/dependabot.yml`) updates Maven dependencies and GitHub Actions weekly, grouped, with a seven-day cooldown. Paper API, Spigot API and Brigadier are ignored on purpose: they define compatibility floors. Name-only ignores also suppress security-update PRs for those dependencies ([Dependabot docs](https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference#ignore)); these are compile-time APIs, not shaded dependencies. Paper’s API SNAPSHOT can change, so rebuilding an old tag is not fully reproducible.
+- **Boot matrix** (also in `build.yml`): after the build job, a job builds the Spigot jars, one `smoke` matrix job boots every software and version with the plugin and LuckPerms, and an aggregate `compat` job gates the result. The matrix runs on main pushes, every PR, manual dispatch and twice-weekly scheduled runs. Spigot jars are built with pinned BuildTools and cached, never uploaded. The `compat` aggregate check follows [setuptools’ `check` job](https://github.com/pypa/setuptools/blob/main/.github/workflows/main.yml) using alls-green. PRs restore download caches; non-PR runs save them (Spigot jar builds also save on PR misses for downstream jobs).
+- If you make a check "required" in branch protection, do not add `paths` or `paths-ignore` to Build (`build` and `compat` required checks); a skipped required check blocks merging.
+- Dependabot (`.github/dependabot.yml`) updates Maven dependencies, GitHub Actions and the live-test npm packages weekly, grouped, with a seven-day cooldown. Paper API, Spigot API and Brigadier are ignored on purpose: they define compatibility floors. Name-only ignores also suppress security-update PRs for those dependencies ([Dependabot docs](https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference#ignore)); these are compile-time APIs, not shaded dependencies. Paper’s API SNAPSHOT can change, so rebuilding an old tag is not fully reproducible.
 
 ### Compatibility boot tests
 
-`compat.yml` and `scripts/compat-smoke.sh` boot real servers. The setup follows other projects that do the same:
+The boot matrix in `.github/workflows/build.yml` and `scripts/compat-smoke.sh` boot real servers. The setup follows other projects that do the same:
 
 - [josemmo/yamipa `tests.yml`](https://github.com/josemmo/yamipa/blob/master/.github/workflows/tests.yml): a matrix of `spigot`, `paper`, `purpur` and `folia`, a Java version chosen per Minecraft version, assertions on the plugin's own log lines, `fail-fast: false`. The checks grep only the plugin's lines, because Purpur and Spigot log exceptions of their own.
 - [ez-plugins/EzShops `smoke-tests.yml`](https://github.com/ez-plugins/EzShops/blob/main/.github/workflows/smoke-tests.yml): a `User-Agent` on Fill requests, the newest STABLE build with a fallback to any channel, and the server log uploaded with `if: always()`.

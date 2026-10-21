@@ -5,5 +5,5 @@
 ## Checklist
 
 - [ ] `mvn verify` passes
-- [ ] Tested on a server where the change affects behaviour (state software and version), or covered by the Compatibility workflow
+- [ ] Tested on a server where the change affects behaviour (state software and version), or covered by the CI boot matrix
 - [ ] Added a line under `## [Unreleased]` in `CHANGELOG.md` for user-visible changes
