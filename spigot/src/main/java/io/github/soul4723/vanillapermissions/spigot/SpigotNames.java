@@ -141,6 +141,11 @@ final class SpigotNames {
         String name(MappingGeneration generation) {
             return nameFor(rows, mojang, generation, "class " + name());
         }
+
+        /** Whether this class has a name on {@code generation}, so {@link #name} does not throw. */
+        boolean isNamedOn(MappingGeneration generation) {
+            return generation.isMojang() || rows.get(0).from.compareTo(generation) <= 0;
+        }
     }
 
     enum Kind { FIELD, STATIC_FIELD, METHOD, STATIC_METHOD }

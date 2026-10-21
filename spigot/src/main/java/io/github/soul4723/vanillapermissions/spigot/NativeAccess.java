@@ -3,6 +3,7 @@ package io.github.soul4723.vanillapermissions.spigot;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import io.github.soul4723.vanillapermissions.platform.Adapters;
 import io.github.soul4723.vanillapermissions.spigot.SpigotNames.Kind;
 import io.github.soul4723.vanillapermissions.spigot.SpigotNames.LevelShape;
 import io.github.soul4723.vanillapermissions.spigot.SpigotNames.NativeClass;
@@ -37,33 +38,55 @@ final class NativeAccess {
     private static final List<String> PLAIN_TARGETS = Arrays.asList("Notch", "069a79f4-44e9-4726-a5be-fca90e38aaf5");
 
     private final MappingGeneration generation;
-    private LevelShape shape;
+    private final LevelShape shape;
     private final Map<NativeClass, Class<?>> classes = new EnumMap<>(NativeClass.class);
     private final Map<NativeMember, Member> members = new EnumMap<>(NativeMember.class);
 
-    private NativeAccess(MappingGeneration generation) {
+    private NativeAccess(MappingGeneration generation, Class<?> source, LevelShape shape) {
         this.generation = generation;
+        this.shape = shape;
+        classes.put(NativeClass.SOURCE, source);
     }
 
     /** Resolves and validates every entry for {@code generation}; throws on the first mismatch. */
     static NativeAccess resolve(MappingGeneration generation, ClassLoader loader) throws ReflectiveOperationException {
-        NativeAccess access = resolveLevels(generation, loader);
+        NativeAccess access = forSource(generation, loader);
         access.resolve(LevelShape.ANY, loader);
+        access.resolve(access.shape, loader);
         access.checkShapes();
         return access;
     }
 
     /**
-     * The first step of {@link #resolve}: the command source class and the operator-level entries of its shape, int
-     * levels if it has CraftBukkit's {@code hasPermission(int, String)} and a PermissionSet otherwise.
+     * For tests: only the command source and the operator-level entries of its shape, without the shared entries or
+     * {@link #checkShapes}, so operator levels can be tested without a fake class for every shared entry. This works
+     * because operator-level entries refer to no shared class but the source, which {@code SpigotNamesTest} checks.
      */
-    static NativeAccess resolveLevels(MappingGeneration generation, ClassLoader loader) throws ReflectiveOperationException {
-        NativeAccess access = new NativeAccess(generation);
-        Class<?> source = Class.forName(NativeClass.SOURCE.name(generation), false, loader);
-        access.classes.put(NativeClass.SOURCE, source);
-        access.shape = hasMethod(source, "hasPermission", int.class, String.class) ? LevelShape.INT : LevelShape.PERMISSION_SET;
+    static NativeAccess resolveOperatorLevelsOnly(MappingGeneration generation, ClassLoader loader) throws ReflectiveOperationException {
+        NativeAccess access = forSource(generation, loader);
         access.resolve(access.shape, loader);
         return access;
+    }
+
+    private static NativeAccess forSource(MappingGeneration generation, ClassLoader loader) throws ReflectiveOperationException {
+        Class<?> source = Class.forName(NativeClass.SOURCE.name(generation), false, loader);
+        return new NativeAccess(generation, source, shapeOf(source, generation, loader));
+    }
+
+    /**
+     * Int levels if the source has CraftBukkit's {@code hasPermission(int, String)}; a PermissionSet if it does not and
+     * the server has the PermissionSet class under this generation's names. Anything else, such as a fork before
+     * 1.21.11 without CraftBukkit's method, is a shape this adapter does not know, so it fails before looking up names
+     * that cannot be right.
+     */
+    private static LevelShape shapeOf(Class<?> source, MappingGeneration generation, ClassLoader loader) {
+        if (hasMethod(source, "hasPermission", int.class, String.class)) return LevelShape.INT;
+        NativeClass permissionSet = NativeClass.PERMISSION_SET;
+        if (permissionSet.isNamedOn(generation) && Adapters.classExists(permissionSet.name(generation), loader)) {
+            return LevelShape.PERMISSION_SET;
+        }
+        throw new IllegalStateException("Unknown operator-level shape on " + generation + ": " + source.getName()
+                + " has no hasPermission(int, String) and the server has no " + permissionSet.mojang);
     }
 
     private void resolve(LevelShape group, ClassLoader loader) throws ReflectiveOperationException {

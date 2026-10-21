@@ -50,7 +50,7 @@ class OperatorLevelsTest {
     }
 
     private static OperatorLevels spigot1_21_11() throws ReflectiveOperationException {
-        return OperatorLevels.of(NativeAccess.resolveLevels(MappingGeneration.of("v1_21_R7"), LOADER));
+        return OperatorLevels.of(NativeAccess.resolveOperatorLevelsOnly(MappingGeneration.of("v1_21_R7"), LOADER));
     }
 
     @Test
@@ -73,7 +73,7 @@ class OperatorLevelsTest {
 
     @Test
     void sourcesWithAPermissionSetResolveTheSpigot1_21_11Names() throws Exception {
-        NativeAccess access = NativeAccess.resolveLevels(MappingGeneration.of("v1_21_R7"), LOADER);
+        NativeAccess access = NativeAccess.resolveOperatorLevelsOnly(MappingGeneration.of("v1_21_R7"), LOADER);
 
         assertEquals(LevelShape.PERMISSION_SET, access.shape());
         assertEquals("g", access.field(NativeMember.SOURCE_PERMISSIONS).getName());

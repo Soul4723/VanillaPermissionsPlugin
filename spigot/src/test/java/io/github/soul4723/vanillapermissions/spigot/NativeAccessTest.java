@@ -53,6 +53,15 @@ class NativeAccessTest {
         assertThrows(IllegalStateException.class, () -> access.method(NativeMember.SOURCE_WITH_SOURCE));
     }
 
+    /** A pre-1.21.11 source without CraftBukkit's hasPermission(int, String), like the 1.21.11 one, has no known shape. */
+    @Test
+    void aSourceWithNeitherLevelShapeFailsBeforeAnyLevelName() {
+        IllegalStateException error = assertThrows(IllegalStateException.class, () -> resolve("v1_20_R3"));
+
+        assertEquals("Unknown operator-level shape on v1_20_R3: net.minecraft.commands.CommandListenerWrapper has no"
+                + " hasPermission(int, String) and the server has no net.minecraft.server.permissions.PermissionSet", error.getMessage());
+    }
+
     @Test
     void anUnknownPackageFailsToResolve() {
         assertThrows(ClassNotFoundException.class, () -> resolve("v1_16_R2"));

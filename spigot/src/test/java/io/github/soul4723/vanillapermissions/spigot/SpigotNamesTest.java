@@ -6,6 +6,7 @@ import io.github.soul4723.vanillapermissions.spigot.SpigotNames.NativeMember;
 import io.github.soul4723.vanillapermissions.spigot.SpigotNames.Since;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -30,6 +31,26 @@ class SpigotNamesTest {
         assertEquals(MappingGeneration.of(first), rows.get(0).from, what + " must start at " + first);
         for (int i = 1; i < rows.size(); i++) {
             assertTrue(rows.get(i - 1).from.compareTo(rows.get(i).from) < 0, what + " rows are not in order");
+        }
+    }
+
+    /**
+     * {@link NativeAccess} resolves the shared entries and those of one operator-level shape, and
+     * {@link NativeAccess#resolveOperatorLevelsOnly} only the source and that shape's entries, so an entry may only refer
+     * to the source and to classes of its own shape.
+     */
+    @Test
+    void entriesReferOnlyToTheSourceAndClassesOfTheirShape() {
+        for (NativeMember member : NativeMember.values()) {
+            List<Object> referenced = new ArrayList<>(member.parameters);
+            referenced.add(member.owner);
+            referenced.add(member.type);
+            for (Object type : referenced) {
+                if (!(type instanceof NativeClass)) continue;
+                NativeClass nativeClass = (NativeClass) type;
+                assertTrue(nativeClass == NativeClass.SOURCE || nativeClass.shape == member.shape,
+                        member + " (" + member.shape + ") refers to " + nativeClass + " (" + nativeClass.shape + ")");
+            }
         }
     }
 
