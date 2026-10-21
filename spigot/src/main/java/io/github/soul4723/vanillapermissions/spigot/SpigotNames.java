@@ -23,8 +23,8 @@ import java.util.List;
  *
  * <p>Sources: the names of every
  * Spigot release from 1.13 to 26.3, taken by joining Mojang's server mappings with Spigot BuildData's class and member
- * mappings, and checked with {@code javap} against the Spigot 1.13.2, 1.16.5, 1.17.1 and 1.20.4 jars. Live-tested
- * generations are listed in {@code docs/compatibility.md}; the others are mapping-derived.
+ * mappings, and checked with {@code javap} against the Spigot 1.13.2, 1.16.5, 1.17.1, 1.20.4, 1.21.10, 1.21.11 and 26.3
+ * jars. Live-tested generations are listed in {@code docs/compatibility.md}; the others are mapping-derived.
  */
 final class SpigotNames {
 
@@ -61,6 +61,15 @@ final class SpigotNames {
         return match.name == null ? ABSENT : match.name.replace(NMS, generation.nmsPackage());
     }
 
+    /**
+     * The operator-level shape an entry belongs to. Up to 1.21.10 a command source has an int level and CraftBukkit's
+     * {@code hasPermission(int, String)}; from 1.21.11 it has a {@code PermissionSet}. Mojang names cover both shapes
+     * (Paper 1.20.5 has int levels, Spigot 26.x a PermissionSet), so {@link NativeAccess} picks the shape from the
+     * source class and resolves only the entries of that shape. {@link #PERMISSION_SET} entries have rows from
+     * {@code v1_21_R7}.
+     */
+    enum Levels { ANY, INT, PERMISSION_SET }
+
     /** Server classes, by runtime name. */
     enum NativeClass {
         /** Mojang {@code CommandSourceStack}. */
@@ -87,15 +96,36 @@ final class SpigotNames {
                 since("v1_13_R1", NMS + ".Entity"),
                 since("v1_17_R1", "net.minecraft.world.entity.Entity")),
         /** The class declaring {@code getPermissionLevel()}: {@code Entity} up to 1.21.1, {@code Player} from 1.21.2. */
-        PERMISSION_LEVEL_HOLDER("net.minecraft.world.entity.Entity",
+        PERMISSION_LEVEL_HOLDER(Levels.INT, "net.minecraft.world.entity.Entity",
                 since("v1_13_R1", NMS + ".Entity"),
                 since("v1_17_R1", "net.minecraft.world.entity.Entity"),
-                since("v1_21_R2", "net.minecraft.world.entity.player.EntityHuman"));
+                since("v1_21_R2", "net.minecraft.world.entity.player.EntityHuman")),
+        PLAYER(Levels.PERMISSION_SET, "net.minecraft.world.entity.player.Player",
+                since("v1_21_R7", "net.minecraft.world.entity.player.EntityHuman")),
+        PERMISSION_SET(Levels.PERMISSION_SET, "net.minecraft.server.permissions.PermissionSet",
+                since("v1_21_R7", "net.minecraft.server.permissions.PermissionSet")),
+        PERMISSION(Levels.PERMISSION_SET, "net.minecraft.server.permissions.Permission",
+                since("v1_21_R7", "net.minecraft.server.permissions.Permission")),
+        /** Mojang {@code Permission.HasCommandLevel}: the check for one operator level. */
+        HAS_COMMAND_LEVEL(Levels.PERMISSION_SET, "net.minecraft.server.permissions.Permission$HasCommandLevel",
+                since("v1_21_R7", "net.minecraft.server.permissions.Permission$b")),
+        PERMISSION_LEVEL(Levels.PERMISSION_SET, "net.minecraft.server.permissions.PermissionLevel",
+                since("v1_21_R7", "net.minecraft.server.permissions.PermissionLevel")),
+        LEVEL_BASED_PERMISSION_SET(Levels.PERMISSION_SET, "net.minecraft.server.permissions.LevelBasedPermissionSet",
+                since("v1_21_R7", "net.minecraft.server.permissions.LevelBasedPermissionSet")),
+        PERMISSIONS(Levels.PERMISSION_SET, "net.minecraft.server.permissions.Permissions",
+                since("v1_21_R7", "net.minecraft.server.permissions.Permissions"));
 
+        final Levels levels;
         final String mojang;
         final List<Since> rows;
 
         NativeClass(String mojang, Since... rows) {
+            this(Levels.ANY, mojang, rows);
+        }
+
+        NativeClass(Levels levels, String mojang, Since... rows) {
+            this.levels = levels;
             this.mojang = mojang;
             this.rows = Collections.unmodifiableList(Arrays.asList(rows));
         }
@@ -105,7 +135,7 @@ final class SpigotNames {
         }
     }
 
-    enum Kind { FIELD, METHOD, STATIC_METHOD }
+    enum Kind { FIELD, STATIC_FIELD, METHOD, STATIC_METHOD }
 
     /**
      * Server members, by runtime name. {@code type} is a field's type or a method's return type; {@code parameters}
@@ -113,7 +143,7 @@ final class SpigotNames {
      */
     enum NativeMember {
         /** {@code CommandSourceStack.permissionLevel}, the source's operator level (0 - 4). */
-        SOURCE_PERMISSION_LEVEL(Kind.FIELD, NativeClass.SOURCE, int.class, params(), "permissionLevel",
+        SOURCE_PERMISSION_LEVEL(Levels.INT, Kind.FIELD, NativeClass.SOURCE, int.class, params(), "permissionLevel",
                 since("v1_13_R1", "f"),
                 since("v1_21_R3", "g")),
         /** {@code CommandSourceStack.silent}: output suppressed. */
@@ -121,8 +151,33 @@ final class SpigotNames {
                 since("v1_13_R1", "j"),
                 since("v1_21_R3", "k")),
         /** {@code CommandSourceStack.withPermission(int)}. */
-        SOURCE_WITH_PERMISSION(Kind.METHOD, NativeClass.SOURCE, NativeClass.SOURCE, params(int.class), "withPermission",
+        SOURCE_WITH_PERMISSION(Levels.INT, Kind.METHOD, NativeClass.SOURCE, NativeClass.SOURCE, params(int.class), "withPermission",
                 since("v1_13_R1", "a")),
+        /** {@code CommandSourceStack.permissions}, the source's own PermissionSet; CraftBukkit's {@code permissions()} adds Bukkit nodes. */
+        SOURCE_PERMISSIONS(Levels.PERMISSION_SET, Kind.FIELD, NativeClass.SOURCE, NativeClass.PERMISSION_SET, params(), "permissions",
+                since("v1_21_R7", "g")),
+        /** {@code CommandSourceStack.withPermission(PermissionSet)}. */
+        SOURCE_WITH_PERMISSION_SET(Levels.PERMISSION_SET, Kind.METHOD, NativeClass.SOURCE, NativeClass.SOURCE,
+                params(NativeClass.PERMISSION_SET), "withPermission",
+                since("v1_21_R7", "a")),
+        /** {@code Player.permissions()}; other entities have no operator level. */
+        PLAYER_PERMISSIONS(Levels.PERMISSION_SET, Kind.METHOD, NativeClass.PLAYER, NativeClass.PERMISSION_SET, params(), "permissions",
+                since("v1_21_R7", "I")),
+        /** {@code PermissionSet.hasPermission(Permission)}. */
+        SET_HAS_PERMISSION(Levels.PERMISSION_SET, Kind.METHOD, NativeClass.PERMISSION_SET, boolean.class, params(NativeClass.PERMISSION),
+                "hasPermission",
+                since("v1_21_R7", "hasPermission")),
+        /** {@code PermissionLevel.id()}: 0 - 4. */
+        PERMISSION_LEVEL_ID(Levels.PERMISSION_SET, Kind.METHOD, NativeClass.PERMISSION_LEVEL, int.class, params(), "id",
+                since("v1_21_R7", "a")),
+        /** {@code LevelBasedPermissionSet.forLevel(PermissionLevel)}. */
+        FOR_LEVEL(Levels.PERMISSION_SET, Kind.STATIC_METHOD, NativeClass.LEVEL_BASED_PERMISSION_SET, NativeClass.LEVEL_BASED_PERMISSION_SET,
+                params(NativeClass.PERMISSION_LEVEL), "forLevel",
+                since("v1_21_R7", "a")),
+        /** {@code Permissions.COMMANDS_ENTITY_SELECTORS}. */
+        SELECTORS_PERMISSION(Levels.PERMISSION_SET, Kind.STATIC_FIELD, NativeClass.PERMISSIONS, NativeClass.PERMISSION, params(),
+                "COMMANDS_ENTITY_SELECTORS",
+                since("v1_21_R7", "e")),
         /** {@code CommandSourceStack.withSuppressedOutput()}. */
         SOURCE_WITH_SUPPRESSED_OUTPUT(Kind.METHOD, NativeClass.SOURCE, NativeClass.SOURCE, params(), "withSuppressedOutput",
                 since("v1_13_R1", "a")),
@@ -169,7 +224,7 @@ final class SpigotNames {
                 since("v1_17_R1", "o"),
                 since("v1_19_R2", "p")),
         /** {@code getPermissionLevel()} on {@link NativeClass#PERMISSION_LEVEL_HOLDER}; protected. */
-        ENTITY_PERMISSION_LEVEL(Kind.METHOD, NativeClass.PERMISSION_LEVEL_HOLDER, int.class, params(), "getPermissionLevel",
+        ENTITY_PERMISSION_LEVEL(Levels.INT, Kind.METHOD, NativeClass.PERMISSION_LEVEL_HOLDER, int.class, params(), "getPermissionLevel",
                 since("v1_13_R1", "y"),
                 since("v1_18_R1", "B"),
                 since("v1_19_R2", "C"),
@@ -181,6 +236,7 @@ final class SpigotNames {
                 since("v1_21_R5", "G"),
                 since("v1_21_R6", "I"));
 
+        final Levels levels;
         final Kind kind;
         final NativeClass owner;
         final Object type;
@@ -189,6 +245,11 @@ final class SpigotNames {
         final List<Since> rows;
 
         NativeMember(Kind kind, NativeClass owner, Object type, Object[] parameters, String mojang, Since... rows) {
+            this(Levels.ANY, kind, owner, type, parameters, mojang, rows);
+        }
+
+        NativeMember(Levels levels, Kind kind, NativeClass owner, Object type, Object[] parameters, String mojang, Since... rows) {
+            this.levels = levels;
             this.kind = kind;
             this.owner = owner;
             this.type = type;

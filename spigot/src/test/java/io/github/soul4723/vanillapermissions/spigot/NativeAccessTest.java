@@ -40,7 +40,8 @@ class NativeAccessTest {
         assertEquals("c", access.method(NativeMember.ENTITY_ARGUMENT_GET_OPTIONAL_ENTITIES).getName());
         assertEquals("c", access.method(NativeMember.SCORE_HOLDER_ARGUMENT_GET_WITH_WILDCARD).getName());
         for (NativeMember member : NativeMember.values()) {
-            if (member != NativeMember.SOURCE_WITH_SOURCE) assertTrue(access.has(member), member + " should resolve");
+            if (member == NativeMember.SOURCE_WITH_SOURCE) continue;
+            assertEquals(member.levels != SpigotNames.Levels.PERMISSION_SET, access.has(member), member + " resolves only with int levels");
         }
     }
 
@@ -60,7 +61,7 @@ class NativeAccessTest {
     @Test
     void failsWhenTheOperatorLevelFieldHasTheWrongType() {
         IllegalStateException error = assertThrows(IllegalStateException.class,
-                () -> NativeAccess.instanceField(LongLevel.class, "f", int.class, "LongLevel.f"));
+                () -> NativeAccess.field(LongLevel.class, "f", int.class, false, "LongLevel.f"));
         assertTrue(error.getMessage().contains("is not an instance field of type int"), error.getMessage());
     }
 

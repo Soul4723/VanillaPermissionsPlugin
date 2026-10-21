@@ -1,5 +1,6 @@
 package io.github.soul4723.vanillapermissions.spigot;
 
+import io.github.soul4723.vanillapermissions.spigot.SpigotNames.Levels;
 import io.github.soul4723.vanillapermissions.spigot.SpigotNames.NativeClass;
 import io.github.soul4723.vanillapermissions.spigot.SpigotNames.NativeMember;
 import io.github.soul4723.vanillapermissions.spigot.SpigotNames.Since;
@@ -19,13 +20,14 @@ class SpigotNamesTest {
     }
 
     @Test
-    void rowsAreOrderedOldestFirstAndStartAt113() {
-        for (NativeClass type : NativeClass.values()) checkRows(type.name(), type.rows);
-        for (NativeMember member : NativeMember.values()) checkRows(member.name(), member.rows);
+    void rowsAreOrderedOldestFirstAndStartAt113OrAtPermissionSets() {
+        for (NativeClass type : NativeClass.values()) checkRows(type.name(), type.levels, type.rows);
+        for (NativeMember member : NativeMember.values()) checkRows(member.name(), member.levels, member.rows);
     }
 
-    private static void checkRows(String what, List<Since> rows) {
-        assertEquals(MappingGeneration.of("v1_13_R1"), rows.get(0).from, what + " must start at 1.13");
+    private static void checkRows(String what, Levels levels, List<Since> rows) {
+        String first = levels == Levels.PERMISSION_SET ? "v1_21_R7" : "v1_13_R1";
+        assertEquals(MappingGeneration.of(first), rows.get(0).from, what + " must start at " + first);
         for (int i = 1; i < rows.size(); i++) {
             assertTrue(rows.get(i - 1).from.compareTo(rows.get(i).from) < 0, what + " rows are not in order");
         }
@@ -69,6 +71,26 @@ class SpigotNamesTest {
     void mojangNamesAreTheMappingNames() {
         assertEquals("usesSelector", NativeMember.SELECTOR_USES_SELECTOR.name(MappingGeneration.MOJANG));
         assertEquals("withSource", NativeMember.SOURCE_WITH_SOURCE.name(MappingGeneration.MOJANG));
+    }
+
+    @Test
+    void permissionSetNamesAreObfuscatedOn1_21_11AndMojangOn26() {
+        MappingGeneration spigot = MappingGeneration.of("v1_21_R7");
+        assertEquals("g", NativeMember.SOURCE_PERMISSIONS.name(spigot));
+        assertEquals("permissions", NativeMember.SOURCE_PERMISSIONS.name(MappingGeneration.MOJANG));
+        assertEquals("a", NativeMember.SOURCE_WITH_PERMISSION_SET.name(spigot));
+        assertEquals("withPermission", NativeMember.SOURCE_WITH_PERMISSION_SET.name(MappingGeneration.MOJANG));
+        assertEquals("I", NativeMember.PLAYER_PERMISSIONS.name(spigot));
+        assertEquals("e", NativeMember.SELECTORS_PERMISSION.name(spigot));
+        assertEquals("COMMANDS_ENTITY_SELECTORS", NativeMember.SELECTORS_PERMISSION.name(MappingGeneration.MOJANG));
+        assertEquals("forLevel", NativeMember.FOR_LEVEL.name(MappingGeneration.MOJANG));
+        assertEquals("net.minecraft.commands.CommandListenerWrapper", NativeClass.SOURCE.name(spigot));
+        assertEquals("net.minecraft.world.entity.player.EntityHuman", NativeClass.PLAYER.name(spigot));
+        assertEquals("net.minecraft.world.entity.player.Player", NativeClass.PLAYER.name(MappingGeneration.MOJANG));
+        assertEquals("net.minecraft.server.permissions.Permission$b", NativeClass.HAS_COMMAND_LEVEL.name(spigot));
+        assertEquals("net.minecraft.server.permissions.Permission$HasCommandLevel",
+                NativeClass.HAS_COMMAND_LEVEL.name(MappingGeneration.MOJANG));
+        assertThrows(IllegalStateException.class, () -> NativeMember.SOURCE_PERMISSIONS.name(MappingGeneration.of("v1_21_R6")));
     }
 
     @Test

@@ -4,6 +4,7 @@ import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.soul4723.vanillapermissions.spigot.SpigotNames.Kind;
+import io.github.soul4723.vanillapermissions.spigot.SpigotNames.Levels;
 import io.github.soul4723.vanillapermissions.spigot.SpigotNames.NativeClass;
 import io.github.soul4723.vanillapermissions.spigot.SpigotNames.NativeMember;
 
@@ -22,7 +23,8 @@ import java.util.Map;
  * Every {@link SpigotNames} entry resolved on the running server and checked before anything is patched: each class
  * must load, each member must exist with the declared static-ness, type and parameters, and the entity arguments and
  * selector flag must behave as expected. Any mismatch throws, so the adapter fails closed instead of calling the
- * wrong obfuscated member.
+ * wrong obfuscated member. Operator-level entries are resolved only for the {@link Levels} shape the command source
+ * has, so servers before 1.21.11 never load the PermissionSet classes.
  *
  * <p>Shape checks follow ProtocolLib's {@code FuzzyReflection} ({@code src/main/java/com/comphenix/protocol/reflect/FuzzyReflection.java}: find a
  * member by its types); the "uses selector" flag is found as the one boolean that is true for {@code @s}, {@code @p}
@@ -35,6 +37,7 @@ final class NativeAccess {
     private static final List<String> PLAIN_TARGETS = Arrays.asList("Notch", "069a79f4-44e9-4726-a5be-fca90e38aaf5");
 
     private final MappingGeneration generation;
+    private Levels levels;
     private final Map<NativeClass, Class<?>> classes = new EnumMap<>(NativeClass.class);
     private final Map<NativeMember, Member> members = new EnumMap<>(NativeMember.class);
 
@@ -44,17 +47,42 @@ final class NativeAccess {
 
     /** Resolves and validates every entry for {@code generation}; throws on the first mismatch. */
     static NativeAccess resolve(MappingGeneration generation, ClassLoader loader) throws ReflectiveOperationException {
-        NativeAccess access = new NativeAccess(generation);
-        for (NativeClass type : NativeClass.values()) {
-            access.classes.put(type, Class.forName(type.name(generation), false, loader));
-        }
-        for (NativeMember member : NativeMember.values()) {
-            String name = member.name(generation);
-            if (name == null) continue;
-            access.members.put(member, access.lookup(member, name));
-        }
+        NativeAccess access = resolveLevels(generation, loader);
+        access.resolve(Levels.ANY, loader);
         access.checkShapes();
         return access;
+    }
+
+    /**
+     * The first step of {@link #resolve}: the command source class and the operator-level entries of its shape, int
+     * levels if it has CraftBukkit's {@code hasPermission(int, String)} and a PermissionSet otherwise.
+     */
+    static NativeAccess resolveLevels(MappingGeneration generation, ClassLoader loader) throws ReflectiveOperationException {
+        NativeAccess access = new NativeAccess(generation);
+        Class<?> source = Class.forName(NativeClass.SOURCE.name(generation), false, loader);
+        access.classes.put(NativeClass.SOURCE, source);
+        access.levels = hasMethod(source, "hasPermission", int.class, String.class) ? Levels.INT : Levels.PERMISSION_SET;
+        access.resolve(access.levels, loader);
+        return access;
+    }
+
+    private void resolve(Levels group, ClassLoader loader) throws ReflectiveOperationException {
+        for (NativeClass type : NativeClass.values()) {
+            if (type.levels == group && !classes.containsKey(type)) {
+                classes.put(type, Class.forName(type.name(generation), false, loader));
+            }
+        }
+        for (NativeMember member : NativeMember.values()) {
+            if (member.levels != group) continue;
+            String name = member.name(generation);
+            if (name == null) continue;
+            members.put(member, lookup(member, name));
+        }
+    }
+
+    /** The operator-level shape of this server's command source. */
+    Levels levels() {
+        return levels;
     }
 
     Class<?> type(NativeClass type) {
@@ -84,8 +112,8 @@ final class NativeAccess {
         Class<?> owner = classes.get(member.owner);
         Class<?> type = resolveType(member.type);
         String where = owner.getName() + "." + name + " (" + member + ", " + generation + ")";
-        if (member.kind == Kind.FIELD) {
-            return instanceField(owner, name, type, where);
+        if (member.kind == Kind.FIELD || member.kind == Kind.STATIC_FIELD) {
+            return field(owner, name, type, member.kind == Kind.STATIC_FIELD, where);
         }
         Class<?>[] parameters = new Class<?>[member.parameters.size()];
         for (int i = 0; i < parameters.length; i++) parameters[i] = resolveType(member.parameters.get(i));
@@ -102,7 +130,7 @@ final class NativeAccess {
         return type instanceof NativeClass ? classes.get(type) : (Class<?>) type;
     }
 
-    private static <T extends AccessibleObject> T accessible(T member, String where) throws IllegalAccessException {
+    static <T extends AccessibleObject> T accessible(T member, String where) throws IllegalAccessException {
         try {
             member.setAccessible(true);
             return member;
@@ -113,12 +141,21 @@ final class NativeAccess {
         }
     }
 
-    static Field instanceField(Class<?> owner, String name, Class<?> type, String where) throws ReflectiveOperationException {
+    static Field field(Class<?> owner, String name, Class<?> type, boolean isStatic, String where) throws ReflectiveOperationException {
         Field field = owner.getDeclaredField(name);
-        if (Modifier.isStatic(field.getModifiers()) || field.getType() != type) {
-            throw new IllegalStateException(where + " is not an instance field of type " + type.getName());
+        if (Modifier.isStatic(field.getModifiers()) != isStatic || field.getType() != type) {
+            throw new IllegalStateException(where + " is not a" + (isStatic ? " static" : "n instance") + " field of type " + type.getName());
         }
         return accessible(field, where);
+    }
+
+    private static boolean hasMethod(Class<?> type, String name, Class<?>... parameters) {
+        try {
+            type.getMethod(name, parameters);
+            return true;
+        } catch (NoSuchMethodException missing) {
+            return false;
+        }
     }
 
     /** Cross-checks the entity arguments and selector flag by behaviour. */
