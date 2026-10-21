@@ -32,8 +32,9 @@ JAVA_MAJOR=$("$JAVA_BIN" -version 2>&1 | sed -n '1s/.*version "\(1\.\)\{0,1\}\([
 if (( JAVA_MAJOR >= 11 )); then
   # Current release from LuckPerms' metadata API. Nothing is pinned (download.luckperms.net purges old builds) and no
   # checksum is published, so the jar is downloaded unverified.
-  LP_JSON=$(curl -fsS -A "$USER_AGENT" https://metadata.luckperms.net/data/all)
-  IFS=$'\t' read -r LP_VERSION LP_URL <<<"$(printf '%s' "$LP_JSON" | python3 -I -c 'import json,sys; d=json.load(sys.stdin); print(d["version"], d["downloads"]["bukkit"], sep="\t")')"
+  LP_JSON=$(curl -fsS --retry 3 --retry-delay 10 -A "$USER_AGENT" https://metadata.luckperms.net/data/all)
+  IFS=$'\t' read -r LP_VERSION LP_URL <<<"$(printf '%s' "$LP_JSON" | python3 -I -c 'import json,sys; d=json.load(sys.stdin); print(d["version"], d["downloads"]["bukkit"], sep="\t")' 2>/dev/null)" || true
+  [[ -n $LP_VERSION && -n $LP_URL ]] || { echo "could not resolve LuckPerms from metadata.luckperms.net" >&2; exit 1; }
   LP_SHA256=""
 else
   # LuckPerms moved to Java 11 bytecode in the 5.5 line. 5.4.158 (build 1575, classes major 52) is the newest 5.4.x
