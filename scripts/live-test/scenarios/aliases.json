@@ -1,11 +1,11 @@
 {
   "name": "aliases",
-  "description": "Redirect aliases (/tp, /tell, /w) have their own root node, also through Bukkit's command dispatch (a commands.yml alias), with the target command's node as the fallback when unset. On 1.19 - 1.20.5 a typed /tell skips Bukkit's check, so an unset /tell does not fall back to msg there.",
+  "description": "Redirect aliases (/tp, /tell, /w) have their own root node, also through Bukkit's command dispatch (a commands.yml alias), with the target command's node as the fallback when unset. With the spigot adapter on 1.19+ (Spigot, Paper 1.19 - 1.20.5), a typed /tell skips Bukkit's check, so an unset /tell does not fall back to msg there.",
   "when": { "plugin": true, "backend": "luckperms", "minVersion": "1.13" },
   "server": { "files": { "commands.yml": "aliases:\n  vpptp:\n  - tp $1-\n" } },
   "players": ["Bot", "Bot2"],
   "steps": [
-    { "name": "spigot adapter: alias wrappers got their own Bukkit node", "log": "Gave the vanilla alias commands their own Bukkit permission node", "when": { "maxVersion": "1.20.5" } },
+    { "name": "spigot adapter: alias wrappers got their own Bukkit node", "log": "Gave the vanilla alias commands their own Bukkit permission node", "when": { "not": { "minVersion": "1.20.6", "not": { "software": "spigot" } } } },
     { "log": "Could not give the vanilla alias commands", "absent": true },
     { "connect": "Bot" },
     { "connect": "Bot2" },
@@ -20,7 +20,7 @@
     { "perm": { "user": "Bot", "node": "minecraft.command.tell", "value": true } },
     { "name": "minecraft.command.tell true, msg false: /tell Bot2 hi allowed", "as": "Bot", "command": "/tell Bot2 hi", "expect": { "outcome": "allowed" } },
     { "perm": { "user": "Bot", "node": "minecraft.command.tell", "value": null } },
-    { "name": "tell unset falls back to msg false: /tell Bot2 hi denied", "as": "Bot", "command": "/tell Bot2 hi", "expect": { "outcome": "denied" }, "when": { "not": { "minVersion": "1.19", "maxVersion": "1.20.5" } } },
+    { "name": "tell unset falls back to msg false: /tell Bot2 hi denied", "as": "Bot", "command": "/tell Bot2 hi", "expect": { "outcome": "denied" }, "when": { "not": { "minVersion": "1.19", "not": { "minVersion": "1.20.6", "not": { "software": "spigot" } } } } },
     { "perm": { "user": "Bot", "node": "minecraft.command.msg", "value": null } },
     { "name": "no nodes: /w Bot2 hi allowed (vanilla default)", "as": "Bot", "command": "/w Bot2 hi", "expect": { "outcome": "allowed" } },
     { "perm": { "user": "Bot", "node": "minecraft.command.w", "value": false } },
