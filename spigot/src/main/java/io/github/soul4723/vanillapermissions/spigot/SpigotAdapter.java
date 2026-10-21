@@ -65,10 +65,9 @@ public final class SpigotAdapter implements VersionAdapter {
                 aliasTask = server.getScheduler().runTask(plugin, () -> applyAliasPermissions(plugin, craft));
             }
         } catch (ReflectiveOperationException | RuntimeException | LinkageError error) {
-            String message = AdapterLog.INSTALL_FAILED + " to vanilla commands on " + server.getName() + " " + ServerVersion.minecraft()
-                    + " (tested: " + SupportedVersions.describe(ServerSoftware.detect()) + "). "
-                    + "Vanilla commands were restored and VanillaPermissionsPlugin is disabling itself so no command is left half-checked. "
-                    + "Run it on a tested version or remove it.";
+            ServerSoftware software = ServerSoftware.detect();
+            String message = AdapterLog.installFailed(software.displayName(), ServerVersion.minecraft(),
+                    SupportedVersions.describe(software));
             if (permissions != null) {
                 permissions.failAndDisable(message, error);
             } else {

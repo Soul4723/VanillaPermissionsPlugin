@@ -7,6 +7,7 @@ import io.github.soul4723.vanillapermissions.paper.listener.ForceGamemodeBypassL
 import io.github.soul4723.vanillapermissions.paper.listener.MoveSpeedBypassListener;
 import io.github.soul4723.vanillapermissions.platform.AdapterLog;
 import io.github.soul4723.vanillapermissions.platform.PluginScheduler;
+import io.github.soul4723.vanillapermissions.platform.ServerVersion;
 import io.github.soul4723.vanillapermissions.platform.VersionAdapter;
 import io.github.soul4723.vanillapermissions.util.ServerSoftware;
 import io.github.soul4723.vanillapermissions.util.SupportedVersions;
@@ -58,10 +59,9 @@ public final class PaperAdapter implements VersionAdapter {
             try {
                 installer.install(getNativeDispatcher(event.registrar().getDispatcher()));
             } catch (ReflectiveOperationException | RuntimeException error) {
-                installer.failAndDisable(AdapterLog.INSTALL_FAILED + " to vanilla commands on Minecraft "
-                    + Bukkit.getMinecraftVersion() + " (tested: " + SupportedVersions.describe(ServerSoftware.detect()) + "). "
-                    + "Vanilla commands were restored and VanillaPermissionsPlugin is disabling itself so no command is left half-checked. "
-                    + "Run it on a tested Paper version or remove it.", error);
+                ServerSoftware software = ServerSoftware.detect();
+                installer.failAndDisable(AdapterLog.installFailed(software.displayName(), ServerVersion.minecraft(),
+                    SupportedVersions.describe(software)), error);
             }
         });
     }

@@ -124,7 +124,7 @@ public final class Adapters {
     }
 
     /** Whether {@code server} is CraftBukkit's server class (Spigot, Paper and their forks), relocated or not. */
-    static boolean isCraftBukkit(Object server) {
+    public static boolean isCraftBukkit(Object server) {
         return server != null && server.getClass().getName().startsWith("org.bukkit.craftbukkit.");
     }
 

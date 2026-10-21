@@ -8,12 +8,16 @@ import io.github.soul4723.vanillapermissions.platform.ServerVersion;
 import io.github.soul4723.vanillapermissions.platform.VersionAdapter;
 import io.github.soul4723.vanillapermissions.selector.SelectorRules;
 import io.github.soul4723.vanillapermissions.util.PermissionManager;
+import io.github.soul4723.vanillapermissions.util.ServerSoftware;
+import io.github.soul4723.vanillapermissions.util.SupportedVersions;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 
 /**
@@ -30,6 +34,8 @@ public final class LegacyAdapter implements VersionAdapter {
     private final List<Listener> listeners = new ArrayList<>();
     private LegacyFeatures features;
     private volatile int checkedNodes;
+    /** The sub-command paths the grammars check, without {@code minecraft.command.}; empty until installed. */
+    private volatile Set<String> checkedPaths = Collections.emptySet();
 
     @Override
     public String id() {
@@ -53,9 +59,9 @@ public final class LegacyAdapter implements VersionAdapter {
         try {
             install(plugin, version);
         } catch (ReflectiveOperationException | RuntimeException | LinkageError error) {
-            plugin.getLogger().log(Level.SEVERE, AdapterLog.INSTALL_FAILED + " to vanilla commands on Minecraft " + version
-                + " (" + plugin.getServer().getVersion() + "). Vanilla commands were left unchanged and VanillaPermissionsPlugin "
-                + "is disabling itself so no command is left half-checked. Run it on a tested version or remove it.", error);
+            ServerSoftware software = ServerSoftware.detect();
+            plugin.getLogger().log(Level.SEVERE, AdapterLog.installFailed(software.displayName(), ServerVersion.minecraft(),
+                SupportedVersions.describe(software)), error);
             disable();
             plugin.getServer().getScheduler().runTask(plugin, () -> plugin.getServer().getPluginManager().disablePlugin(plugin));
         }
@@ -73,7 +79,8 @@ public final class LegacyAdapter implements VersionAdapter {
         TabCompleteFilter completions = TabCompleteFilter.register(plugin, guard);
         if (completions != null) listeners.add(completions);
 
-        checkedNodes = Grammars.nodePaths(vanilla, version).size();
+        checkedPaths = Collections.unmodifiableSet(Grammars.nodePaths(vanilla, version));
+        checkedNodes = checkedPaths.size();
         plugin.getLogger().info(AdapterLog.added(checkedNodes));
         if (completions == null) {
             plugin.getLogger().info("Tab completion is not filtered on Minecraft " + version
@@ -86,6 +93,7 @@ public final class LegacyAdapter implements VersionAdapter {
         for (Listener listener : listeners) HandlerList.unregisterAll(listener);
         listeners.clear();
         checkedNodes = 0;
+        checkedPaths = Collections.emptySet();
         if (features != null) {
             features.disable();
             features = null;
@@ -101,5 +109,17 @@ public final class LegacyAdapter implements VersionAdapter {
     @Override
     public int checkedNodeCount() {
         return checkedNodes;
+    }
+
+    @Override
+    public String inactiveReason(String node) {
+        if (node.startsWith("minecraft.debug_stick.use.")) return "there is no debug stick before 1.13";
+        if (node.startsWith("minecraft.operator_block.jigsaw.")) return "there is no jigsaw block before 1.14";
+        String prefix = "minecraft.command.";
+        if (!node.startsWith(prefix)) return null;
+        String path = node.substring(prefix.length());
+        // Roots are CraftBukkit's own nodes; sub-commands only count where a grammar checks them.
+        if (path.indexOf('.') < 0 || path.endsWith("*") || checkedPaths.isEmpty() || checkedPaths.contains(path)) return null;
+        return "legacy mode checks sub-commands of " + Grammars.count() + " commands only";
     }
 }

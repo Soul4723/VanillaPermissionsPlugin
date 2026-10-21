@@ -80,8 +80,6 @@ class SupportedVersionsTest {
         assertEquals(List.of("1.20.6", "1.21.11", "26.1.2", "26.3"), SupportedVersions.verified(ServerSoftware.FOLIA));
         assertFalse(SupportedVersions.isVerified(ServerSoftware.FOLIA, "1.20.4"));
         assertFalse(SupportedVersions.isVerified(ServerSoftware.FOLIA, "1.21.4"));
-        assertEquals("1.8.8 to 26.3", SupportedVersions.range(ServerSoftware.PAPER));
-        assertEquals("1.8.8 to 1.20.4", SupportedVersions.range(ServerSoftware.SPIGOT));
     }
 
     @Test

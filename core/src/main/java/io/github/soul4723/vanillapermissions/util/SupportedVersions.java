@@ -44,12 +44,6 @@ public final class SupportedVersions {
         return VERIFIED.get(software).contains(minecraftVersion);
     }
 
-    /** For logs, e.g. "1.8.8 to 26.3". */
-    public static String range(ServerSoftware software) {
-        List<String> versions = VERIFIED.get(software);
-        return versions.get(0) + " to " + versions.get(versions.size() - 1);
-    }
-
     /** The warning's tail and the debug line's list: {@code "Paper 1.8.8, 1.12.2, ..."}. */
     public static String describe(ServerSoftware software) {
         return software.displayName() + " " + String.join(", ", VERIFIED.get(software));

@@ -56,6 +56,11 @@ public final class Grammars {
 
     private Grammars() {}
 
+    /** How many commands have a grammar (sub-command checks), e.g. for the startup line. */
+    public static int count() {
+        return ALL.size();
+    }
+
     /** The grammar for legacy command {@code name} (CraftBukkit's wrapper name), or {@code null}. */
     public static Grammar forCommand(String name) {
         return BY_COMMAND.get(name);
