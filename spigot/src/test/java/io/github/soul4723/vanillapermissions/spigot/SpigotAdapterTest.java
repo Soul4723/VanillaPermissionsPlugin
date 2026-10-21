@@ -1,6 +1,7 @@
 package io.github.soul4723.vanillapermissions.spigot;
 
 import io.github.soul4723.vanillapermissions.brigadier.BrigadierPermissions;
+import io.github.soul4723.vanillapermissions.util.ServerSoftware;
 import org.bukkit.Bukkit;
 import org.junit.jupiter.api.Test;
 
@@ -8,6 +9,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -90,5 +95,33 @@ class SpigotAdapterTest {
         Field field = SpigotAdapter.class.getDeclaredField(name);
         field.setAccessible(true);
         field.set(adapter, value);
+    }
+
+    @Test
+    void skippedVanillaCommandsAreWarningsAndPluginCommandsACount() {
+        List<String> records = new ArrayList<>();
+        Logger logger = Logger.getAnonymousLogger();
+        logger.setUseParentHandlers(false);
+        logger.setLevel(Level.ALL);
+        logger.addHandler(new Handler() {
+            @Override public void publish(LogRecord record) { records.add(record.getLevel() + " " + record.getMessage()); }
+            @Override public void flush() {}
+            @Override public void close() {}
+        });
+        SpigotAdapter.logSkipped(logger, List.of("lp", "luckperms:lp", "tp", "minecraft:give"));
+        assertEquals(List.of(
+            "WARNING Another plugin changed these vanilla commands, so they have no permission checks from VanillaPermissionsPlugin: tp, minecraft:give",
+            "INFO Left 2 commands that other plugins added to the vanilla command dispatcher unchecked",
+            "FINE Commands other plugins added: lp, luckperms:lp"), records);
+    }
+
+    @Test
+    void bypassNoteSaysSpigotNeedsPaper() {
+        assertEquals("These bypasses need Paper's API and do nothing on Spigot (see docs/compatibility.md#limits): "
+                + "minecraft.bypass.force-gamemode",
+            PaperEventBypasses.unavailableMessage(ServerSoftware.SPIGOT,
+                List.of(PaperEventBypasses.FORCE_GAMEMODE_PERMISSION)));
+        assertTrue(PaperEventBypasses.unavailableMessage(ServerSoftware.PAPER,
+                List.of(PaperEventBypasses.MOVE_SPEED_PERMISSION)).contains("newer Paper"));
     }
 }

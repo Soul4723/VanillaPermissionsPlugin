@@ -11,8 +11,11 @@ import org.bukkit.Server;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Spigot 1.13+ and Paper 1.13 - 1.20.5: permission checks on CraftBukkit's vanilla Brigadier dispatcher, installed
@@ -30,6 +33,7 @@ public final class SpigotAdapter implements VersionAdapter {
     private JavaPlugin plugin;
     private final AliasPermissions aliases = new AliasPermissions();
     private BukkitTask aliasTask;
+    private List<String> unavailableBypasses = Collections.emptyList();
 
     @Override
     public String id() {
@@ -40,7 +44,7 @@ public final class SpigotAdapter implements VersionAdapter {
     public void enable(JavaPlugin plugin) {
         this.plugin = plugin;
         BrigadierFeatures.registerListeners(plugin);
-        PaperEventBypasses.register(plugin);
+        unavailableBypasses = PaperEventBypasses.register(plugin);
 
         Server server = plugin.getServer();
         try {
@@ -51,10 +55,7 @@ public final class SpigotAdapter implements VersionAdapter {
             bridge.resolve(generation);
             boolean late = craft.vanillaCommandsRegistered();
             permissions.install(craft.vanillaDispatcher());
-            if (!bridge.skippedPluginCommands().isEmpty()) {
-                plugin.getLogger().info("Left the commands other plugins added to the vanilla command dispatcher unchecked: "
-                        + String.join(", ", bridge.skippedPluginCommands()));
-            }
+            logSkipped(plugin.getLogger(), bridge.skippedPluginCommands());
             if (late) {
                 craft.syncCommands();
                 plugin.getLogger().info("Re-synced the server's commands because VanillaPermissionsPlugin was enabled after startup");
@@ -77,6 +78,28 @@ public final class SpigotAdapter implements VersionAdapter {
         }
     }
 
+    /**
+     * Commands other plugins put in the vanilla dispatcher are left unchecked: their number at INFO and the names at
+     * FINE, because a plugin such as LuckPerms adds a dozen. A vanilla command among them was changed by another
+     * plugin and has no checks at all, so those names are a WARNING.
+     */
+    static void logSkipped(Logger logger, List<String> skipped) {
+        List<String> vanilla = new ArrayList<>();
+        List<String> added = new ArrayList<>();
+        for (String name : skipped) {
+            String bare = name.startsWith("minecraft:") ? name.substring("minecraft:".length()) : name;
+            (PluginNodes.VANILLA_COMMANDS.contains(bare) ? vanilla : added).add(name);
+        }
+        if (!vanilla.isEmpty()) {
+            logger.warning("Another plugin changed these vanilla commands, so they have no permission checks from "
+                    + "VanillaPermissionsPlugin: " + String.join(", ", vanilla));
+        }
+        if (!added.isEmpty()) {
+            logger.info("Left " + added.size() + " commands that other plugins added to the vanilla command dispatcher unchecked");
+            logger.fine("Commands other plugins added: " + String.join(", ", added));
+        }
+    }
+
     /** Fail-safe: on any problem, one warning and CraftBukkit's alias permissions stay as they are. */
     private void applyAliasPermissions(JavaPlugin plugin, CraftServerAccess craft) {
         aliasTask = null;
@@ -86,8 +109,9 @@ public final class SpigotAdapter implements VersionAdapter {
                     craft.vanillaDispatcher().getRoot(), plugin.getServer().getClass().getClassLoader(),
                     SpigotAdapter.class.getClassLoader());
             if (!changed.isEmpty()) {
-                plugin.getLogger().info("Gave the vanilla alias commands their own Bukkit permission node "
-                        + "(minecraft.command.<alias>, e.g. minecraft.command.tp): " + String.join(", ", changed));
+                plugin.getLogger().info("Gave " + changed.size() + " vanilla alias commands their own Bukkit permission node "
+                        + "(minecraft.command.<alias>, e.g. minecraft.command.tp)");
+                plugin.getLogger().fine("Alias commands with their own node: " + String.join(", ", changed));
             }
         } catch (ReflectiveOperationException | RuntimeException | LinkageError error) {
             aliases.restore();
@@ -133,5 +157,10 @@ public final class SpigotAdapter implements VersionAdapter {
     @Override
     public int checkedNodeCount() {
         return permissions == null ? 0 : permissions.installedNodeCount();
+    }
+
+    @Override
+    public String inactiveReason(String node) {
+        return unavailableBypasses.contains(node) ? "this server's API has no event for it (it needs Paper)" : null;
     }
 }
