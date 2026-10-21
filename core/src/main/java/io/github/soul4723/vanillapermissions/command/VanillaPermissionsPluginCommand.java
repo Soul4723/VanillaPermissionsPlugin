@@ -2,6 +2,7 @@ package io.github.soul4723.vanillapermissions.command;
 
 import io.github.soul4723.vanillapermissions.VanillaPermissionsPlugin;
 import io.github.soul4723.vanillapermissions.platform.ServerVersion;
+import io.github.soul4723.vanillapermissions.selector.SelectorRules;
 import io.github.soul4723.vanillapermissions.util.PermissionManager;
 import io.github.soul4723.vanillapermissions.util.PermissionProvider;
 import io.github.soul4723.vanillapermissions.util.ServerSoftware;
@@ -109,10 +110,13 @@ public final class VanillaPermissionsPluginCommand implements TabExecutor {
     }
 
     private static String describe(Player target, String node) {
-        boolean limit = node.startsWith("minecraft.selector.limit.");
-        if (limit || node.startsWith("minecraft.selector.weight.")) {
-            OptionalInt value = PermissionManager.getIntegerMeta(target.getUniqueId(), target, node);
-            if (value.isPresent()) return "§f" + value.getAsInt() + " §7(meta)";
+        String metaPrefix = node.startsWith(SelectorRules.LIMIT_PREFIX) ? SelectorRules.LIMIT_PREFIX
+            : node.startsWith(SelectorRules.WEIGHT_PREFIX) ? SelectorRules.WEIGHT_PREFIX : null;
+        if (metaPrefix != null && node.length() > metaPrefix.length()) {
+            for (String key : SelectorRules.fallbackKeys(metaPrefix, node.substring(metaPrefix.length()))) {
+                OptionalInt value = PermissionManager.getIntegerMeta(target.getUniqueId(), target, key);
+                if (value.isPresent()) return "§f" + value.getAsInt() + " §7(meta" + (key.equals(node) ? "" : " from " + key) + ")";
+            }
             return "§7unset (" + unsetMeaning(node) + ")";
         }
         String meaning = unsetMeaning(node);

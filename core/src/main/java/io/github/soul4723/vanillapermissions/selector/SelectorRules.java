@@ -6,6 +6,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -32,6 +33,9 @@ public final class SelectorRules {
             return PermissionManager.getIntegerMeta(subjectId, onlineSubject, node);
         }
     };
+
+    public static final String LIMIT_PREFIX = "minecraft.selector.limit.";
+    public static final String WEIGHT_PREFIX = "minecraft.selector.weight.";
 
     private SelectorRules() {}
 
@@ -133,7 +137,7 @@ public final class SelectorRules {
 
     /**
      * Checks {@code selected} against the selector nodes under {@link #selectorPath}. Non-player senders are
-     * never restricted.
+     * never restricted. Limit and weight meta fall back to shorter keys, see {@link #fallbackKeys}.
      *
      * @return the first rule the selection breaks, or empty when it is allowed
      */
@@ -148,14 +152,14 @@ public final class SelectorRules {
         Player player = (Player) sender;
 
         String path = selectorPath(parsedNodePath, argumentName);
-        OptionalInt limit = permissions.getIntegerMeta(player.getUniqueId(), sender, "minecraft.selector.limit." + path);
+        OptionalInt limit = meta(permissions, player.getUniqueId(), sender, fallbackKeys(LIMIT_PREFIX, path));
         if (limit.isPresent() && limit.getAsInt() < selected.size()) return Optional.of(SelectorDenial.tooMany(limit.getAsInt()));
 
         boolean entitiesAllowed = permissions.hasPermission(sender, "minecraft.selector.entity." + path, true);
         boolean playersAllowed = permissions.hasPermission(sender, "minecraft.selector.player." + path, true);
         boolean selfAllowed = permissions.hasPermission(sender, "minecraft.selector.self." + path, true);
-        String weightNode = "minecraft.selector.weight." + path;
-        OptionalInt sourceWeight = permissions.getIntegerMeta(player.getUniqueId(), sender, weightNode);
+        List<String> weightKeys = fallbackKeys(WEIGHT_PREFIX, path);
+        OptionalInt sourceWeight = meta(permissions, player.getUniqueId(), sender, weightKeys);
         for (Target target : selected) {
             if (target.kind() == Target.Kind.UNSUPPORTED) return denial(SelectorDenial.Reason.UNSUPPORTED);
             if (target.kind() == Target.Kind.SCORE_HOLDER) continue;
@@ -171,13 +175,40 @@ public final class SelectorRules {
             if (!playersAllowed) return denial(SelectorDenial.Reason.PLAYER);
 
             if (sourceWeight.isPresent()) {
-                OptionalInt targetWeight = permissions.getIntegerMeta(target.id(), target.metadataSubject(), weightNode);
+                OptionalInt targetWeight = meta(permissions, target.id(), target.metadataSubject(), weightKeys);
                 if (targetWeight.isPresent() && targetWeight.getAsInt() > sourceWeight.getAsInt()) {
                     return denial(SelectorDenial.Reason.WEIGHT);
                 }
             }
         }
         return Optional.empty();
+    }
+
+    /**
+     * The meta keys tried for {@code prefix + path}, most specific first: the full key, then the key with its last
+     * segment dropped, down to {@code prefix + <command>.<argument>}. LuckPerms meta has no wildcards, so without this
+     * every way of typing a command would need its own line; exact keys still win, so upstream configs keep working.
+     */
+    public static List<String> fallbackKeys(String prefix, String path) {
+        List<String> keys = new ArrayList<>();
+        String key = path;
+        while (true) {
+            keys.add(prefix + key);
+            int dot = key.lastIndexOf('.');
+            // Stop at <command>.<argument>: a bare command name says nothing about which argument is limited.
+            if (dot < 0 || key.indexOf('.') == dot) break;
+            key = key.substring(0, dot);
+        }
+        return keys;
+    }
+
+    /** The value of the first of {@code keys} set for the subject, or empty if none is. */
+    public static OptionalInt meta(Permissions permissions, UUID subjectId, CommandSender onlineSubject, List<String> keys) {
+        for (String key : keys) {
+            OptionalInt value = permissions.getIntegerMeta(subjectId, onlineSubject, key);
+            if (value.isPresent()) return value;
+        }
+        return OptionalInt.empty();
     }
 
     /** {@code <command>.<argument>.<rest of the parsed path>}, matching upstream's selector node layout. */
