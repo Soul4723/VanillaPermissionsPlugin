@@ -42,7 +42,7 @@ public class VanillaPermissionsPlugin extends JavaPlugin {
 
         // Chosen now because the commands below need a provider at once; the adapter's listeners repeat the choice
         // on ServerLoadEvent, which fires after every plugin has enabled.
-        permissionProvider = PermissionManager.selectProvider(this, adapter.scheduler(this));
+        permissionProvider = PermissionManager.selectProvider(this);
         PermissionManager.initialize(permissionProvider, this);
 
         VanillaPermissionsPluginCommand.register(this);

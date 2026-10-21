@@ -1,6 +1,5 @@
 package io.github.soul4723.vanillapermissions.util;
 
-import io.github.soul4723.vanillapermissions.platform.PluginScheduler;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.cacheddata.CachedMetaData;
 import net.luckperms.api.model.user.User;
@@ -13,7 +12,7 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 /**
- * LuckPerms lookups in the player's current context, with integer meta and command list refresh from
+ * LuckPerms lookups in the player's current context, with integer meta, through
  * {@link LuckPermsHook}. Only load this class after checking that LuckPerms is enabled.
  */
 public final class LuckPermsPermissionProvider implements PermissionProvider {
@@ -27,9 +26,9 @@ public final class LuckPermsPermissionProvider implements PermissionProvider {
     }
 
     /** Connects to the installed LuckPerms, or returns {@code null} after logging why it cannot be used. */
-    public static LuckPermsPermissionProvider connect(Plugin plugin, PluginScheduler scheduler) {
+    public static LuckPermsPermissionProvider connect(Plugin plugin) {
         LuckPermsHook hook = new LuckPermsHook();
-        hook.initialize(plugin, scheduler);
+        hook.initialize(plugin);
         return hook.isEnabled() ? new LuckPermsPermissionProvider(hook, plugin.getLogger()) : null;
     }
 
@@ -112,7 +111,7 @@ public final class LuckPermsPermissionProvider implements PermissionProvider {
     public String describePermissions() {
         if (!hook.isEnabled()) return "§cLuckPerms not connected";
         return "§aLuckPerms " + hook.getLuckPerms().getPluginMetadata().getVersion()
-            + " §7(contexts, command list refresh on changes)";
+            + " §7(contexts; LuckPerms refreshes command lists on changes)";
     }
 
     @Override

@@ -1,7 +1,6 @@
 package io.github.soul4723.vanillapermissions.brigadier.listener;
 
 import io.github.soul4723.vanillapermissions.util.PermissionManager;
-import io.github.soul4723.vanillapermissions.platform.PluginScheduler;
 import org.bukkit.Server;
 import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.plugin.Plugin;
@@ -54,7 +53,7 @@ class ProviderReselectListenerTest {
 
     @Test
     void onlyStartupLoadReselects() {
-        PermissionManager.initialize(PermissionManager.selectProvider(owner, PluginScheduler.bukkit(owner)), owner);
+        PermissionManager.initialize(PermissionManager.selectProvider(owner), owner);
         ProviderReselectListener listener = new ProviderReselectListener(owner);
         listener.reselectOn(ServerLoadEvent.LoadType.RELOAD);
         assertTrue(at(Level.WARNING).isEmpty(), "A reload selected again");
