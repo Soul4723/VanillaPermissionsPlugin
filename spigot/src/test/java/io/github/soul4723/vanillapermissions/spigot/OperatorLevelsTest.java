@@ -26,15 +26,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Operator levels in both shapes: int levels on the fake Spigot 1.16.5 classes in {@code net.minecraft.server.v1_16_R3},
- * and PermissionSet levels on the fake Spigot 1.21.11 classes in {@code net.minecraft.commands},
- * {@code net.minecraft.server.permissions} and {@code net.minecraft.world.entity.player}.
+ * Operator levels under Spigot names in both shapes: int levels on the fake Spigot 1.16.5 classes in
+ * {@code net.minecraft.server.v1_16_R3}, and PermissionSet levels on the fake Spigot 1.21.11 classes in
+ * {@code net.minecraft.commands}, {@code net.minecraft.server.permissions} and {@code net.minecraft.world.entity.player}.
+ * {@link MojangOperatorLevelsTest} covers Mojang names.
  */
 class OperatorLevelsTest {
 
     private static final ClassLoader LOADER = OperatorLevelsTest.class.getClassLoader();
 
-    private static CommandSender senderWith(String... nodes) {
+    static CommandSender senderWith(String... nodes) {
         Set<String> granted = Set.of(nodes);
         return (CommandSender) Proxy.newProxyInstance(CommandSender.class.getClassLoader(), new Class<?>[]{CommandSender.class},
                 (proxy, method, args) -> {

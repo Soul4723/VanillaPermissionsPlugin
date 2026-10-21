@@ -31,10 +31,6 @@ public class CommandListenerWrapper {
         return bukkitPermissions;
     }
 
-    public CommandSender getBukkitSender() {
-        return sender;
-    }
-
     class DelegatePermissionSet implements PermissionSet {
         private final PermissionSet handle;
 

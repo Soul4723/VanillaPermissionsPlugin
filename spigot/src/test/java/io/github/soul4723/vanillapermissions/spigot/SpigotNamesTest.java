@@ -11,6 +11,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -125,8 +126,10 @@ class SpigotNamesTest {
 
     @Test
     void detectReadsTheCraftBukkitPackageUnlessMojangNamesExist() {
-        // No server classes on the test class path: neither the Mojang probe nor a version package is present.
-        assertThrows(IllegalStateException.class,
-                () -> MappingGeneration.detect(SpigotNamesTest.class, SpigotNamesTest.class.getClassLoader()));
+        // The test class path has the fake Spigot 26.x CommandSourceStack, the Mojang probe.
+        assertSame(MappingGeneration.MOJANG, MappingGeneration.detect(SpigotNamesTest.class, SpigotNamesTest.class.getClassLoader()));
+        // A loader without it, and a server class without a version package.
+        ClassLoader noServerClasses = new ClassLoader(null) {};
+        assertThrows(IllegalStateException.class, () -> MappingGeneration.detect(SpigotNamesTest.class, noServerClasses));
     }
 }

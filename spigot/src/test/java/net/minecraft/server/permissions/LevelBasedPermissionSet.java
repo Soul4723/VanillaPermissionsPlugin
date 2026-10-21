@@ -1,6 +1,9 @@
 package net.minecraft.server.permissions;
 
-/** Mimics LevelBasedPermissionSet: level checks, and the selector permission from level 2, as vanilla grants them. */
+/**
+ * Mimics LevelBasedPermissionSet: level checks, and the selector permission from level 2, as vanilla grants them;
+ * {@code forLevel} is {@code a} on Spigot 1.21.11.
+ */
 public interface LevelBasedPermissionSet extends PermissionSet {
 
     PermissionLevel level();
