@@ -54,7 +54,7 @@ Before you install:
    Added permission checks to <n> vanilla command nodes
    ```
 
-   A `SEVERE` line starting with `Could not add permission checks` or ending with `is not supported` means the plugin disabled itself and vanilla commands work as they would without it. [Troubleshooting](docs/troubleshooting.md#reading-the-startup-log) shows what each line means, including the differences on 1.8.8 – 1.12.2.
+   A `SEVERE` line starting with `Could not add permission checks` or containing `is not supported` means the plugin disabled itself and vanilla commands work as they would without it. [Troubleshooting](docs/troubleshooting.md#reading-the-startup-log) shows what each line means, including the differences on 1.8.8 – 1.12.2.
 3. Run `/vanillapermissions debug` to see the mode, the server version, the permissions plugin in use and the number of checked nodes.
 
 ## Quick start
@@ -65,7 +65,7 @@ Let a `member` group use `/time`:
 /lp group member permission set minecraft.command.time true
 ```
 
-Operator commands such as `/time` stay closed to players until you grant them, so this is all a normal player group needs. It also opens `/time set`, `/time add` and `/time query`, because a sub-command with no node set follows its root. To take one away, set its node to `false`:
+Operator commands such as `/time` stay closed to players until you grant them, so this is all a normal player group needs. It also opens `/time set`, `/time add` and `/time query`, because a sub-command with no node set follows vanilla, which normally only restricts the root. To take one away, set its node to `false`:
 
 ```text
 /lp group member permission set minecraft.command.time.set false

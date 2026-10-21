@@ -13,7 +13,7 @@ Replace the jar: stop the server, swap `VanillaPermissionsPlugin-1.0.0.jar` for 
 
 ### Added
 - Spigot, old Paper, Purpur, Pufferfish and Folia are supported by the same jar, from Minecraft 1.8.8 to 26.3. The plugin picks one of three modes at startup by looking at the server: Paper mode (Paper, Folia and forks, 1.20.6 and later), Spigot mode (Spigot 1.13+ and Paper 1.13 - 1.20.5) and legacy mode (1.8.8 - 1.12.2). See [Compatibility](docs/compatibility.md) for the version table, the limits and what was tested.
-- Folia 1.20.6 and later, in Paper mode: LuckPerms refreshes run on each player's entity scheduler and global work on the global scheduler. `plugin.yml` declares `folia-supported: true`. Older Folia is refused with a clear message.
+- Folia 1.20.6 and later, in Paper mode: command list resends run on each player's entity scheduler and global work on the global scheduler. `plugin.yml` declares `folia-supported: true`. Older Folia is refused with a clear message.
 - On 1.8.8 - 1.12.2 the modern sub-nodes for ten commands (`gamemode`, `time`, `weather`, `kill`, `effect`, `give`, `clear`, `tp`/`teleport`, `execute`, `scoreboard`) are checked before the command runs, with selector rules, tab completion filtering (1.9+), operator blocks, and the force-gamemode and move-speed bypasses. Other commands keep `minecraft.command.<name>`; `/tp` follows `minecraft.command.teleport` as on 1.13+. See [Permissions](docs/permissions.md#188---1122-legacy-servers).
 - The startup warning and `/vanillapermissions debug` compare the server with the tested versions of its own software (Paper, Folia, Spigot, Purpur or Pufferfish).
 - Limit and weight meta now fall back to shorter keys. `minecraft.selector.limit.effect.targets` caps every form of `/effect`, while `minecraft.selector.limit.effect.targets.give` caps only `/effect give`. Keys written in the full form keep working and win over shorter ones.
@@ -27,7 +27,9 @@ Replace the jar: stop the server, swap `VanillaPermissionsPlugin-1.0.0.jar` for 
 ### Fixed
 - Random selectors (`@r`, or any selector with `sort=random`) are checked against every entity they could pick, because the server picks again when the command runs. A weight rule now denies `/kill @r` if any possible target outranks the sender.
 - The plugin no longer resends command lists itself when LuckPerms permissions change. LuckPerms already does this (its `update-client-command-list` option, on by default). If you turned that option off, tab completion updates when the player rejoins.
-- The failure messages at startup say what went wrong and where to find the supported servers.
+- The failure messages at startup say what went wrong and where to find the supported servers. `/vanillapermissions check` says when a node has no effect on this server, and an unknown subcommand is reported instead of silently showing the help.
+- On 1.8.8 - 1.12.2 a command whose check fails with an error is refused instead of running unchecked, and tab completion for the command an `/execute` runs is filtered too.
+- On Spigot 1.13+, a vanilla command that another plugin changed (and that is therefore left unchecked) is logged as a warning.
 - Console and command blocks no longer fail on `/scoreboard players … *` and on `/execute unless entity …` with an empty selection. Selector validation now skips non-player sources, and player checks keep vanilla's wildcard score holders (`*`) and empty selections. This also fixes the behaviour shipped on Paper in 1.0.0.
 - Paper 1.20.5 no longer refuses the plugin because of its `api-version`.
 - The operator-block nodes now also cover the 1.21.5+ test blocks and test instance blocks.

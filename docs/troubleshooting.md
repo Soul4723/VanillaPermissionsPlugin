@@ -28,8 +28,8 @@ Added permission checks to <n> vanilla command nodes
 
 Problems look like this:
 
-- `Could not add permission checks to vanilla commands on <software> <version> (tested: ...), so VanillaPermissionsPlugin is disabling itself and vanilla commands work as they would without it.` (SEVERE) The server is a version the plugin could not patch. Vanilla commands keep working as if the plugin were not installed. Report it with the `/vanillapermissions debug` output if the version is in the [supported list](compatibility.md).
-- `<software> <version> is not supported (<reason>), so VanillaPermissionsPlugin is disabling itself and leaving vanilla commands unchanged` (SEVERE) The software or version is not supported, for example `Folia is supported from 1.20.6` or `not a CraftBukkit-based server`. Spigot 1.21.11 and 26.x are in this group; use Paper.
+- `Could not add permission checks to vanilla commands on <software> <version> (tested: ...), so VanillaPermissionsPlugin is disabling itself and vanilla commands work as they would without it.` (SEVERE) The server is a version the plugin could not patch, such as Spigot 1.21.11 and 26.x (use Paper there). Vanilla commands keep working as if the plugin were not installed. If the version is in the [supported list](compatibility.md), report it with the full startup log.
+- `<software> <version> is not supported (<reason>), so VanillaPermissionsPlugin is disabling itself and leaving vanilla commands unchanged` (SEVERE) The software or version is not supported, for example `Folia is supported from 1.20.6` or `not a CraftBukkit-based server`.
 - `No permissions plugin found, so every node follows Bukkit defaults and operator status; install a permissions plugin such as LuckPerms for granular control` (WARNING) The checks are installed but nobody can be given a node. Install LuckPerms, or another permissions plugin; see [Permissions plugins](providers.md).
 - `Selected after all plugins enabled: ...` means a permissions plugin enabled after this one and was picked up. It is not a problem.
 
