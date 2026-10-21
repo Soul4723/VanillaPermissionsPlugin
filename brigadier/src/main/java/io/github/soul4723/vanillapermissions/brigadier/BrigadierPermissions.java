@@ -167,15 +167,35 @@ public final class BrigadierPermissions {
         return checkedNodes;
     }
 
-    /** Resends the command tree to online players, so their tab completion matches the patched tree. */
-    static void refreshOnlinePlayers(JavaPlugin owner) {
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            try {
-                player.updateCommands();
-            } catch (RuntimeException error) {
-                if (owner != null) owner.getLogger().log(Level.WARNING,
-                    "Could not refresh the command list for " + player.getName(), error);
+    /**
+     * Resends the command tree to online players, so their tab completion matches the patched tree. Each resend runs on
+     * the player's own thread (Folia's entity scheduler), one tick later; when nothing can be scheduled any more
+     * (the plugin is being disabled), it runs at once, as the server is stopping or reloading on this thread.
+     */
+    private void refreshOnlinePlayers(JavaPlugin logTarget) {
+        refresh(new ArrayList<>(Bukkit.getOnlinePlayers()), logTarget);
+    }
+
+    void refresh(List<? extends Player> players, JavaPlugin logTarget) {
+        for (Player player : players) {
+            if (scheduler == null) {
+                updateCommands(player, logTarget);
+                continue;
             }
+            try {
+                scheduler.runLater(player, () -> updateCommands(player, logTarget), 1, () -> {});
+            } catch (RuntimeException unschedulable) {
+                updateCommands(player, logTarget);
+            }
+        }
+    }
+
+    private static void updateCommands(Player player, JavaPlugin logTarget) {
+        try {
+            player.updateCommands();
+        } catch (RuntimeException error) {
+            if (logTarget != null) logTarget.getLogger().log(Level.WARNING,
+                "Could not refresh the command list for " + player.getName(), error);
         }
     }
 
