@@ -5,6 +5,7 @@ import io.github.soul4723.vanillapermissions.legacy.grammar.Grammars;
 import io.github.soul4723.vanillapermissions.legacy.grammar.LegacyVersion;
 import io.github.soul4723.vanillapermissions.legacy.grammar.Parse;
 import io.github.soul4723.vanillapermissions.legacy.grammar.Tokens;
+import io.github.soul4723.vanillapermissions.selector.RandomSelectors;
 import io.github.soul4723.vanillapermissions.selector.SelectorDenial;
 import io.github.soul4723.vanillapermissions.selector.SelectorRules;
 import org.bukkit.command.Command;
@@ -153,6 +154,7 @@ final class CommandGuard {
     private String checkTargets(Player player, Entity origin, Parse.Segment segment, Parse.Step step, String[] args,
                                 List<Entity> entities) {
         List<SelectorRules.Target> targets = new ArrayList<>();
+        List<SelectorRules.Target> candidates = new ArrayList<>();
         int end = Math.min(args.length, step.token() + step.width());
         for (int i = step.token(); i < end; i++) {
             String token = args[i];
@@ -165,12 +167,18 @@ final class CommandGuard {
             }
             List<Entity> resolved = server.resolve(origin, token, step.kind() == Parse.Kind.PLAYERS);
             if (resolved == null) return UNRESOLVED;
-            for (Entity entity : resolved) {
-                entities.add(entity);
-                targets.add(SelectorRules.Target.entity(entity));
+            for (Entity entity : resolved) targets.add(SelectorRules.Target.entity(entity));
+            // Vanilla resolves @r again when the command runs, so check (and run /execute for) everyone it could pick.
+            String pool = RandomSelectors.candidates(token, true);
+            if (pool != null) {
+                resolved = server.resolve(origin, pool, step.kind() == Parse.Kind.PLAYERS);
+                if (resolved == null) return UNRESOLVED;
+                for (Entity entity : resolved) candidates.add(SelectorRules.Target.entity(entity));
             }
+            entities.addAll(resolved);
         }
-        Optional<SelectorDenial> denial = SelectorRules.check(player, segment.names(), step.name(), targets, permissions);
+        Optional<SelectorDenial> denial = SelectorRules.check(player, segment.names(), step.name(), targets,
+            candidates.isEmpty() ? targets : candidates, permissions);
         return denial.isPresent() ? denial.get().message() : null;
     }
 

@@ -168,6 +168,17 @@ class SelectorRulesTest {
     }
 
     @Test
+    void randomSelectionsCheckEveryCandidateButLimitThePick() {
+        permissions.nodes.put("minecraft.selector.player." + PERMISSION_PATH, false);
+        permissions.meta.put(SOURCE_ID + ":minecraft.selector.limit." + PERMISSION_PATH, 1);
+        List<SelectorRules.Target> picked = List.of(targetPlayer(SOURCE_ID, source));
+        List<SelectorRules.Target> pool = List.of(targetPlayer(SOURCE_ID, source), targetPlayer(OTHER_ID, other));
+        assertEquals(Optional.empty(), SelectorRules.check(source, COMMAND_PATH, "targets", picked, picked, permissions));
+        Optional<SelectorDenial> denial = SelectorRules.check(source, COMMAND_PATH, "targets", picked, pool, permissions);
+        assertEquals(SelectorDenial.Reason.PLAYER, denial.orElseThrow().reason());
+    }
+
+    @Test
     void tooManyNeedsALimit() {
         assertThrows(IllegalArgumentException.class, () -> SelectorDenial.of(SelectorDenial.Reason.TOO_MANY));
         assertEquals("You can select at most 3 targets here", SelectorDenial.tooMany(3).message());

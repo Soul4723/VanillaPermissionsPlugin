@@ -2,12 +2,15 @@ package io.github.soul4723.vanillapermissions.brigadier;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.context.ParsedArgument;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.ArgumentCommandNode;
 import com.mojang.brigadier.tree.CommandNode;
 import io.github.soul4723.vanillapermissions.platform.AdapterLog;
 import io.github.soul4723.vanillapermissions.platform.PluginScheduler;
+import io.github.soul4723.vanillapermissions.selector.RandomSelectors;
 import io.github.soul4723.vanillapermissions.util.PermissionManager;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
@@ -20,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
@@ -32,6 +36,8 @@ import java.util.logging.Level;
  * enabled adapter.
  */
 public final class BrigadierPermissions {
+
+    private static volatile Field contextArgumentsField;
 
     private final List<Mutation> installed = new ArrayList<>();
     private final List<CommandMutation> selectorInstalled = new ArrayList<>();
@@ -331,18 +337,70 @@ public final class BrigadierPermissions {
             ArgumentCommandNode<?, ?> argument = (ArgumentCommandNode<?, ?>) parsed.node();
             ArgumentResolver resolver = bridge.selectorResolver(argument.getType());
             if (resolver == null) continue;
-            Object result;
-            try {
-                result = resolver.resolve(context, argument.getName());
-            } catch (InvocationTargetException error) {
-                Throwable cause = error.getCause();
-                if (cause instanceof CommandSyntaxException) throw (CommandSyntaxException) cause;
-                throw new IllegalStateException("Native selector resolver failed", cause);
-            } catch (ReflectiveOperationException error) {
-                throw new IllegalStateException("Native selector resolver failed", error);
+            Object result = resolve(resolver, context, argument.getName());
+            String pool = RandomSelectors.candidates(parsed.range().get(context.getInput()), false);
+            if (pool == null) {
+                SelectorTargets.validate(sender, path, argument.getName(), result, bridge::selectorTarget);
+            } else {
+                Object candidates = resolveCandidates(context, argument, resolver, pool);
+                SelectorTargets.validate(sender, path, argument.getName(), result, candidates, bridge::selectorTarget);
             }
-            SelectorTargets.validate(sender, path, argument.getName(), result, bridge::selectorTarget);
         }
+    }
+
+    private static Object resolve(ArgumentResolver resolver, CommandContext<?> context, String name) throws CommandSyntaxException {
+        try {
+            return resolver.resolve(context, name);
+        } catch (InvocationTargetException error) {
+            Throwable cause = error.getCause();
+            if (cause instanceof CommandSyntaxException) throw (CommandSyntaxException) cause;
+            throw new IllegalStateException("Native selector resolver failed", cause);
+        } catch (ReflectiveOperationException error) {
+            throw new IllegalStateException("Native selector resolver failed", error);
+        }
+    }
+
+    /**
+     * Resolves {@code pool}, the random selector typed for {@code argument} without its limit and random order, through
+     * the same resolver: the argument's parsed value is swapped for the pool's while it resolves, then put back.
+     * Brigadier's own API only (its field names are not obfuscated), so it works the same on every server.
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private Object resolveCandidates(CommandContext<?> context, ArgumentCommandNode<?, ?> argument, ArgumentResolver resolver,
+                                     String pool) throws CommandSyntaxException {
+        String name = argument.getName();
+        Map<String, ParsedArgument<?, ?>> arguments;
+        try {
+            arguments = (Map<String, ParsedArgument<?, ?>>) contextArguments().get(context);
+        } catch (ReflectiveOperationException error) {
+            throw new IllegalStateException("Could not read the parsed command arguments", error);
+        }
+        ParsedArgument<?, ?> original = arguments.get(name);
+        if (original == null) throw new IllegalStateException("No parsed argument " + name);
+        Object poolValue = argument.getType().parse(new StringReader(pool));
+        arguments.put(name, new ParsedArgument(original.getRange().getStart(), original.getRange().getEnd(), poolValue));
+        try {
+            SelectorOverride override = bridge.bypassSelectorCheck(context, name);
+            try {
+                return resolve(resolver, context, name);
+            } finally {
+                override.restore();
+            }
+        } catch (ReflectiveOperationException error) {
+            throw new IllegalStateException("Could not resolve every target of a random selector", error);
+        } finally {
+            arguments.put(name, original);
+        }
+    }
+
+    private static Field contextArguments() throws ReflectiveOperationException {
+        Field field = contextArgumentsField;
+        if (field == null) {
+            field = VanillaTree.accessible(CommandContext.class.getDeclaredField("arguments"),
+                    "Brigadier command context arguments field is inaccessible");
+            contextArgumentsField = field;
+        }
+        return field;
     }
 
     /** The {@code minecraft.command.<path>} requirement for one node, falling back to vanilla's when unset. */

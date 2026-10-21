@@ -42,6 +42,22 @@ public final class SelectorTargets {
         SelectorPolicy.validate(sender, parsedNodePath, argumentName, targets(result, classify), PERMISSIONS);
     }
 
+    /**
+     * {@link #validate} for a selector that picks at random: {@code candidates} is what the same selector without its
+     * limit and random order resolved to, every target the server could pick when the command runs.
+     */
+    public static void validate(
+            CommandSender sender,
+            List<String> parsedNodePath,
+            String argumentName,
+            Object result,
+            Object candidates,
+            Function<Object, SelectorRules.Target> classify) throws CommandSyntaxException {
+        if (!(sender instanceof Player)) return;
+        SelectorPolicy.validate(sender, parsedNodePath, argumentName, targets(result, classify),
+                targets(candidates, classify), PERMISSIONS);
+    }
+
     public static void validateSelectorSyntax(CommandSender sender, boolean vanillaAllowed) throws CommandSyntaxException {
         if (!SelectorRules.allowSelectorSyntax(sender, vanillaAllowed, PERMISSIONS)) throw SELECTOR_DENIED.create();
     }

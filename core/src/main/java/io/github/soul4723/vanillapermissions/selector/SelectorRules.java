@@ -147,8 +147,25 @@ public final class SelectorRules {
             String argumentName,
             Collection<Target> selected,
             Permissions permissions) {
+        return check(sender, parsedNodePath, argumentName, selected, selected, permissions);
+    }
+
+    /**
+     * {@link #check} for a selector the server resolves again when the command runs and may then pick other targets
+     * ({@link RandomSelectors}): the limit applies to {@code selected}, the scope and weight rules to every target in
+     * {@code selected} and in {@code candidates}, all the targets it could pick.
+     */
+    public static Optional<SelectorDenial> check(
+            CommandSender sender,
+            List<String> parsedNodePath,
+            String argumentName,
+            Collection<Target> selected,
+            Collection<Target> candidates,
+            Permissions permissions) {
         if (!(sender instanceof Player)) return Optional.empty();
-        if (selected == null || permissions == null) throw new IllegalArgumentException("selection and permissions are required");
+        if (selected == null || candidates == null || permissions == null) {
+            throw new IllegalArgumentException("selection and permissions are required");
+        }
         Player player = (Player) sender;
 
         String path = selectorPath(parsedNodePath, argumentName);
@@ -160,7 +177,9 @@ public final class SelectorRules {
         boolean selfAllowed = permissions.hasPermission(sender, "minecraft.selector.self." + path, true);
         List<String> weightKeys = fallbackKeys(WEIGHT_PREFIX, path);
         OptionalInt sourceWeight = meta(permissions, player.getUniqueId(), sender, weightKeys);
-        for (Target target : selected) {
+        List<Target> checked = new ArrayList<>(selected);
+        if (candidates != selected) checked.addAll(candidates);
+        for (Target target : checked) {
             if (target.kind() == Target.Kind.UNSUPPORTED) return denial(SelectorDenial.Reason.UNSUPPORTED);
             if (target.kind() == Target.Kind.SCORE_HOLDER) continue;
             if (target.kind() == Target.Kind.ENTITY) {

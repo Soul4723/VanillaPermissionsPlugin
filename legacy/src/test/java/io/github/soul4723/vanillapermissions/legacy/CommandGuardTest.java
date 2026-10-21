@@ -140,6 +140,27 @@ class CommandGuardTest {
     }
 
     @Test
+    void randomSelectorsAreCheckedAgainstEveryPlayerTheyCouldPick() {
+        nodes.put("minecraft.selector", true);
+        server.targets.put("@r", List.of(alice));
+        server.targets.put("@a", List.of(alice, bob));
+        assertNull(guard.check(alice, "kill @r"));
+        nodes.put("minecraft.selector.player.kill.targets.targets", false);
+        // This resolution picked Alice herself, but vanilla resolves @r again and may pick Bob.
+        assertEquals("You do not have permission to target other players here", guard.check(alice, "kill @r"));
+        assertEquals(List.of("@r players=false from Alice", "@a players=false from Alice"),
+            server.resolved.subList(server.resolved.size() - 2, server.resolved.size()));
+
+        // The count limit still applies to what is picked, not to the pool.
+        nodes.remove("minecraft.selector.player.kill.targets.targets");
+        meta.put("minecraft.selector.limit.kill.targets", 1);
+        assertNull(guard.check(alice, "kill @r"));
+        // Unresolvable pools fail closed like any selector.
+        server.targets.put("@r[team=red]", List.of(alice));
+        assertEquals(CommandGuard.UNRESOLVED, guard.check(alice, "kill @r[team=red]"));
+    }
+
+    @Test
     void unresolvableSelectorFailsClosed() {
         nodes.put("minecraft.selector", true);
         assertEquals(CommandGuard.UNRESOLVED, guard.check(alice, "kill @e[broken"));
