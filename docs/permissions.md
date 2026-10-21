@@ -7,7 +7,7 @@ Terms used on every page: an **operator** is a player with op status; a **node**
 > **Read this first**
 >
 > - **Granting a root opens everything under it that you have not set.** `minecraft.command.time true` lets the player use `/time set`, `/time add` and `/time query`, because the sub-nodes are unset and an unset sub-node follows vanilla. Set the branches you want closed to `false`.
-> - **To find the node for a command,** run `/lp verbose on <player>`, have the player run or tab-complete the command, then `/lp verbose off`. Every node the command checked is printed with its value.
+> - **To find the node for a command,** start with `/vanillapermissions check <player> <node>`, which shows how one node resolves. If you do not know the node, run `/lp verbose on <player> & minecraft.command`, have the player run the command, then `/lp verbose off`. The filter keeps the output to command nodes; without it LuckPerms prints every check, which can be thousands of lines when the player's command list is sent.
 
 ## How a node is resolved
 
@@ -27,7 +27,7 @@ Rules that apply everywhere:
 - **Unset command roots follow vanilla:** operators (level 2 or higher) only. Open to everyone on Paper by default: `/minecraft:help` (plain `/help` is Bukkit's), `/me`, `/msg` (`/tell`, `/w`), `/teammsg` (`/tm`) and `/trigger`. Our node names are the same strings as Paper's own Bukkit command permissions, so a value set in your permissions plugin is also what Paper sees.
 - **Parent and child nodes are checked independently along the command path.** The player needs the root and every node on the path to be allowed. An unset sub-node follows vanilla, which usually means "open to anyone who can use the command". A few sub-commands keep their own vanilla operator requirement (for example `/random reset`); `/lp verbose` shows them. See the note at the top of this page about granting a root.
 - **Console and command blocks** are never affected by command or selector nodes.
-- **To see every node a command checks,** use `/lp verbose`, as described at the top of this page.
+- **To see every node a command checks,** use `/lp verbose` with a filter, as described at the top of this page.
 
 ## Wildcards
 

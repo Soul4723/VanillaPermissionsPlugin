@@ -1,7 +1,6 @@
 # VanillaPermissionsPlugin
 
 [![Build](https://github.com/Soul4723/VanillaPermissionsPlugin/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/Soul4723/VanillaPermissionsPlugin/actions/workflows/build.yml)
-[![Compatibility](https://github.com/Soul4723/VanillaPermissionsPlugin/actions/workflows/compat.yml/badge.svg?branch=main)](https://github.com/Soul4723/VanillaPermissionsPlugin/actions/workflows/compat.yml)
 [![Latest release](https://img.shields.io/github/v/release/Soul4723/VanillaPermissionsPlugin)](https://github.com/Soul4723/VanillaPermissionsPlugin/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
@@ -21,11 +20,20 @@ Your permissions plugin decides, node by node, who may use each part of a vanill
 | --- | --- |
 | Server software | [Paper](https://papermc.io/), [Folia](https://papermc.io/software/folia) (1.20.6 – 26.3), [Spigot](https://www.spigotmc.org/), [Purpur](https://purpurmc.org/) (1.20.6 – 26.3) and Pufferfish (1.21 – 1.21.10) |
 | Minecraft | **1.8.8 through 26.3**, one jar, except Spigot 1.21.11 and 26.x (Paper never published 1.21.2, 26.1 or 26.1.0) |
-| Java | 8 for 1.8.8 – 1.16.5, 17 for 1.17 – 1.20.4, 21 for 1.20.5 – 1.21.11, 25 for 26.x (whatever your server needs; the jar is Java 8 bytecode except the `paper` adapter, which is Java 21) |
+| Java | 8 for 1.8.8 – 1.16.5, 17 for 1.17 – 1.20.4, 21 for 1.20.5 – 1.21.11, 25 for 26.x (whatever your server needs) |
 | Permissions plugin | Optional. LuckPerms recommended (5.5 needs Java 11+; on Java 8 use 5.4.x); any Bukkit permissions plugin works |
 | Not supported | Spigot 1.21.11 and 26.x; Folia before 1.20.6 |
 
-Every listed Paper release, eight Spigot versions (1.8.8 – 1.20.4), four Folia builds from 1.20.6 through 26.3 and the Purpur and Pufferfish versions in the table boot and install cleanly in CI (1.21.5, 1.21.9 and 26.1.1 only have experimental Paper builds, so they are boot-tested only). Full behaviour checks ran on Paper 1.20.6 and 1.21.11, Spigot 1.20.4 and Paper 1.16.5, and Spigot 1.8.8 and 1.12.2; command, selector and LuckPerms-refresh checks ran on Folia 1.21.11. Spigot 1.20.5 – 1.21.10 is untested. Not every feature exists on every version; the features and limits are in [docs/compatibility.md](docs/compatibility.md).
+Every listed version boots and installs cleanly in CI, and the main behaviour checks ran on live servers. What was verified, and how, is in [docs/compatibility.md](docs/compatibility.md#how-each-level-was-verified).
+
+### Differences by platform
+
+Not every feature exists on every version. The full list is in [docs/compatibility.md](docs/compatibility.md#limits).
+
+- **Paper, Folia, Purpur and Pufferfish, 1.20.6 and later:** everything.
+- **Spigot 1.13 and later, and Paper 1.13 – 1.20.5:** everything, except that the force-gamemode and move-speed bypasses need Paper's API and do nothing on Spigot (and on the older Paper versions listed in the limits).
+- **1.8.8 – 1.12.2:** sub-command nodes for ten commands only; every other command keeps `minecraft.command.<name>`. No `/execute` additions and no debug stick nodes. 1.8.8 has no tab completion filtering.
+- **Not supported:** Spigot 1.21.11 and 26.x (use Paper), and Folia before 1.20.6.
 
 ## Installation
 
@@ -37,47 +45,33 @@ Before you install:
 
 
 1. Put `VanillaPermissionsPlugin-<version>.jar` from the [latest release](https://github.com/Soul4723/VanillaPermissionsPlugin/releases/latest) in `plugins/`. Each release also has a `.sha256` file to check the download with `sha256sum -c`.
-2. Restart the server. The log should show:
-   - `Installed vanilla /execute permission, feedback, and oplevel extensions` (1.13 and later only)
-   - `Added permission checks to <n> vanilla command nodes`
-3. Run `/vanillapermissions debug` to see the server version, the permissions plugin in use and the number of checked nodes.
+2. Restart the server. A good start shows lines like these (the node count varies by version):
+
+   ```text
+   Using Paper mode on Paper 1.21.11 (checks on every vanilla command and sub-command)
+   Using LuckPerms <version> for permission checks, ...
+   Installed vanilla /execute permission, feedback, and oplevel extensions
+   Added permission checks to <n> vanilla command nodes
+   ```
+
+   A `SEVERE` line starting with `Could not add permission checks` or ending with `is not supported` means the plugin disabled itself and vanilla commands work as they would without it. [Troubleshooting](docs/troubleshooting.md#reading-the-startup-log) shows what each line means, including the differences on 1.8.8 – 1.12.2.
+3. Run `/vanillapermissions debug` to see the mode, the server version, the permissions plugin in use and the number of checked nodes.
 
 ## Quick start
 
-Let a `member` group use `/time`, and nothing else from vanilla (plugin commands are not affected):
+Let a `member` group use `/time`:
 
 ```text
-/lp group member permission set minecraft.command.* false
 /lp group member permission set minecraft.command.time true
-/lp group member permission set minecraft.command.time.* true
 ```
 
-`minecraft.command.* false` also turns off `/me`, `/msg`, `/tell`, `/w`, `/teammsg`, `/tm`, `/trigger`, `/minecraft:help` and, through Paper's `minecraft.command.selector`, `@` selectors. To keep them, run these lines (the last one keeps `@` selectors; also see [Recipes](docs/recipes.md#what-minecraftcommand-false-also-turns-off)):
-
-<details>
-<summary>Lines to keep the everyday commands and <code>@</code> selectors</summary>
+Operator commands such as `/time` stay closed to players until you grant them, so this is all a normal player group needs. It also opens `/time set`, `/time add` and `/time query`, because a sub-command with no node set follows its root. To take one away, set its node to `false`:
 
 ```text
-/lp group member permission set minecraft.command.me true
-/lp group member permission set minecraft.command.me.* true
-/lp group member permission set minecraft.command.msg true
-/lp group member permission set minecraft.command.msg.* true
-/lp group member permission set minecraft.command.tell true
-/lp group member permission set minecraft.command.w true
-/lp group member permission set minecraft.command.teammsg true
-/lp group member permission set minecraft.command.teammsg.* true
-/lp group member permission set minecraft.command.tm true
-/lp group member permission set minecraft.command.trigger true
-/lp group member permission set minecraft.command.trigger.* true
-/lp group member permission set minecraft.command.help true
-/lp group member permission set minecraft.selector true
+/lp group member permission set minecraft.command.time.set false
 ```
 
-</details>
-
-Granting a root also opens every sub-command you have not set: [Read this first](docs/permissions.md) explains that and how to find a node with `/lp verbose`.
-
-Check the result with `/vanillapermissions check <player> minecraft.command.time.set`. More copy-paste setups are in [Recipes](docs/recipes.md).
+Check the result with `/vanillapermissions check <player> minecraft.command.time.set`. [Read this first](docs/permissions.md) explains how a node resolves and how to find the node for a command. To take vanilla commands away from operators instead, see [Recipes](docs/recipes.md#take-every-vanilla-command-away-from-staff). More copy-paste setups are in [Recipes](docs/recipes.md).
 
 ## Documentation
 
@@ -89,7 +83,6 @@ Check the result with `/vanillapermissions check <player> minecraft.command.time
 | [Compatibility](docs/compatibility.md) | Supported versions, how they were verified, what is not supported |
 | [Commands](docs/commands.md) | `/vanillapermissions` and the plugin's own nodes |
 | [Troubleshooting and limitations](docs/troubleshooting.md) | FAQ and limitations |
-| [Roadmap](docs/roadmap.md) | Other versions and platforms |
 
 The full index is [docs/README.md](docs/README.md).
 
