@@ -1,0 +1,13 @@
+{
+  "name": "plugin-refused",
+  "description": "On unsupported Spigot 1.21.11 and newer, the plugin must disable itself and vanilla commands keep working.",
+  "when": { "plugin": true, "software": "spigot", "minVersion": "1.21.11" },
+  "players": ["Bot"],
+  "steps": [
+    { "name": "plugin did not install its checks", "log": "Added permission checks to \\d+ vanilla command nodes", "absent": true },
+    { "name": "plugin refused or disabled", "log": "Could not add permission checks|Could not load plugin.*VanillaPermissions|Could not load '?plugins.VanillaPermissions|Error occurred while enabling VanillaPermissions|Disabling VanillaPermissions|VanillaPermissions.*(Unsupported API version|requires)" },
+    { "connect": "Bot" },
+    { "op": "Bot" },
+    { "name": "op: /gamemode creative still works", "command": "/gamemode creative", "expect": { "outcome": "allowed", "gamemode": "creative" } }
+  ]
+}

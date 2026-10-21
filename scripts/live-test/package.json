@@ -1,0 +1,13 @@
+{
+  "name": "vpp-live-test",
+  "private": true,
+  "description": "Live permission tests for VanillaPermissionsPlugin: boots a server and drives a headless bot",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "minecraft-protocol": "1.68.0",
+    "prismarine-nbt": "2.8.0"
+  }
+}

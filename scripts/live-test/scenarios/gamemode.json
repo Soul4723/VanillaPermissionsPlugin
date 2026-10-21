@@ -1,0 +1,23 @@
+{
+  "name": "gamemode",
+  "description": "Per-mode gamemode nodes: the root opens the command, each mode can be closed separately, false beats op.",
+  "when": { "plugin": true, "backend": "luckperms" },
+  "players": ["Bot"],
+  "steps": [
+    { "connect": "Bot" },
+    { "name": "no nodes: /gamemode creative denied", "command": "/gamemode creative", "expect": { "outcome": "denied", "gamemode": "survival" } },
+    { "name": "no nodes: gamemode not in command tree", "tree": { "lacks": ["gamemode"] } },
+    { "perm": { "node": "minecraft.command.gamemode", "value": true } },
+    { "perm": { "node": "minecraft.command.gamemode.creative", "value": false } },
+    { "name": "root only, creative false: tree", "tree": { "has": ["gamemode survival", "gamemode adventure"], "lacks": ["gamemode creative"] } },
+    { "name": "root only, creative false: /gamemode creative denied", "command": "/gamemode creative", "expect": { "outcome": "denied", "gamemode": "survival" } },
+    { "name": "root only: unset adventure follows vanilla (allowed)", "command": "/gamemode adventure", "expect": { "outcome": "allowed", "gamemode": "adventure" } },
+    { "perm": { "node": "minecraft.command.gamemode.creative", "value": true } },
+    { "name": "creative true: /gamemode creative allowed", "command": "/gamemode creative", "expect": { "outcome": "allowed", "gamemode": "creative" } },
+    { "name": "creative true: tab-complete offers creative", "tab": { "text": "/gamemode c", "has": ["creative"] } },
+    { "op": "Bot" },
+    { "perm": { "node": "minecraft.command.gamemode.spectator", "value": false } },
+    { "name": "op, spectator false: /gamemode spectator denied", "command": "/gamemode spectator", "expect": { "outcome": "denied", "gamemode": "creative" } },
+    { "name": "op: /gamemode survival allowed", "command": "/gamemode survival", "expect": { "outcome": "allowed", "gamemode": "survival" } }
+  ]
+}

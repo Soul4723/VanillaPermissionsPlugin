@@ -1,0 +1,16 @@
+{
+  "name": "vanilla-smoke",
+  "description": "Plugin-independent check that the harness drives this server: op gates /gamemode, tab-complete or the command tree reflect it.",
+  "players": ["Bot"],
+  "steps": [
+    { "connect": "Bot" },
+    { "name": "not op: /gamemode creative denied", "command": "/gamemode creative", "expect": { "outcome": "denied", "gamemode": "survival" } },
+    { "name": "not op: tree lacks gamemode", "tree": { "lacks": ["gamemode"] } },
+    { "name": "not op: tab-complete hides gamemode", "when": { "maxVersion": "1.12.2" }, "tab": { "text": "/gamemo", "lacks": ["gamemode"] } },
+    { "op": "Bot" },
+    { "name": "op: /gamemode creative allowed", "command": "/gamemode creative", "expect": { "outcome": "allowed", "gamemode": "creative" } },
+    { "name": "op: tree has gamemode creative", "tree": { "has": ["gamemode creative"] } },
+    { "name": "op: tab-complete offers gamemode", "when": { "maxVersion": "1.12.2" }, "tab": { "text": "/gamemo", "has": ["gamemode"] } },
+    { "name": "op: /tp @a ~ ~3 ~ moves the bot", "command": "/tp @a ~ ~3 ~", "expect": { "outcome": "allowed", "teleported": true } }
+  ]
+}
