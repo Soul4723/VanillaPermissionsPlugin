@@ -6,6 +6,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.tree.ArgumentCommandNode;
 import io.github.soul4723.vanillapermissions.brigadier.ArgumentResolver;
 import io.github.soul4723.vanillapermissions.brigadier.BrigadierBridge;
+import io.github.soul4723.vanillapermissions.brigadier.Reflection;
 import io.github.soul4723.vanillapermissions.brigadier.SelectorOverride;
 import io.github.soul4723.vanillapermissions.brigadier.SelectorTargets;
 import io.github.soul4723.vanillapermissions.brigadier.VanillaTree;
@@ -320,7 +321,7 @@ final class SpigotBridge implements BrigadierBridge {
 
     private static Object invokeUnchecked(Method method, Object receiver, Object... arguments) {
         try {
-            return OperatorLevels.invoke(method, receiver, arguments);
+            return Reflection.invoke(method, receiver, arguments);
         } catch (ReflectiveOperationException error) {
             throw new IllegalStateException("Could not invoke native method " + method.getName(), error);
         }
