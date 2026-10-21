@@ -119,7 +119,6 @@ The scenarios in `scenarios/`:
 | `bukkit-permissions-yml.json` | No permissions plugin: a `permissions.yml` default-true node grants the gamemode root. Run with no `--luckperms`. |
 | `vanilla-smoke.json` | Plugin-independent: op gates `/gamemode`, `/tp @a`. Proves the harness drives any version. |
 | `aliases.json` | Redirect aliases (`/tp`, `/tell`, `/w`) gated by their own root node, falling back to the target's (own boot: writes `commands.yml`). |
-| `plugin-refused.json` | On Spigot 1.21.11 and newer, the plugin must refuse to enable and vanilla commands must keep working. |
 | `folia.json` | Folia status, user and group permission changes refreshing online command trees, selector limits, and absence of `UnsupportedOperationException`. |
 
 ## Results

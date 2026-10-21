@@ -1,20 +1,22 @@
 package io.github.soul4723.vanillapermissions.paper;
 
-import java.lang.reflect.Constructor;
+import io.github.soul4723.vanillapermissions.brigadier.PermissionLevelTable;
+
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+
+import static io.github.soul4723.vanillapermissions.brigadier.BrigadierBridge.GAMEMASTER;
+import static io.github.soul4723.vanillapermissions.brigadier.BrigadierBridge.SELECTOR_PERMISSION;
+import static io.github.soul4723.vanillapermissions.brigadier.Reflection.invoke;
 
 /**
  * Vanilla operator levels on a {@code CommandSourceStack} or entity. Minecraft 1.21.11 replaced the int level
  * ({@code hasPermission(int)}, {@code withPermission(int)}, {@code getPermissionLevel()}) with
  * {@code net.minecraft.server.permissions.PermissionSet}; {@link #detect} picks the shape the server actually has
- * rather than trusting its version string. Entities other than players have level 0 in both shapes.
+ * rather than trusting its version string. Entities other than players have level 0 in both shapes. The PermissionSet
+ * level table is the {@link PermissionLevelTable} the {@code spigot} adapter also uses.
  */
 abstract class NativePermissionLevels {
-
-    static final String SELECTOR_PERMISSION = "minecraft.command.selector";
-    static final int GAMEMASTER = 2;
 
     /** Vanilla's selector check, including Paper's {@code minecraft.command.selector} node. */
     abstract boolean allowsSelectors(Object source) throws ReflectiveOperationException;
@@ -46,15 +48,6 @@ abstract class NativePermissionLevels {
             return true;
         } catch (NoSuchMethodException missing) {
             return false;
-        }
-    }
-
-    static Object invoke(Method method, Object receiver, Object... arguments) throws ReflectiveOperationException {
-        try {
-            return method.invoke(receiver, arguments);
-        } catch (InvocationTargetException error) {
-            if (error.getCause() instanceof RuntimeException runtime) throw runtime;
-            throw error;
         }
     }
 
@@ -121,12 +114,8 @@ abstract class NativePermissionLevels {
         private final Class<?> permissionSet;
         private final Method hasPermission;
         private final Method withPermission;
-        private final Method setHasPermission;
-        private final Method forLevel;
         private final Object selectorPermission;
-        /** {@code PermissionLevel} constants and their {@code HasCommandLevel} checks, indexed by level id. */
-        private final Object[] levels;
-        private final Object[] levelChecks;
+        private final PermissionLevelTable table;
 
         private PermissionSetLevels(Class<?> sourceClass, Class<?> permissionSet, ClassLoader loader)
                 throws ReflectiveOperationException {
@@ -143,23 +132,10 @@ abstract class NativePermissionLevels {
             if (!permissionSet.isAssignableFrom(sourcePermissions.getReturnType())) {
                 throw new IllegalStateException(sourceClass.getName() + ".permissions() does not return a PermissionSet");
             }
-            setHasPermission = permissionSet.getMethod("hasPermission", permission);
-            forLevel = levelBased.getMethod("forLevel", permissionLevel);
             selectorPermission = permissions.getField("COMMANDS_ENTITY_SELECTORS").get(null);
-
-            Method id = permissionLevel.getMethod("id");
-            Object[] constants = permissionLevel.getEnumConstants();
-            Constructor<?> check = hasCommandLevel.getConstructor(permissionLevel);
-            levels = new Object[constants.length];
-            levelChecks = new Object[constants.length];
-            for (Object constant : constants) {
-                int index = (int) id.invoke(constant);
-                if (index < 0 || index >= constants.length || levels[index] != null) {
-                    throw new IllegalStateException("Unexpected PermissionLevel ids: " + constant + " has id " + index);
-                }
-                levels[index] = constant;
-                levelChecks[index] = check.newInstance(constant);
-            }
+            table = new PermissionLevelTable(permissionLevel, permissionLevel.getMethod("id"),
+                hasCommandLevel.getConstructor(permissionLevel), levelBased.getMethod("forLevel", permissionLevel),
+                permissionSet.getMethod("hasPermission", permission));
         }
 
         @Override
@@ -176,18 +152,13 @@ abstract class NativePermissionLevels {
                 return 0;
             }
             Object set = invoke(permissions, sourceOrEntity);
-            if (!permissionSet.isInstance(set)) return 0;
-            for (int index = levels.length - 1; index > 0; index--) {
-                if ((boolean) invoke(setHasPermission, set, levelChecks[index])) return index;
-            }
-            return 0;
+            return permissionSet.isInstance(set) ? table.level(set) : 0;
         }
 
         @Override
         Object withLevelAtMost(Object source, int level) throws ReflectiveOperationException {
             if (level >= level(source)) return source;
-            int clamped = Math.max(0, Math.min(level, levels.length - 1));
-            return invoke(withPermission, source, invoke(forLevel, null, levels[clamped]));
+            return invoke(withPermission, source, table.setFor(level));
         }
     }
 }

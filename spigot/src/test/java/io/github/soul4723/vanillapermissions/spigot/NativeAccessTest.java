@@ -40,7 +40,8 @@ class NativeAccessTest {
         assertEquals("c", access.method(NativeMember.ENTITY_ARGUMENT_GET_OPTIONAL_ENTITIES).getName());
         assertEquals("c", access.method(NativeMember.SCORE_HOLDER_ARGUMENT_GET_WITH_WILDCARD).getName());
         for (NativeMember member : NativeMember.values()) {
-            if (member != NativeMember.SOURCE_WITH_SOURCE) assertTrue(access.has(member), member + " should resolve");
+            if (member == NativeMember.SOURCE_WITH_SOURCE) continue;
+            assertEquals(member.shape != SpigotNames.LevelShape.PERMISSION_SET, access.has(member), member + " resolves only with int levels");
         }
     }
 
@@ -52,6 +53,15 @@ class NativeAccessTest {
         assertThrows(IllegalStateException.class, () -> access.method(NativeMember.SOURCE_WITH_SOURCE));
     }
 
+    /** A pre-1.21.11 source without CraftBukkit's hasPermission(int, String), like the 1.21.11 one, has no known shape. */
+    @Test
+    void aSourceWithNeitherLevelShapeFailsBeforeAnyLevelName() {
+        IllegalStateException error = assertThrows(IllegalStateException.class, () -> resolve("v1_20_R3"));
+
+        assertEquals("Unknown operator-level shape on v1_20_R3: net.minecraft.commands.CommandListenerWrapper has no"
+                + " hasPermission(int, String) and the server has no net.minecraft.server.permissions.PermissionSet", error.getMessage());
+    }
+
     @Test
     void anUnknownPackageFailsToResolve() {
         assertThrows(ClassNotFoundException.class, () -> resolve("v1_16_R2"));
@@ -60,7 +70,7 @@ class NativeAccessTest {
     @Test
     void failsWhenTheOperatorLevelFieldHasTheWrongType() {
         IllegalStateException error = assertThrows(IllegalStateException.class,
-                () -> NativeAccess.instanceField(LongLevel.class, "f", int.class, "LongLevel.f"));
+                () -> NativeAccess.field(LongLevel.class, "f", int.class, false, "LongLevel.f"));
         assertTrue(error.getMessage().contains("is not an instance field of type int"), error.getMessage());
     }
 

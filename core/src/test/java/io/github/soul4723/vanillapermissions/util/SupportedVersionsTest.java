@@ -76,6 +76,7 @@ class SupportedVersionsTest {
         assertFalse(SupportedVersions.isVerified(ServerSoftware.PAPER, "1.21.2"));
         assertTrue(SupportedVersions.isVerified(ServerSoftware.SPIGOT, "1.8.8"));
         assertFalse(SupportedVersions.isVerified(ServerSoftware.SPIGOT, "1.21.4"));
+        assertTrue(SupportedVersions.isVerified(ServerSoftware.SPIGOT, "1.21.11"));
         assertFalse(SupportedVersions.isVerified(ServerSoftware.PURPUR, "1.8.8"));
         assertEquals(List.of("1.20.6", "1.21.11", "26.1.2", "26.3"), SupportedVersions.verified(ServerSoftware.FOLIA));
         assertFalse(SupportedVersions.isVerified(ServerSoftware.FOLIA, "1.20.4"));

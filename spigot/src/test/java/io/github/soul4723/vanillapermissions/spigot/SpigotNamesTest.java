@@ -1,14 +1,17 @@
 package io.github.soul4723.vanillapermissions.spigot;
 
+import io.github.soul4723.vanillapermissions.spigot.SpigotNames.LevelShape;
 import io.github.soul4723.vanillapermissions.spigot.SpigotNames.NativeClass;
 import io.github.soul4723.vanillapermissions.spigot.SpigotNames.NativeMember;
 import io.github.soul4723.vanillapermissions.spigot.SpigotNames.Since;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -19,15 +22,36 @@ class SpigotNamesTest {
     }
 
     @Test
-    void rowsAreOrderedOldestFirstAndStartAt113() {
-        for (NativeClass type : NativeClass.values()) checkRows(type.name(), type.rows);
-        for (NativeMember member : NativeMember.values()) checkRows(member.name(), member.rows);
+    void rowsAreOrderedOldestFirstAndStartAt113OrAtPermissionSets() {
+        for (NativeClass type : NativeClass.values()) checkRows(type.name(), type.shape, type.rows);
+        for (NativeMember member : NativeMember.values()) checkRows(member.name(), member.shape, member.rows);
     }
 
-    private static void checkRows(String what, List<Since> rows) {
-        assertEquals(MappingGeneration.of("v1_13_R1"), rows.get(0).from, what + " must start at 1.13");
+    private static void checkRows(String what, LevelShape shape, List<Since> rows) {
+        String first = shape == LevelShape.PERMISSION_SET ? "v1_21_R7" : "v1_13_R1";
+        assertEquals(MappingGeneration.of(first), rows.get(0).from, what + " must start at " + first);
         for (int i = 1; i < rows.size(); i++) {
             assertTrue(rows.get(i - 1).from.compareTo(rows.get(i).from) < 0, what + " rows are not in order");
+        }
+    }
+
+    /**
+     * {@link NativeAccess} resolves the shared entries and those of one operator-level shape, and
+     * {@link NativeAccess#resolveOperatorLevelsOnly} only the source and that shape's entries, so an entry may only refer
+     * to the source and to classes of its own shape.
+     */
+    @Test
+    void entriesReferOnlyToTheSourceAndClassesOfTheirShape() {
+        for (NativeMember member : NativeMember.values()) {
+            List<Object> referenced = new ArrayList<>(member.parameters);
+            referenced.add(member.owner);
+            referenced.add(member.type);
+            for (Object type : referenced) {
+                if (!(type instanceof NativeClass)) continue;
+                NativeClass nativeClass = (NativeClass) type;
+                assertTrue(nativeClass == NativeClass.SOURCE || nativeClass.shape == member.shape,
+                        member + " (" + member.shape + ") refers to " + nativeClass + " (" + nativeClass.shape + ")");
+            }
         }
     }
 
@@ -72,6 +96,26 @@ class SpigotNamesTest {
     }
 
     @Test
+    void permissionSetNamesAreObfuscatedOn1_21_11AndMojangOn26() {
+        MappingGeneration spigot = MappingGeneration.of("v1_21_R7");
+        assertEquals("g", NativeMember.SOURCE_PERMISSIONS.name(spigot));
+        assertEquals("permissions", NativeMember.SOURCE_PERMISSIONS.name(MappingGeneration.MOJANG));
+        assertEquals("a", NativeMember.SOURCE_WITH_PERMISSION_SET.name(spigot));
+        assertEquals("withPermission", NativeMember.SOURCE_WITH_PERMISSION_SET.name(MappingGeneration.MOJANG));
+        assertEquals("I", NativeMember.PLAYER_PERMISSIONS.name(spigot));
+        assertEquals("e", NativeMember.SELECTORS_PERMISSION.name(spigot));
+        assertEquals("COMMANDS_ENTITY_SELECTORS", NativeMember.SELECTORS_PERMISSION.name(MappingGeneration.MOJANG));
+        assertEquals("forLevel", NativeMember.FOR_LEVEL.name(MappingGeneration.MOJANG));
+        assertEquals("net.minecraft.commands.CommandListenerWrapper", NativeClass.SOURCE.name(spigot));
+        assertEquals("net.minecraft.world.entity.player.EntityHuman", NativeClass.PLAYER.name(spigot));
+        assertEquals("net.minecraft.world.entity.player.Player", NativeClass.PLAYER.name(MappingGeneration.MOJANG));
+        assertEquals("net.minecraft.server.permissions.Permission$b", NativeClass.HAS_COMMAND_LEVEL.name(spigot));
+        assertEquals("net.minecraft.server.permissions.Permission$HasCommandLevel",
+                NativeClass.HAS_COMMAND_LEVEL.name(MappingGeneration.MOJANG));
+        assertThrows(IllegalStateException.class, () -> NativeMember.SOURCE_PERMISSIONS.name(MappingGeneration.of("v1_21_R6")));
+    }
+
+    @Test
     void generationsCompareNumerically() {
         assertTrue(MappingGeneration.of("v1_9_R2").compareTo(MappingGeneration.of("v1_13_R1")) < 0);
         assertTrue(MappingGeneration.of("v1_20_R3").compareTo(MappingGeneration.of("v1_20_R10")) < 0);
@@ -82,8 +126,10 @@ class SpigotNamesTest {
 
     @Test
     void detectReadsTheCraftBukkitPackageUnlessMojangNamesExist() {
-        // No server classes on the test class path: neither the Mojang probe nor a version package is present.
-        assertThrows(IllegalStateException.class,
-                () -> MappingGeneration.detect(SpigotNamesTest.class, SpigotNamesTest.class.getClassLoader()));
+        // The test class path has the fake Spigot 26.x CommandSourceStack, the Mojang probe.
+        assertSame(MappingGeneration.MOJANG, MappingGeneration.detect(SpigotNamesTest.class, SpigotNamesTest.class.getClassLoader()));
+        // A loader without it, and a server class without a version package.
+        ClassLoader noServerClasses = new ClassLoader(null) {};
+        assertThrows(IllegalStateException.class, () -> MappingGeneration.detect(SpigotNamesTest.class, noServerClasses));
     }
 }

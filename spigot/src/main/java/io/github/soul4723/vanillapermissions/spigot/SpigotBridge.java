@@ -6,6 +6,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.tree.ArgumentCommandNode;
 import io.github.soul4723.vanillapermissions.brigadier.ArgumentResolver;
 import io.github.soul4723.vanillapermissions.brigadier.BrigadierBridge;
+import io.github.soul4723.vanillapermissions.brigadier.Reflection;
 import io.github.soul4723.vanillapermissions.brigadier.SelectorOverride;
 import io.github.soul4723.vanillapermissions.brigadier.SelectorTargets;
 import io.github.soul4723.vanillapermissions.brigadier.VanillaTree;
@@ -30,6 +31,7 @@ import java.util.Map;
  * Spigot 1.13+ and Paper 1.13 - 1.20.4 (and Paper 1.20.5, which runs Mojang names): the server-specific half of the
  * Brigadier adapter. Obfuscated members come from {@link SpigotNames}, resolved and checked by {@link NativeAccess};
  * the Bukkit sender comes from CraftBukkit's {@code getBukkitSender()}, which every version has under that name.
+ * Operator levels, int or PermissionSet, go through {@link OperatorLevels}.
  *
  * <p>Vanilla's own selector check is skipped by clearing {@code EntitySelector}'s "uses selector" flag on the
  * selectors of the running command and restoring it afterwards, as CommandAPI does on 1.14 - 1.20.4
@@ -38,14 +40,11 @@ import java.util.Map;
  */
 final class SpigotBridge implements BrigadierBridge {
 
-    static final String SELECTOR_PERMISSION = "minecraft.command.selector";
-    static final int GAMEMASTER = 2;
-
     private final ClassLoader loader;
     private final Object minecraftServer;
     private volatile NativeAccess access;
     private volatile Method getBukkitSender;
-    private volatile Method hasPermission;
+    private volatile OperatorLevels operatorLevels;
     /** For each result type that wraps an {@code EntitySelector} (profile and score holder results), that field. */
     private final Map<Class<?>, Field> wrappedSelectors = new HashMap<>();
     private volatile List<String> lastSkipped = Collections.emptyList();
@@ -63,18 +62,14 @@ final class SpigotBridge implements BrigadierBridge {
         if (!CommandSender.class.isAssignableFrom(sender.getReturnType())) {
             throw new IllegalStateException(source.getName() + ".getBukkitSender() does not return a Bukkit CommandSender");
         }
-        // CraftBukkit's check: operator level, or the Bukkit permission for the level-gated command or selector.
-        Method check = source.getMethod("hasPermission", int.class, String.class);
-        if (check.getReturnType() != boolean.class) {
-            throw new IllegalStateException(source.getName() + ".hasPermission(int, String) does not return boolean");
-        }
+        OperatorLevels levels = OperatorLevels.of(resolved);
         resolved.type(NativeClass.ENTITY).getMethod("getBukkitEntity");
         if (resolved.has(NativeMember.SOURCE_WITH_SOURCE)
                 && !resolved.type(NativeClass.COMMAND_SOURCE).isInstance(minecraftServer)) {
             throw new IllegalStateException("The MinecraftServer is not a " + resolved.type(NativeClass.COMMAND_SOURCE).getName());
         }
         getBukkitSender = sender;
-        hasPermission = check;
+        operatorLevels = levels;
         access = resolved;
     }
 
@@ -117,23 +112,17 @@ final class SpigotBridge implements BrigadierBridge {
 
     @Override
     public boolean allowsSelectors(Object source) throws ReflectiveOperationException {
-        return (Boolean) invoke(hasPermission, source, GAMEMASTER, SELECTOR_PERMISSION);
+        return operatorLevels.allowsSelectors(source);
     }
 
     @Override
     public int operatorLevel(Object sourceOrEntity) throws ReflectiveOperationException {
-        if (access.type(NativeClass.SOURCE).isInstance(sourceOrEntity)) {
-            return access.field(NativeMember.SOURCE_PERMISSION_LEVEL).getInt(sourceOrEntity);
-        }
-        // From 1.21.2 only players have a level; other entities are level 0, as on Paper.
-        if (!access.type(NativeClass.PERMISSION_LEVEL_HOLDER).isInstance(sourceOrEntity)) return 0;
-        return (Integer) invoke(access.method(NativeMember.ENTITY_PERMISSION_LEVEL), sourceOrEntity);
+        return operatorLevels.level(sourceOrEntity);
     }
 
     @Override
     public Object withOperatorLevelAtMost(Object source, int level) throws ReflectiveOperationException {
-        if (level >= operatorLevel(source)) return source;
-        return invoke(access.method(NativeMember.SOURCE_WITH_PERMISSION), source, level);
+        return operatorLevels.withLevelAtMost(source, level);
     }
 
     @Override
@@ -330,18 +319,9 @@ final class SpigotBridge implements BrigadierBridge {
         }
     }
 
-    private static Object invoke(Method method, Object receiver, Object... arguments) throws ReflectiveOperationException {
-        try {
-            return method.invoke(receiver, arguments);
-        } catch (InvocationTargetException error) {
-            if (error.getCause() instanceof RuntimeException) throw (RuntimeException) error.getCause();
-            throw error;
-        }
-    }
-
     private static Object invokeUnchecked(Method method, Object receiver, Object... arguments) {
         try {
-            return invoke(method, receiver, arguments);
+            return Reflection.invoke(method, receiver, arguments);
         } catch (ReflectiveOperationException error) {
             throw new IllegalStateException("Could not invoke native method " + method.getName(), error);
         }

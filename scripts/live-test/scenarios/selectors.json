@@ -21,6 +21,7 @@
     { "meta": { "user": "Bot", "key": "minecraft.selector.limit.teleport.targets.targets.location", "value": 1 } },
     { "name": "limit meta 1: /tp @a ~ ~ ~ (2 players) denied", "as": "Bot", "command": "/tp @a ~ ~ ~", "expect": { "chat": "at most 1 target", "teleported": false } },
     { "perm": { "user": "Bot", "node": "minecraft.selector.player.teleport.*", "value": false } },
-    { "name": "player scope false: /tp Bot2 ~ ~ ~ denied", "as": "Bot", "command": "/tp Bot2 ~ ~ ~", "expect": { "chat": "permission to target other players" } }
+    { "name": "player scope false: /tp Bot2 ~ ~ ~ denied", "as": "Bot", "command": "/tp Bot2 ~ ~ ~", "expect": { "chat": "permission to target other players" } },
+    { "name": "player scope false: /tp @r ~ ~ ~ denied, since @r could pick Bot2", "as": "Bot", "command": "/tp @r ~ ~ ~", "expect": { "chat": "permission to target other players", "teleported": false } }
   ]
 }

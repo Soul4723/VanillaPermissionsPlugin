@@ -32,6 +32,11 @@ import java.util.List;
  */
 public interface BrigadierBridge {
 
+    /** The Bukkit node that passes vanilla's selector check without the operator level (CraftBukkit and Paper). */
+    String SELECTOR_PERMISSION = "minecraft.command.selector";
+    /** The operator level vanilla's selector check requires. */
+    int GAMEMASTER = 2;
+
     // ---- Install ----------------------------------------------------------------------------------------------
 
     /**
@@ -58,7 +63,7 @@ public interface BrigadierBridge {
 
     // ---- Operator levels --------------------------------------------------------------------------------------
 
-    /** Vanilla's own selector check for {@code source}: level 2 or the Bukkit node {@code minecraft.command.selector}. */
+    /** Vanilla's own selector check for {@code source}: level {@link #GAMEMASTER} or the Bukkit node {@link #SELECTOR_PERMISSION}. */
     boolean allowsSelectors(Object source) throws ReflectiveOperationException;
 
     /** Operator level (0 - 4) of a native command source or entity; entities without one are level 0. */

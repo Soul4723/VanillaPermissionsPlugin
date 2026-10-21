@@ -19,12 +19,12 @@ Your permissions plugin decides, node by node, who may use each part of a vanill
 | | Supported |
 | --- | --- |
 | Server software | [Paper](https://papermc.io/), [Folia](https://papermc.io/software/folia) (1.20.6 – 26.3), [Spigot](https://www.spigotmc.org/), [Purpur](https://purpurmc.org/) (1.20.6 – 26.3) and Pufferfish (1.21 – 1.21.10) |
-| Minecraft | **1.8.8 through 26.3**, one jar, except Spigot 1.21.11 and 26.x (Paper never published 1.21.2, 26.1 or 26.1.0) |
+| Minecraft | **1.8.8 through 26.3**, one jar (Paper never published 1.21.2, 26.1 or 26.1.0) |
 | Java | 8 for 1.8.8 – 1.16.5, 17 for 1.17 – 1.20.4, 21 for 1.20.5 – 1.21.11, 25 for 26.x (whatever your server needs) |
 | Permissions plugin | Optional. LuckPerms recommended (5.5 needs Java 11+; on Java 8 use 5.4.x); any Bukkit permissions plugin works |
-| Not supported | Spigot 1.21.11 and 26.x; Folia before 1.20.6 |
+| Not supported | Folia before 1.20.6 |
 
-Every listed version boots and installs cleanly in CI, and the main behaviour checks ran on live servers. What was verified, and how, is in [docs/compatibility.md](docs/compatibility.md#how-each-level-was-verified).
+Every listed version boots and installs cleanly in CI, and the main behaviour checks ran on live servers. What was verified, and how, is in [docs/compatibility.md](docs/compatibility.md#how-each-level-was-verified). Versions between the tested ones usually work but were not booted; `/vanillapermissions debug` says whether your server's version was tested.
 
 ### Differences by platform
 
@@ -33,13 +33,13 @@ Not every feature exists on every version. The full list is in [docs/compatibili
 - **Paper, Folia, Purpur and Pufferfish, 1.20.6 and later:** everything.
 - **Spigot 1.13 and later, and Paper 1.13 – 1.20.5:** everything, except that the force-gamemode and move-speed bypasses need Paper's API and do nothing on Spigot (and on the older Paper versions listed in the limits).
 - **1.8.8 – 1.12.2:** sub-command nodes for ten commands only; every other command keeps `minecraft.command.<name>`. No `/execute` additions and no debug stick nodes. 1.8.8 has no tab completion filtering.
-- **Not supported:** Spigot 1.21.11 and 26.x (use Paper), and Folia before 1.20.6.
+- **Not supported:** Folia before 1.20.6.
 
 ## Installation
 
 Before you install:
 
-- It needs Paper, Folia, Spigot or a fork of them, on a version listed above. Spigot 1.21.11 and 26.x are not supported: use Paper there.
+- It needs Paper, Folia, Spigot or a fork of them, on a version listed above.
 - It does nothing useful without a permissions plugin such as LuckPerms: it adds the checks, your permissions plugin decides who passes them.
 - There is no config file; everything is set through your permissions plugin.
 

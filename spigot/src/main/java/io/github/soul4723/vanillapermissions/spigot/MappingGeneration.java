@@ -7,8 +7,8 @@ import java.util.regex.Pattern;
 
 /**
  * Which set of runtime names the server uses: a CraftBukkit package token such as {@code v1_20_R3} (Spigot names,
- * Spigot and Paper 1.13 - 1.20.4, Spigot up to 1.21.10), or {@link #MOJANG} (Mojang names: Paper 1.20.5, and Spigot
- * builds that run the unobfuscated server). Decided once per install; every lookup in {@link SpigotNames} reads it.
+ * Spigot and Paper 1.13 - 1.20.4, Spigot up to 1.21.11), or {@link #MOJANG} (Mojang names: Paper 1.20.5 and Spigot
+ * 26.x). Decided once per install; every lookup in {@link SpigotNames} reads it.
  *
  * <p>The token comes from {@code Bukkit.getServer().getClass().getPackage().getName()}, as NBT-API's
  * {@code MinecraftVersion} reads it ({@code item-nbt-api/src/main/java/de/tr7zw/changeme/nbtapi/utils/MinecraftVersion.java});

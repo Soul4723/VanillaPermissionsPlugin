@@ -56,7 +56,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # JDK per revision: Java 8 up to 1.16.5, 17 for 1.17.x - 1.20.4 (1.17 also runs on 16).
+        # JDK per revision: Java 8 up to 1.16.5, 17 for 1.17.x - 1.20.4 (1.17 also runs on 16), 21 for 1.20.5 - 1.21.11,
+        # 25 for 26.x.
         include:
           - { minecraft: '1.8.8', java: 8 }
           - { minecraft: '1.12.2', java: 8 }
@@ -66,6 +67,10 @@ jobs:
           - { minecraft: '1.18.2', java: 17 }
           - { minecraft: '1.19.4', java: 17 }
           - { minecraft: '1.20.4', java: 17 }
+          - { minecraft: '1.20.6', java: 21 }
+          - { minecraft: '1.21.10', java: 21 }
+          - { minecraft: '1.21.11', java: 21 }
+          - { minecraft: '26.3', java: 25 }
     steps:
       - id: cache
         uses: actions/cache/restore@v6
@@ -140,7 +145,8 @@ jobs:
           - { software: paper, minecraft: '26.1.2', build: 74, java: 25 }
           - { software: paper, minecraft: '26.2', build: 134, java: 25 }
           - { software: paper, minecraft: '26.3', build: 206, java: 25 }
-          # Spigot: the same versions as SupportedVersions' Spigot list, built by the spigot-jar job.
+          # Spigot: the same versions as SupportedVersions' Spigot list, built by the spigot-jar job. 1780 nodes were
+          # counted on 1.20.6, 1951 on 1.21.10, 2081 on 1.21.11 and 2487 on 26.3.
           - { software: spigot, minecraft: '1.8.8', java: 8, min_nodes: 120 }
           - { software: spigot, minecraft: '1.12.2', java: 8, min_nodes: 130 }
           - { software: spigot, minecraft: '1.13.2', java: 8, min_nodes: 720 }
@@ -149,6 +155,10 @@ jobs:
           - { software: spigot, minecraft: '1.18.2', java: 17, min_nodes: 1170 }
           - { software: spigot, minecraft: '1.19.4', java: 17, min_nodes: 1500 }
           - { software: spigot, minecraft: '1.20.4', java: 17, min_nodes: 1570 }
+          - { software: spigot, minecraft: '1.20.6', java: 21, min_nodes: 1600 }
+          - { software: spigot, minecraft: '1.21.10', java: 21, min_nodes: 1750 }
+          - { software: spigot, minecraft: '1.21.11', java: 21, min_nodes: 1870 }
+          - { software: spigot, minecraft: '26.3', java: 25, min_nodes: 2240 }
           - { software: folia, minecraft: '1.20.6', build: 6, java: 21, min_nodes: 795 }
           - { software: folia, minecraft: '1.21.11', build: 14, java: 21, min_nodes: 950 }
           - { software: folia, minecraft: '26.1.2', build: 8, java: 25, min_nodes: 975 }
