@@ -16,7 +16,9 @@ import org.bukkit.entity.Player;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -184,24 +186,40 @@ final class CommandGuard {
 
     /**
      * Drops tab completions that would make the line refused. {@code buffer} is the typed line with its slash and
-     * the partial last token; {@code completions} complete that last token.
+     * the partial last token; {@code completions} complete that last token. Node lookups are memoised for the call,
+     * because every candidate (one per online player for {@code /tp }) re-checks mostly the same nodes.
      */
     List<String> filterCompletions(Player player, String buffer, List<String> completions) {
-        if (completions == null || completions.isEmpty() || !buffer.startsWith("/")) return completions;
+        return filterCompletions(player, buffer, completions, new HashMap<String, Boolean>(), 0);
+    }
+
+    private List<String> filterCompletions(Player player, String buffer, List<String> completions,
+                                           Map<String, Boolean> deniedNodes, int depth) {
+        if (completions == null || completions.isEmpty() || !buffer.startsWith("/") || depth > MAX_DEPTH) return completions;
         String[] tokens = buffer.substring(1).split(" ", -1);
         if (tokens.length < 2) return completions;
         Command command = server.command(tokens[0]);
         if (command == null || !server.isVanilla(command) || !command.testPermissionSilent(player)) return completions;
         String modernRoot = Grammars.MODERN_ROOTS.get(command.getName());
-        if (modernRoot != null && denied(player, modernRoot)
+        if (modernRoot != null && denied(player, modernRoot, deniedNodes)
                 && !(command.getName().equals("tp") && permissions.hasPermission(player, "minecraft.command.tp", false))) return Collections.emptyList();
         Grammar grammar = Grammars.forCommand(command.getName());
         if (grammar == null) return completions;
-        String[] probe = Arrays.copyOfRange(tokens, 1, tokens.length);
+        String[] args = Arrays.copyOfRange(tokens, 1, tokens.length);
+        Parse typed = grammar.parse(command.getName(), args, version);
+        // The last token belongs to the command /execute runs: filter it as that command's completion, once the
+        // /execute part itself (which no longer depends on the last token) is allowed.
+        if (typed.innerCommandStart() >= 0 && typed.innerCommandStart() < args.length - 1) {
+            if (!nodesAllowed(player, typed.checkedNodes(), deniedNodes)) return Collections.emptyList();
+            return filterCompletions(player, "/" + join(args, typed.innerCommandStart()), completions, deniedNodes, depth + 1);
+        }
+        String[] probe = args.clone();
         List<String> allowed = new ArrayList<>(completions.size());
         for (String completion : completions) {
             probe[probe.length - 1] = completion;
-            if (nodesAllowed(player, grammar.parse(command.getName(), probe, version))) allowed.add(completion);
+            if (nodesAllowed(player, grammar.parse(command.getName(), probe, version).checkedNodes(), deniedNodes)) {
+                allowed.add(completion);
+            }
         }
         return allowed;
     }
@@ -211,6 +229,22 @@ final class CommandGuard {
             if (denied(player, node)) return false;
         }
         return true;
+    }
+
+    private boolean nodesAllowed(Player player, List<String> nodes, Map<String, Boolean> deniedNodes) {
+        for (String node : nodes) {
+            if (denied(player, node, deniedNodes)) return false;
+        }
+        return true;
+    }
+
+    private boolean denied(Player player, String node, Map<String, Boolean> memo) {
+        Boolean known = memo.get(node);
+        if (known == null) {
+            known = denied(player, node);
+            memo.put(node, known);
+        }
+        return known;
     }
 
     /** An explicit {@code false} on {@code minecraft.command.<node>}; unset falls back to vanilla, which allows. */

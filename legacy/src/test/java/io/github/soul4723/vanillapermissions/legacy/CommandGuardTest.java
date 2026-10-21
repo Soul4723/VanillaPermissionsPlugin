@@ -22,6 +22,7 @@ import java.util.UUID;
 import static io.github.soul4723.vanillapermissions.util.TestLuckPerms.proxy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** The interception logic against a fake command map, resolver and permission source. */
 class CommandGuardTest {
@@ -360,6 +361,32 @@ class CommandGuardTest {
     }
 
     @Test
+    void tabCompletionFiltersTheCommandExecuteRuns() {
+        nodes.put("minecraft.command.gamemode.creative", false);
+        List<String> modes = List.of("survival", "creative");
+        assertEquals(List.of("survival"), guard.filterCompletions(alice, "/execute @s ~ ~ ~ gamemode ", modes));
+        assertEquals(List.of("survival"), guard.filterCompletions(alice, "/execute @s ~ ~ ~ execute @p ~ ~ ~ gamemode ", modes));
+        nodes.put("minecraft.command.execute.run", false);
+        assertEquals(List.of(), guard.filterCompletions(alice, "/execute @s ~ ~ ~ gamemode ", modes));
+    }
+
+    @Test
+    void tabCompletionLooksEachNodeUpOncePerEvent() {
+        Map<String, Integer> lookups = new HashMap<>();
+        CommandGuard counting = new CommandGuard(server, new FakePermissions() {
+            @Override
+            public boolean hasPermission(CommandSender sender, String node, boolean fallback) {
+                lookups.merge(node, 1, Integer::sum);
+                return super.hasPermission(sender, node, fallback);
+            }
+        }, LegacyVersion.V1_12_2);
+        List<String> names = new ArrayList<>();
+        for (int i = 0; i < 200; i++) names.add("Player" + i);
+        assertEquals(names, counting.filterCompletions(alice, "/tp ", names));
+        assertTrue(lookups.values().stream().allMatch(count -> count == 1), "Repeated lookups: " + lookups);
+    }
+
+    @Test
     void splitMatchesCraftBukkit() {
         assertEquals(List.of("gamemode", "", "c"), Arrays.asList(Tokens.split("gamemode  c ")));
         assertEquals(List.of(), Arrays.asList(Tokens.split("")));
@@ -378,7 +405,7 @@ class CommandGuardTest {
             });
     }
 
-    private final class FakePermissions implements SelectorRules.Permissions {
+    private class FakePermissions implements SelectorRules.Permissions {
         @Override
         public boolean hasPermission(CommandSender sender, String node, boolean fallback) {
             Boolean value = nodes.get(node);
