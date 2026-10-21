@@ -20,10 +20,10 @@ class SupportedVersionsTest {
     private static final Path REPO = Path.of(System.getProperty("repo.root", ".."));
 
     private static String workflow() throws IOException {
-        return Files.readString(REPO.resolve(".github/workflows/compat.yml"));
+        return Files.readString(REPO.resolve(".github/workflows/build.yml"));
     }
 
-    /** The {@code minecraft:} values of every {@code software: <id>} row in compat.yml, in file order. */
+    /** The {@code minecraft:} values of every {@code software: <id>} row in build.yml, in file order. */
     private static List<String> matrixRows(String software) throws IOException {
         Matcher entry = Pattern.compile("software: " + software + ", minecraft: '([^']+)'").matcher(workflow());
         List<String> rows = new ArrayList<>();
@@ -34,7 +34,7 @@ class SupportedVersionsTest {
     @Test
     void compatMatrixBootsEveryVerifiedVersionOfEverySoftware() throws IOException {
         for (ServerSoftware software : ServerSoftware.values()) {
-            assertEquals(SupportedVersions.verified(software), matrixRows(software.id()), software + " rows in compat.yml");
+            assertEquals(SupportedVersions.verified(software), matrixRows(software.id()), software + " rows in build.yml");
         }
     }
 

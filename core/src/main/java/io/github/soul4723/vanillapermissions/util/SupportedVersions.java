@@ -9,7 +9,7 @@ import java.util.Map;
 /**
  * Minecraft versions each server software has been booted and checked against. Support is decided by feature
  * detection at install time, not by these lists; they only decide whether to warn that a (software, version) pair is
- * untested. Each list mirrors that software's rows in {@code .github/workflows/compat.yml}
+ * untested. Each list mirrors that software's rows in {@code .github/workflows/build.yml}
  * ({@code SupportedVersionsTest} checks it).
  */
 public final class SupportedVersions {
