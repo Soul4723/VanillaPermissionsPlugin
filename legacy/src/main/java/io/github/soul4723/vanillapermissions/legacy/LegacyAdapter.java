@@ -67,7 +67,7 @@ public final class LegacyAdapter implements VersionAdapter {
         if (vanilla.isEmpty()) throw new IllegalStateException("CraftBukkit registered no VanillaCommandWrapper commands");
         CommandGuard guard = new CommandGuard(server, SelectorRules.PERMISSION_MANAGER, version);
 
-        CommandListener commands = new CommandListener(guard);
+        CommandListener commands = new CommandListener(guard, plugin.getLogger());
         plugin.getServer().getPluginManager().registerEvents(commands, plugin);
         listeners.add(commands);
         TabCompleteFilter completions = TabCompleteFilter.register(plugin, guard);
