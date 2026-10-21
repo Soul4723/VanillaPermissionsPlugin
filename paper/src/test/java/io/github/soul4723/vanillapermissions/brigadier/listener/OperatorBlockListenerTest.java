@@ -26,7 +26,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Operator block and debug stick nodes only take access away; unset keeps vanilla's op requirement. */
+/**
+ * Operator block and debug stick nodes only take access away; unset keeps vanilla's op requirement. Lives in the
+ * paper module, not next to the listener in brigadier: brigadier compiles against the 1.13.2 API, which has no
+ * {@code Material.JIGSAW} (added in 1.14).
+ */
 class OperatorBlockListenerTest {
     private final UUID id = UUID.randomUUID();
     private final List<String> messages = new ArrayList<>();
