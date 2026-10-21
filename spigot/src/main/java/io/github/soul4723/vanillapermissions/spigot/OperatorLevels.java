@@ -86,10 +86,13 @@ abstract class OperatorLevels {
             table = new PermissionLevelTable(permissionLevel, access.method(NativeMember.PERMISSION_LEVEL_ID),
                     access.type(NativeClass.HAS_COMMAND_LEVEL).getConstructor(permissionLevel), access.method(NativeMember.FOR_LEVEL),
                     access.method(NativeMember.SET_HAS_PERMISSION));
-            // Permissions.e is an obfuscated name, so check it behaves as the entity selector permission (granted from
-            // level 2), as NativeAccess checks the selector flag. The paper adapter finds it by its Mojang name only.
-            if (!table.grants(table.setFor(GAMEMASTER), selectorPermission) || table.grants(table.setFor(GAMEMASTER - 1), selectorPermission)) {
-                throw new IllegalStateException(NativeMember.SELECTORS_PERMISSION + " is not granted from level 2 like the entity selector permission");
+            // On 1.21.11 the selector permission is the obfuscated Permissions.e, so check that it behaves like the
+            // entity selector permission (granted from level 2), as NativeAccess checks the selector flag by behaviour.
+            // The paper adapter only finds it by its Mojang name, so it does not check.
+            if (!table.grants(table.setFor(GAMEMASTER), selectorPermission)
+                    || table.grants(table.setFor(GAMEMASTER - 1), selectorPermission)) {
+                throw new IllegalStateException(NativeMember.SELECTORS_PERMISSION
+                        + " is not granted from level 2 like the entity selector permission");
             }
         }
 
