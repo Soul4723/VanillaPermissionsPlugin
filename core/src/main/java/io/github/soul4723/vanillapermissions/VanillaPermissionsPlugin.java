@@ -49,7 +49,8 @@ public class VanillaPermissionsPlugin extends JavaPlugin {
         registerListeners();
         try {
             adapter.enable(this);
-        } catch (Exception error) {
+        } catch (Exception | LinkageError error) {
+            // An Error left unhandled would leave the plugin enabled, with its listeners but no checks.
             getLogger().log(Level.SEVERE, "Could not enable the " + adapter.id() + " adapter, so VanillaPermissionsPlugin is "
                 + "disabling itself and leaving vanilla commands unchanged", error);
             getServer().getPluginManager().disablePlugin(this);
