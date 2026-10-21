@@ -13,7 +13,7 @@ Without a node it shows a summary of a few nodes. It reports the permissions plu
 
 ## `/vanillapermissions debug`
 
-Shows the plugin and server version (tested or not), where node values and selector limits and weights come from (LuckPerms and its version, a Bukkit permissions plugin, Vault chat meta, or nothing), and how many vanilla command nodes carry checks.
+Shows the plugin version, the mode (`Mode: Paper mode (checks on every vanilla command and sub-command)`, or Spigot or legacy mode), the server software and version as `Bukkit.getVersion()` reports it (tested or not), where node values and selector limits and weights come from (LuckPerms and its version, a Bukkit permissions plugin, Vault chat meta, or nothing), and how many vanilla command nodes carry checks.
 
 ## Nodes this plugin adds
 

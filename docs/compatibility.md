@@ -112,7 +112,7 @@ The plugin logs a warning once at startup on a (software, version) pair outside 
 ### Features
 
 - **Bypasses:** the force-gamemode bypass is not available on Spigot 1.13+ and Paper 1.13.2; the move-speed bypass is not available on Spigot 1.13+ and Paper 1.13.2 - 1.19.4. Both need Paper's events.
-- **Selectors:** random selectors (`@r`, `sort=random`) are checked on a separate draw from the command, so the checked targets can differ from those affected. On 1.13+, selectors in `/execute` forks (`as`, `at`) are not checked per fork. See [Selectors](permissions.md#selectors).
+- **Selectors:** random selectors (`@r`, `sort=random`) are checked against every entity they could pick, because the server draws again when the command runs. On 1.13+, selectors in `/execute` forks (`as`, `at`) are not checked per fork. See [Selectors](permissions.md#selectors).
 - **Upstream nodes not added**, because the server has no API for them: `minecraft.bypass.spawn-protection`, `minecraft.bypass.chat-speed`, `minecraft.bypass.move-speed.vehicle.<entity>`, `minecraft.debug_chart`, `minecraft.<query|load>.<entity|block>`, `minecraft.adminbroadcast.receive` (use Paper's `minecraft.admin.command_feedback`) and the operator block `edit` action.
 
 ### Runtime
