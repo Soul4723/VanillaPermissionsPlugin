@@ -5,7 +5,7 @@
   "server": { "files": { "commands.yml": "aliases:\n  vpptp:\n  - tp $1-\n" } },
   "players": ["Bot", "Bot2"],
   "steps": [
-    { "name": "spigot adapter: alias wrappers got their own Bukkit node", "log": "Gave the vanilla alias commands their own Bukkit permission node", "when": { "not": { "minVersion": "1.20.6", "not": { "software": "spigot" } } } },
+    { "name": "spigot adapter: alias wrappers got their own Bukkit node", "log": "Gave \\d+ vanilla alias commands their own Bukkit permission node", "when": { "not": { "minVersion": "1.20.6", "not": { "software": "spigot" } } } },
     { "log": "Could not give the vanilla alias commands", "absent": true },
     { "connect": "Bot" },
     { "connect": "Bot2" },
