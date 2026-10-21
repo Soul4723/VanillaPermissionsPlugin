@@ -4,7 +4,7 @@ import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.soul4723.vanillapermissions.spigot.SpigotNames.Kind;
-import io.github.soul4723.vanillapermissions.spigot.SpigotNames.Levels;
+import io.github.soul4723.vanillapermissions.spigot.SpigotNames.LevelShape;
 import io.github.soul4723.vanillapermissions.spigot.SpigotNames.NativeClass;
 import io.github.soul4723.vanillapermissions.spigot.SpigotNames.NativeMember;
 
@@ -23,7 +23,7 @@ import java.util.Map;
  * Every {@link SpigotNames} entry resolved on the running server and checked before anything is patched: each class
  * must load, each member must exist with the declared static-ness, type and parameters, and the entity arguments and
  * selector flag must behave as expected. Any mismatch throws, so the adapter fails closed instead of calling the
- * wrong obfuscated member. Operator-level entries are resolved only for the {@link Levels} shape the command source
+ * wrong obfuscated member. Operator-level entries are resolved only for the {@link LevelShape} the command source
  * has, so servers before 1.21.11 never load the PermissionSet classes.
  *
  * <p>Shape checks follow ProtocolLib's {@code FuzzyReflection} ({@code src/main/java/com/comphenix/protocol/reflect/FuzzyReflection.java}: find a
@@ -37,7 +37,7 @@ final class NativeAccess {
     private static final List<String> PLAIN_TARGETS = Arrays.asList("Notch", "069a79f4-44e9-4726-a5be-fca90e38aaf5");
 
     private final MappingGeneration generation;
-    private Levels levels;
+    private LevelShape shape;
     private final Map<NativeClass, Class<?>> classes = new EnumMap<>(NativeClass.class);
     private final Map<NativeMember, Member> members = new EnumMap<>(NativeMember.class);
 
@@ -48,7 +48,7 @@ final class NativeAccess {
     /** Resolves and validates every entry for {@code generation}; throws on the first mismatch. */
     static NativeAccess resolve(MappingGeneration generation, ClassLoader loader) throws ReflectiveOperationException {
         NativeAccess access = resolveLevels(generation, loader);
-        access.resolve(Levels.ANY, loader);
+        access.resolve(LevelShape.ANY, loader);
         access.checkShapes();
         return access;
     }
@@ -61,19 +61,19 @@ final class NativeAccess {
         NativeAccess access = new NativeAccess(generation);
         Class<?> source = Class.forName(NativeClass.SOURCE.name(generation), false, loader);
         access.classes.put(NativeClass.SOURCE, source);
-        access.levels = hasMethod(source, "hasPermission", int.class, String.class) ? Levels.INT : Levels.PERMISSION_SET;
-        access.resolve(access.levels, loader);
+        access.shape = hasMethod(source, "hasPermission", int.class, String.class) ? LevelShape.INT : LevelShape.PERMISSION_SET;
+        access.resolve(access.shape, loader);
         return access;
     }
 
-    private void resolve(Levels group, ClassLoader loader) throws ReflectiveOperationException {
+    private void resolve(LevelShape group, ClassLoader loader) throws ReflectiveOperationException {
         for (NativeClass type : NativeClass.values()) {
-            if (type.levels == group && !classes.containsKey(type)) {
+            if (type.shape == group && !classes.containsKey(type)) {
                 classes.put(type, Class.forName(type.name(generation), false, loader));
             }
         }
         for (NativeMember member : NativeMember.values()) {
-            if (member.levels != group) continue;
+            if (member.shape != group) continue;
             String name = member.name(generation);
             if (name == null) continue;
             members.put(member, lookup(member, name));
@@ -81,8 +81,8 @@ final class NativeAccess {
     }
 
     /** The operator-level shape of this server's command source. */
-    Levels levels() {
-        return levels;
+    LevelShape shape() {
+        return shape;
     }
 
     Class<?> type(NativeClass type) {
@@ -130,7 +130,7 @@ final class NativeAccess {
         return type instanceof NativeClass ? classes.get(type) : (Class<?>) type;
     }
 
-    static <T extends AccessibleObject> T accessible(T member, String where) throws IllegalAccessException {
+    private static <T extends AccessibleObject> T accessible(T member, String where) throws IllegalAccessException {
         try {
             member.setAccessible(true);
             return member;

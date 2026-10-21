@@ -44,7 +44,7 @@ final class SpigotBridge implements BrigadierBridge {
     private final Object minecraftServer;
     private volatile NativeAccess access;
     private volatile Method getBukkitSender;
-    private volatile OperatorLevels levels;
+    private volatile OperatorLevels operatorLevels;
     /** For each result type that wraps an {@code EntitySelector} (profile and score holder results), that field. */
     private final Map<Class<?>, Field> wrappedSelectors = new HashMap<>();
     private volatile List<String> lastSkipped = Collections.emptyList();
@@ -62,14 +62,14 @@ final class SpigotBridge implements BrigadierBridge {
         if (!CommandSender.class.isAssignableFrom(sender.getReturnType())) {
             throw new IllegalStateException(source.getName() + ".getBukkitSender() does not return a Bukkit CommandSender");
         }
-        OperatorLevels operatorLevels = OperatorLevels.of(resolved);
+        OperatorLevels levels = OperatorLevels.of(resolved);
         resolved.type(NativeClass.ENTITY).getMethod("getBukkitEntity");
         if (resolved.has(NativeMember.SOURCE_WITH_SOURCE)
                 && !resolved.type(NativeClass.COMMAND_SOURCE).isInstance(minecraftServer)) {
             throw new IllegalStateException("The MinecraftServer is not a " + resolved.type(NativeClass.COMMAND_SOURCE).getName());
         }
         getBukkitSender = sender;
-        levels = operatorLevels;
+        operatorLevels = levels;
         access = resolved;
     }
 
@@ -112,17 +112,17 @@ final class SpigotBridge implements BrigadierBridge {
 
     @Override
     public boolean allowsSelectors(Object source) throws ReflectiveOperationException {
-        return levels.allowsSelectors(source);
+        return operatorLevels.allowsSelectors(source);
     }
 
     @Override
     public int operatorLevel(Object sourceOrEntity) throws ReflectiveOperationException {
-        return levels.level(sourceOrEntity);
+        return operatorLevels.level(sourceOrEntity);
     }
 
     @Override
     public Object withOperatorLevelAtMost(Object source, int level) throws ReflectiveOperationException {
-        return levels.withLevelAtMost(source, level);
+        return operatorLevels.withLevelAtMost(source, level);
     }
 
     @Override

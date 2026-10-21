@@ -1,19 +1,16 @@
 package io.github.soul4723.vanillapermissions.spigot;
 
 import io.github.soul4723.vanillapermissions.brigadier.PermissionLevelTable;
-import io.github.soul4723.vanillapermissions.spigot.SpigotNames.Levels;
+import io.github.soul4723.vanillapermissions.spigot.SpigotNames.LevelShape;
 import io.github.soul4723.vanillapermissions.spigot.SpigotNames.NativeClass;
 import io.github.soul4723.vanillapermissions.spigot.SpigotNames.NativeMember;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 
 import static io.github.soul4723.vanillapermissions.brigadier.BrigadierBridge.GAMEMASTER;
 import static io.github.soul4723.vanillapermissions.brigadier.BrigadierBridge.SELECTOR_PERMISSION;
 import static io.github.soul4723.vanillapermissions.brigadier.Reflection.invoke;
 
 /**
- * Vanilla operator levels on a command source or entity, in the {@link Levels} shape {@link NativeAccess} found. Levels
+ * Vanilla operator levels on a command source or entity, in the {@link LevelShape} {@link NativeAccess} found. Levels
  * are read from the source's own level or PermissionSet, never from CraftBukkit's Bukkit-aware checks, so granting a
  * Bukkit node cannot raise what {@code /execute oplevel} copies. Entities other than players have level 0 from 1.21.2.
  *
@@ -39,26 +36,20 @@ abstract class OperatorLevels {
     }
 
     static OperatorLevels of(NativeAccess access) throws ReflectiveOperationException {
-        return access.levels() == Levels.INT ? new IntLevels(access) : new PermissionSetLevels(access);
+        return access.shape() == LevelShape.INT ? new IntLevels(access) : new PermissionSetLevels(access);
     }
 
     /** Up to 1.21.10: an int level on the source and CraftBukkit's {@code hasPermission(int, String)}. */
     private static final class IntLevels extends OperatorLevels {
         private final NativeAccess access;
-        private final Method hasPermission;
 
-        IntLevels(NativeAccess access) throws ReflectiveOperationException {
+        IntLevels(NativeAccess access) {
             this.access = access;
-            Class<?> source = access.type(NativeClass.SOURCE);
-            hasPermission = source.getMethod("hasPermission", int.class, String.class);
-            if (hasPermission.getReturnType() != boolean.class) {
-                throw new IllegalStateException(source.getName() + ".hasPermission(int, String) does not return boolean");
-            }
         }
 
         @Override
         boolean allowsSelectors(Object source) throws ReflectiveOperationException {
-            return (Boolean) invoke(hasPermission, source, GAMEMASTER, SELECTOR_PERMISSION);
+            return (Boolean) invoke(access.method(NativeMember.SOURCE_HAS_PERMISSION), source, GAMEMASTER, SELECTOR_PERMISSION);
         }
 
         @Override
@@ -85,25 +76,12 @@ abstract class OperatorLevels {
      */
     private static final class PermissionSetLevels extends OperatorLevels {
         private final NativeAccess access;
-        private final Field bukkitPermissions;
-        private final Class<?> delegateType;
-        private final Method delegateHasPermission;
         private final Object selectorPermission;
         private final PermissionLevelTable table;
 
         PermissionSetLevels(NativeAccess access) throws ReflectiveOperationException {
             this.access = access;
             selectorPermission = access.field(NativeMember.SELECTORS_PERMISSION).get(null);
-            Class<?> source = access.type(NativeClass.SOURCE);
-            bukkitPermissions = NativeAccess.field(source, "bukkitPermissions", access.type(NativeClass.PERMISSION_SET), false,
-                    source.getName() + ".bukkitPermissions");
-            delegateType = Class.forName(source.getName() + "$DelegatePermissionSet", false, source.getClassLoader());
-            String where = delegateType.getName() + ".hasPermission(boolean, String)";
-            delegateHasPermission = NativeAccess.accessible(delegateType.getMethod("hasPermission", boolean.class, String.class), where);
-            if (delegateHasPermission.getReturnType() != boolean.class) {
-                throw new IllegalStateException(where + " does not return boolean");
-            }
-
             Class<?> permissionLevel = access.type(NativeClass.PERMISSION_LEVEL);
             table = new PermissionLevelTable(permissionLevel, access.method(NativeMember.PERMISSION_LEVEL_ID),
                     access.type(NativeClass.HAS_COMMAND_LEVEL).getConstructor(permissionLevel), access.method(NativeMember.FOR_LEVEL),
@@ -117,12 +95,13 @@ abstract class OperatorLevels {
 
         @Override
         boolean allowsSelectors(Object source) throws ReflectiveOperationException {
-            Object delegate = bukkitPermissions.get(source);
+            Object delegate = access.field(NativeMember.SOURCE_BUKKIT_PERMISSIONS).get(source);
+            Class<?> delegateType = access.type(NativeClass.DELEGATE_PERMISSION_SET);
             if (!delegateType.isInstance(delegate)) {
                 throw new IllegalStateException("The source's Bukkit permissions are not a " + delegateType.getName());
             }
             boolean vanilla = table.grants(access.field(NativeMember.SOURCE_PERMISSIONS).get(source), selectorPermission);
-            return (Boolean) invoke(delegateHasPermission, delegate, vanilla, SELECTOR_PERMISSION);
+            return (Boolean) invoke(access.method(NativeMember.DELEGATE_HAS_PERMISSION), delegate, vanilla, SELECTOR_PERMISSION);
         }
 
         @Override

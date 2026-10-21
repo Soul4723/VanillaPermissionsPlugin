@@ -1,6 +1,6 @@
 package io.github.soul4723.vanillapermissions.spigot;
 
-import io.github.soul4723.vanillapermissions.spigot.SpigotNames.Levels;
+import io.github.soul4723.vanillapermissions.spigot.SpigotNames.LevelShape;
 import io.github.soul4723.vanillapermissions.spigot.SpigotNames.NativeClass;
 import io.github.soul4723.vanillapermissions.spigot.SpigotNames.NativeMember;
 import net.minecraft.commands.CommandListenerWrapper;
@@ -65,7 +65,7 @@ class OperatorLevelsTest {
         };
         NativeAccess access = NativeAccess.resolve(MappingGeneration.of("v1_16_R3"), recording);
 
-        assertEquals(Levels.INT, access.levels());
+        assertEquals(LevelShape.INT, access.shape());
         assertTrue(access.has(NativeMember.SOURCE_PERMISSION_LEVEL));
         assertFalse(access.has(NativeMember.SOURCE_PERMISSIONS));
         assertTrue(requested.stream().noneMatch(name -> name.startsWith("net.minecraft.server.permissions.")), requested.toString());
@@ -75,7 +75,7 @@ class OperatorLevelsTest {
     void sourcesWithAPermissionSetResolveTheSpigot1_21_11Names() throws Exception {
         NativeAccess access = NativeAccess.resolveLevels(MappingGeneration.of("v1_21_R7"), LOADER);
 
-        assertEquals(Levels.PERMISSION_SET, access.levels());
+        assertEquals(LevelShape.PERMISSION_SET, access.shape());
         assertEquals("g", access.field(NativeMember.SOURCE_PERMISSIONS).getName());
         assertEquals("I", access.method(NativeMember.PLAYER_PERMISSIONS).getName());
         assertEquals("e", access.field(NativeMember.SELECTORS_PERMISSION).getName());

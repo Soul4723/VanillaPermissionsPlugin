@@ -41,7 +41,7 @@ class NativeAccessTest {
         assertEquals("c", access.method(NativeMember.SCORE_HOLDER_ARGUMENT_GET_WITH_WILDCARD).getName());
         for (NativeMember member : NativeMember.values()) {
             if (member == NativeMember.SOURCE_WITH_SOURCE) continue;
-            assertEquals(member.levels != SpigotNames.Levels.PERMISSION_SET, access.has(member), member + " resolves only with int levels");
+            assertEquals(member.shape != SpigotNames.LevelShape.PERMISSION_SET, access.has(member), member + " resolves only with int levels");
         }
     }
 

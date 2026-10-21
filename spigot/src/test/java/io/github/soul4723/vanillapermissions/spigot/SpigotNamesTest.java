@@ -1,6 +1,6 @@
 package io.github.soul4723.vanillapermissions.spigot;
 
-import io.github.soul4723.vanillapermissions.spigot.SpigotNames.Levels;
+import io.github.soul4723.vanillapermissions.spigot.SpigotNames.LevelShape;
 import io.github.soul4723.vanillapermissions.spigot.SpigotNames.NativeClass;
 import io.github.soul4723.vanillapermissions.spigot.SpigotNames.NativeMember;
 import io.github.soul4723.vanillapermissions.spigot.SpigotNames.Since;
@@ -21,12 +21,12 @@ class SpigotNamesTest {
 
     @Test
     void rowsAreOrderedOldestFirstAndStartAt113OrAtPermissionSets() {
-        for (NativeClass type : NativeClass.values()) checkRows(type.name(), type.levels, type.rows);
-        for (NativeMember member : NativeMember.values()) checkRows(member.name(), member.levels, member.rows);
+        for (NativeClass type : NativeClass.values()) checkRows(type.name(), type.shape, type.rows);
+        for (NativeMember member : NativeMember.values()) checkRows(member.name(), member.shape, member.rows);
     }
 
-    private static void checkRows(String what, Levels levels, List<Since> rows) {
-        String first = levels == Levels.PERMISSION_SET ? "v1_21_R7" : "v1_13_R1";
+    private static void checkRows(String what, LevelShape shape, List<Since> rows) {
+        String first = shape == LevelShape.PERMISSION_SET ? "v1_21_R7" : "v1_13_R1";
         assertEquals(MappingGeneration.of(first), rows.get(0).from, what + " must start at " + first);
         for (int i = 1; i < rows.size(); i++) {
             assertTrue(rows.get(i - 1).from.compareTo(rows.get(i).from) < 0, what + " rows are not in order");
