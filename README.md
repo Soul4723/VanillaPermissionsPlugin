@@ -20,18 +20,18 @@ Your permissions plugin decides, node by node, who may use each part of a vanill
 | | Supported |
 | --- | --- |
 | Server software | [Paper](https://papermc.io/), [Folia](https://papermc.io/software/folia) (1.20.6 – 26.3), [Spigot](https://www.spigotmc.org/), [Purpur](https://purpurmc.org/) (1.20.6 – 26.3) and Pufferfish (1.21 – 1.21.10) |
-| Minecraft | **1.8.8 through 26.3**, one jar, except Spigot 1.21.11 and 26.x (Paper never published 1.21.2, 26.1 or 26.1.0) |
+| Minecraft | **1.8.8 through 26.3**, one jar (Paper never published 1.21.2, 26.1 or 26.1.0) |
 | Java | 8 for 1.8.8 – 1.16.5, 17 for 1.17 – 1.20.4, 21 for 1.20.5 – 1.21.11, 25 for 26.x (whatever your server needs; the jar is Java 8 bytecode except the `paper` adapter, which is Java 21) |
 | Permissions plugin | Optional. LuckPerms recommended (5.5 needs Java 11+; on Java 8 use 5.4.x); any Bukkit permissions plugin works |
-| Not supported | Spigot 1.21.11 and 26.x; Folia before 1.20.6 |
+| Not supported | Folia before 1.20.6 |
 
-Every listed Paper release, eight Spigot versions (1.8.8 – 1.20.4), four Folia builds from 1.20.6 through 26.3 and the Purpur and Pufferfish versions in the table boot and install cleanly in CI (1.21.5, 1.21.9 and 26.1.1 only have experimental Paper builds, so they are boot-tested only). Full behaviour checks ran on Paper 1.20.6 and 1.21.11, Spigot 1.20.4 and Paper 1.16.5, and Spigot 1.8.8 and 1.12.2; command, selector and LuckPerms-refresh checks ran on Folia 1.21.11. Spigot 1.20.5 – 1.21.10 is untested. Not every feature exists on every version; the features and limits are in [docs/compatibility.md](docs/compatibility.md).
+Every listed Paper release, twelve Spigot versions (1.8.8 – 26.3), four Folia builds from 1.20.6 through 26.3 and the Purpur and Pufferfish versions in the table boot and install cleanly in CI (1.21.5, 1.21.9 and 26.1.1 only have experimental Paper builds, so they are boot-tested only). Full behaviour checks ran on Paper 1.20.6 and 1.21.11, Spigot 1.20.4, 1.21.11 and 26.3, Paper 1.16.5, and Spigot 1.8.8 and 1.12.2; command, selector and LuckPerms-refresh checks ran on Folia 1.21.11. Not every feature exists on every version; the features and limits are in [docs/compatibility.md](docs/compatibility.md).
 
 ## Installation
 
 Before you install:
 
-- It needs Paper, Folia, Spigot or a fork of them, on a version listed above. Spigot 1.21.11 and 26.x are not supported: use Paper there.
+- It needs Paper, Folia, Spigot or a fork of them, on a version listed above.
 - It does nothing useful without a permissions plugin such as LuckPerms: it adds the checks, your permissions plugin decides who passes them.
 - There is no config file; everything is set through your permissions plugin.
 

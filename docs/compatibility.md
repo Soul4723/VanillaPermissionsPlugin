@@ -1,13 +1,13 @@
 # Compatibility
 
-One jar, `VanillaPermissionsPlugin-<version>.jar`, covers **Minecraft 1.8.8 through 26.3** on Paper, Folia, Spigot, Purpur and Pufferfish, with one exception: Spigot 1.21.11 and 26.x are not supported (see [Limits](#limits)). Folia is supported from 1.20.6. Paper's download API (`fill.papermc.io`) has no builds for 1.21.2, 26.1 or 26.1.0, so those versions cannot be run on Paper at all (1.21.1 is followed by 1.21.3, and the 26.1 line starts at 26.1.1).
+One jar, `VanillaPermissionsPlugin-<version>.jar`, covers **Minecraft 1.8.8 through 26.3** on Paper, Folia, Spigot, Purpur and Pufferfish. Folia is supported from 1.20.6. Paper's download API (`fill.papermc.io`) has no builds for 1.21.2, 26.1 or 26.1.0, so those versions cannot be run on Paper at all (1.21.1 is followed by 1.21.3, and the 26.1 line starts at 26.1.1).
 
 The jar contains three adapters. The plugin picks one at startup by looking at the server (not at the version string), most specific first:
 
 | Adapter | Serves | How it reaches vanilla commands |
 | --- | --- | --- |
 | `paper` | Paper and Folia 1.20.6 and later, and forks (Purpur, Pufferfish) | Paper's lifecycle `COMMANDS` event. Needs Java 21 (Java 25 for 26.x). |
-| `spigot` | Spigot 1.13 through 1.21.10 (1.20.5 and later untested), Paper 1.13 through 1.20.5 | The Brigadier dispatcher inside CraftBukkit, patched in `onEnable`. |
+| `spigot` | Spigot 1.13 through 26.3, Paper 1.13 through 1.20.5 | The Brigadier dispatcher inside CraftBukkit, patched in `onEnable`. |
 | `legacy` | Spigot and Paper 1.8.8 through 1.12.2 | No Brigadier. Typed commands are checked before they run; see [1.8.8 - 1.12.2](permissions.md#188---1122-legacy-servers). |
 
 See [Architecture](development/architecture.md) for how they are chosen.
@@ -45,6 +45,9 @@ Paper 1.8.8 - 1.16.5 also run on newer Java (11 or later) if you prefer; 1.17.x 
 | 1.17.1 | 17 | spigot | Boot and install in CI |
 | 1.18.2, 1.19.4 | 17 | spigot | Boot and install in CI |
 | 1.20.4 | 17 | spigot | Boot and install in CI; live behaviour checks |
+| 1.20.6, 1.21.10 | 21 | spigot | Boot and install in CI |
+| 1.21.11 | 21 | spigot | Boot and install in CI; live behaviour checks |
+| 26.3 | 25 | spigot | Boot and install in CI; live behaviour checks ([how](development/testing.md#minecraft-26x)) |
 
 Spigot cannot be downloaded, so CI builds each jar once with BuildTools and caches it.
 
@@ -91,10 +94,10 @@ The rows for Paper 1.16.5+ and 1.20.4+ also apply to the forks of the matching P
 ## How each level was verified
 
 - **Boot and install:** the [Compatibility workflow](../.github/workflows/compat.yml) starts each listed server with the plugin and LuckPerms (5.5 on Java 11 and later, 5.4.158 on Java 8), and checks that the plugin installs its permission checks and that the number of checked nodes reaches a per-row minimum (`scripts/compat-smoke.sh`). It runs on every push and pull request. Spigot rows use jars built with BuildTools and cached.
-- **Live behaviour checks:** commands, selectors, bypasses, operator blocks and the debug stick were exercised on live servers with a bot player ([live tests](development/testing.md)). Done on Paper 1.20.6 and 1.21.11 (paper adapter, full), Spigot 1.20.4 and Paper 1.16.5 (spigot adapter), and Spigot 1.8.8 and 1.12.2 (legacy adapter). Folia 1.21.11 also passed command, selector, alias and LuckPerms-refresh checks.
+- **Live behaviour checks:** commands, selectors, bypasses, operator blocks and the debug stick were exercised on live servers with a bot player ([live tests](development/testing.md)). Done on Paper 1.20.6 and 1.21.11 (paper adapter, full), Spigot 1.20.4, 1.21.11 and 26.3 and Paper 1.16.5 (spigot adapter), and Spigot 1.8.8 and 1.12.2 (legacy adapter). Folia 1.21.11 also passed command, selector, alias and LuckPerms-refresh checks.
 - **Experimental builds:** Paper published only ALPHA builds for 1.20.5, 1.21.5, 1.21.9 and 26.1.1. They are boot-tested only, and Paper itself marks them experimental.
 
-Versions not listed in the tables were not booted, for example 1.14.x, 1.15.x, 1.9.4 - 1.11.2, and Spigot 1.18 and 1.19.x other than 1.18.2 and 1.19.4.
+Versions not listed in the tables were not booted, for example 1.14.x, 1.15.x, 1.9.4 - 1.11.2, Spigot 1.18 and 1.19.x other than 1.18.2 and 1.19.4, and Spigot 1.20.5, 1.21 - 1.21.9, 26.1.x and 26.2. Those Spigot versions share name-table rows with booted ones.
 
 The plugin logs a warning once at startup on a (software, version) pair outside the tested list, and `/vanillapermissions debug` marks your version as tested or untested, with the tested range for your server software. Support is decided by feature detection when the plugin installs, so an untested version may work; if the command tree cannot be patched, the plugin logs why, restores the vanilla commands and disables itself.
 
@@ -104,8 +107,6 @@ The plugin logs a warning once at startup on a (software, version) pair outside 
 
 | Software and versions | What happens |
 | --- | --- |
-| Spigot 1.21.11 and 26.x | Not supported yet; use Paper or a Paper fork. These servers replace the numeric operator level with Minecraft's `PermissionSet`, which the `spigot` adapter does not handle yet. The plugin logs the SEVERE line `Could not add permission checks`, restores the vanilla commands and disables itself; the server keeps running. See the [Roadmap](roadmap.md). |
-| Spigot 1.20.5 - 1.21.10 | Untested. The `spigot` adapter has name-table rows for these versions but they were never booted, so the startup warning appears. The plugin may work. |
 | Folia before 1.20.6 | Not supported. The Paper lifecycle command API required by the adapter is unavailable. |
 | Minecraft before 1.8.8 | Not supported. |
 
@@ -134,7 +135,7 @@ The plugin logs a warning once at startup on a (software, version) pair outside 
 | Software | Status |
 | --- | --- |
 | Paper | Supported (1.8.8 through 26.3) |
-| Spigot, CraftBukkit-based builds | Supported 1.8.8 through 1.20.4; see [Limits](#limits) for later versions |
+| Spigot, CraftBukkit-based builds | Supported 1.8.8 through 26.3 |
 | Purpur | Supported: 1.20.6 through 26.3, every version Purpur published (see below) |
 | Pufferfish | Supported on 1.21 through 1.21.10 (see below) |
 | Folia | Supported from 1.20.6; four boot-tested builds are listed [above](#folia). |

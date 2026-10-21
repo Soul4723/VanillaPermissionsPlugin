@@ -9,10 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Spigot, old Paper, Purpur, Pufferfish and Folia are supported by the same jar, from Minecraft 1.8.8 to 26.3. The plugin picks one of three adapters at startup by probing the server: `paper` (Paper, Folia and forks, 1.20.6 and later), `spigot` (Brigadier on Spigot 1.13+ and Paper 1.13 - 1.20.5) and `legacy` (1.8.8 - 1.12.2). See [Compatibility](docs/compatibility.md) for the version table, the limits and what was tested.
+- The `spigot` adapter reads `PermissionSet` operator levels, so Spigot 1.21.11 and 26.x are supported.
 - Folia 1.20.6 and later, through the `paper` adapter: LuckPerms refreshes run on each player's entity scheduler and global work on the global scheduler. `plugin.yml` declares `folia-supported: true`. Older Folia is refused instead of falling through to the `spigot` adapter.
 - On 1.8.8 - 1.12.2 the modern sub-nodes for ten commands (`gamemode`, `time`, `weather`, `kill`, `effect`, `give`, `clear`, `tp`/`teleport`, `execute`, `scoreboard`) are checked before the command runs, with selector rules, tab completion filtering (1.9+), operator blocks, and the force-gamemode and move-speed bypasses. Other commands keep `minecraft.command.<name>`; `/tp` follows `minecraft.command.teleport` as on 1.13+. See [Permissions](docs/permissions.md#188---1122-legacy-servers).
 - The startup warning and `/vanillapermissions debug` compare the server with the tested versions of its own software (Paper, Folia, Spigot, Purpur or Pufferfish).
-- Compatibility workflow rows for Spigot and old Paper (1.8.8 - 1.20.5, Java 8 to 21), Folia, Purpur and Pufferfish, and the live-test harness (`scripts/live-test`). `scripts/compat-smoke.sh` takes `--software` and `--server-jar`.
+- Compatibility workflow rows for Spigot (1.8.8 - 26.3) and old Paper (1.8.8 - 1.20.5), Java 8 to 25, Folia, Purpur and Pufferfish, and the live-test harness (`scripts/live-test`). `scripts/compat-smoke.sh` takes `--software` and `--server-jar`.
 
 ### Changed
 - `plugin.yml` declares `api-version: '1.13'` (it was `'1.20.6'`), the lowest value every 1.13+ server accepts.

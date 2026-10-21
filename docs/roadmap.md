@@ -4,8 +4,6 @@ The long-term scope is any Minecraft version or server software where a permissi
 
 | Target | Status | Notes |
 | --- | --- | --- |
-| Spigot 1.21.11 and 26.x | planned | These versions use `PermissionSet` operator levels, which the Java 8 `spigot` adapter does not handle yet. Until then, use Paper. |
-| Spigot 1.20.5 – 1.21.10 | untested | The `spigot` adapter has name-table rows for these versions, but none was booted. |
 | Sub-nodes for more commands on 1.8.8 – 1.12.2 | not planned | Ten commands have sub-nodes; the rest keep `minecraft.command.<name>`. See [Permissions](permissions.md#188---1122-legacy-servers). |
 | Fabric, Quilt | deferred | [DrexHD/VanillaPermissions](https://github.com/DrexHD/VanillaPermissions) already covers these. |
 | NeoForge, Forge | deferred | NeoForge's PermissionAPI has no "unset" for dynamic nodes, so a module would call LuckPerms directly or use a fabric-permissions-api-style provider. |

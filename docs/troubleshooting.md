@@ -5,7 +5,7 @@
 - **I granted a command but the player still can't use part of it.** Run `/lp verbose on <player>` and look for a `false` on a child node, or one inherited from a group. `@` selectors also need `minecraft.selector`, and the selector scope nodes must not be `false`.
 - **The player can do more than I wanted.** Granting a root grants every sub-command and target. Set the unwanted branches or selector scopes to `false`.
 - **An operator lost access.** An explicit `false` beats operator status. Look for the node in the operator's own and inherited groups, including wildcards.
-- **The plugin disabled itself at startup.** The log says why. Usually the server is not a supported version (Spigot 1.21.11 and 26.x are not; see [Compatibility](compatibility.md#limits)), or something removed a vanilla command.
+- **The plugin disabled itself at startup.** The log says why. Usually the server is not a supported version (see [Compatibility](compatibility.md)), or something removed a vanilla command.
 - **`/minecraft:<command>` behaves differently from `/<command>`.** Another plugin owns the plain name; see below.
 - **A change did not reach the player's command list.** With LuckPerms the list is re-sent automatically. With other plugins it refreshes on rejoin, on an operator change, or when the plugin resends it; see [Permissions plugins](providers.md).
 - **A bypass node does nothing.** Bypass nodes are grant-only and default to `false`; check with `/vanillapermissions check <player> <node>`. For the whitelist and player-limit bypasses with a non-LuckPerms plugin, see [Permissions plugins](providers.md#other-permissions-plugins).
