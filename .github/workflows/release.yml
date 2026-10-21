@@ -5,13 +5,19 @@ on:
     tags: ['v*']
   workflow_dispatch:
 
-permissions:
-  contents: write
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   release:
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      has-notes: ${{ steps.notes.outputs.has-notes }}
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
         with:
@@ -35,6 +41,7 @@ jobs:
       - run: mvn -B -ntp verify
 
       - name: Checksum and release notes
+        id: notes
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
@@ -46,14 +53,34 @@ jobs:
             /^\[[^]]+\]: / { if (found) exit }
             found { print }
           ' CHANGELOG.md > release-notes.md
-          [ -s release-notes.md ] || rm release-notes.md
+          if [ -s release-notes.md ]; then echo "has-notes=true" >> "$GITHUB_OUTPUT"; fi
 
-      - uses: softprops/action-gh-release@v3.0.3
-        if: github.ref_type == 'tag'
+      - uses: actions/upload-artifact@v7
         with:
+          name: release-files
+          path: |
+            target/VanillaPermissionsPlugin-*.jar
+            target/VanillaPermissionsPlugin-*.jar.sha256
+            release-notes.md
+          if-no-files-found: error
+
+  publish:
+    if: github.event_name == 'push' && github.ref_type == 'tag'
+    needs: release
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-files
+      - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          fail_on_unmatched_files: true
           files: |
-            target/VanillaPermissionsPlugin-${{ steps.version.outputs.version }}.jar
-            target/VanillaPermissionsPlugin-${{ steps.version.outputs.version }}.jar.sha256
-          body_path: ${{ hashFiles('release-notes.md') != '' && 'release-notes.md' || '' }}
-          generate_release_notes: ${{ hashFiles('release-notes.md') == '' }}
+            target/VanillaPermissionsPlugin-${{ needs.release.outputs.version }}.jar
+            target/VanillaPermissionsPlugin-${{ needs.release.outputs.version }}.jar.sha256
+          body_path: ${{ needs.release.outputs.has-notes == 'true' && 'release-notes.md' || '' }}
+          generate_release_notes: ${{ needs.release.outputs.has-notes != 'true' }}
           prerelease: ${{ contains(github.ref_name, '-') }}

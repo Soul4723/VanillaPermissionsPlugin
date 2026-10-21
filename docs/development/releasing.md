@@ -1,4 +1,4 @@
-# Releasing and long-term maintenance
+# Releasing and maintenance
 
 Maintainer notes. Contributor-facing rules are in [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
@@ -6,91 +6,49 @@ Maintainer notes. Contributor-facing rules are in [CONTRIBUTING.md](../../CONTRI
 
 - **Semantic Versioning**, `MAJOR.MINOR.PATCH`, set once in `pom.xml` (`<version>`). Pre-releases use a hyphen: `1.1.0-rc.1`.
 - **Git tag** is `v` + the pom version: `v1.0.0`. The tag is the only thing that triggers a release.
-- **The jar name has no Minecraft version**: `VanillaPermissionsPlugin-1.0.0.jar`. One jar covers the whole supported Paper range, as with ViaVersion (`ViaVersion-5.12.1.jar`), EssentialsX (`EssentialsX-2.22.0.jar`) and CommandAPI (`CommandAPI-12.1.0-Paper.jar`). Projects that put the Minecraft version in the version (`0.164.0+26.3` for Fabric API, `0.3.6+26.1.2` for DrexHD/VanillaPermissions) do so because they ship a different jar per Minecraft version, which this plugin does not.
-- **The supported range is documented, not encoded**: `api-version` in `plugin.yml`, the version table in `docs/compatibility.md` and `SupportedVersions`, and a line in the changelog whenever it changes (the pattern of Geyser's and ViaVersion's README "Supported Versions" sections).
-- Bump MAJOR when a Paper version is dropped or a node changes meaning, MINOR for new nodes and features, PATCH for fixes.
+- **One jar covers the whole supported range**, so its name has no Minecraft version: `VanillaPermissionsPlugin-1.0.0.jar`. The adapter is chosen at startup (see [Architecture](architecture.md#release-artifacts)). Split the jar only for a concrete incompatibility, such as a loader or bytecode conflict, and keep one source tree, one version and one tag if that happens.
+- **The supported range is documented, not encoded**: `api-version` in `plugin.yml`, the version tables in `docs/compatibility.md` and `SupportedVersions`, and a line in the changelog whenever it changes.
+- Bump MAJOR when a supported server software or version is dropped or a node changes meaning, MINOR for new nodes and features, PATCH for fixes.
 
 ## Cutting a release
 
-1. Move the entries under `## [Unreleased]` in `CHANGELOG.md` to a new `## [X.Y.Z] - YYYY-MM-DD` section, and update the compare links at the bottom of the file.
-2. Set `<version>` in `pom.xml` to `X.Y.Z` (commit both changes to `main`).
-3. Wait for the **Build** workflow on `main` to pass.
-4. Tag and push: `git tag vX.Y.Z && git push origin vX.Y.Z`.
+1. Open a release PR: move the entries under `## [Unreleased]` in `CHANGELOG.md` to a new `## [X.Y.Z] - YYYY-MM-DD` section, and update the compare links at the bottom of the file.
+2. In that PR, run `mvn versions:set -DnewVersion=X.Y.Z -DgenerateBackupPoms=false`; it updates the root version and every module's parent reference.
+3. Merge the release PR, then wait for both **Build** and **Compatibility** on that merge commit on `main` to pass.
+4. Tag that merge commit: `git tag -a vX.Y.Z <merge-sha> -m "VanillaPermissionsPlugin X.Y.Z"`, then `git push origin vX.Y.Z`.
+5. Run the same command with the next development version (`1.2.0-SNAPSHOT` after `1.1.0`; development builds are `1.1.0-SNAPSHOT` until then).
+
+This release-then-SNAPSHOT sequence follows [ViaVersion](https://github.com/ViaVersion/ViaVersion/blob/master/gradle.properties) (`projectVersion`) and [EssentialsX](https://github.com/EssentialsX/Essentials/blob/2.x/build.gradle) (`version`). The tag/pom check rejects a release tag on a SNAPSHOT commit.
 
 The **Release** workflow (`.github/workflows/release.yml`) then:
 
 - fails if the tag does not equal `v` + the pom version;
 - runs `mvn verify`;
 - writes `VanillaPermissionsPlugin-X.Y.Z.jar.sha256`;
-- takes the matching `CHANGELOG.md` section as the release notes (it falls back to GitHub's generated notes if the section is missing);
+- takes the matching `CHANGELOG.md` section as the release notes (it falls back to GitHub's generated notes if the section is missing), as DrexHD/VanillaPermissions does (`fetchChangelog()` in `build.gradle.kts`);
 - creates a GitHub Release with the jar and checksum, marked pre-release when the version contains a hyphen.
 
 Running the workflow by hand (`workflow_dispatch`) only builds and checks; it never publishes.
 
-Notes come from the changelog, as in DrexHD/VanillaPermissions (`fetchChangelog()` in `build.gradle.kts`). Fabric API instead generates them in CI with `FabricMC/fabric-action-scripts` (`context: changelog`). A hand-kept changelog is the right size here.
-
 ## CI
 
-- **Build** (`build.yml`): runs on pushes to `main`, pull requests and manual dispatch; superseded PR runs are cancelled; the jar is uploaded as the `VanillaPermissionsPlugin` artifact. It uses one JDK (21, the `--release` target). None of the surveyed projects runs a JDK matrix.
-- Other workflows (such as a Paper boot matrix) should keep the same style: a lowercase file name, a short `name:`, `permissions: contents: read`, and a per-ref `concurrency` group.
-- If you make a check "required" in branch protection, do not add `paths-ignore` to it; a skipped required check blocks merging. Geyser uses `paths-ignore`, but this build takes about a minute.
-- Dependabot (`.github/dependabot.yml`) updates Maven dependencies and GitHub Actions weekly, grouped, with a seven-day cooldown. Paper API is ignored on purpose: it defines the supported-version floor.
+- **Build** (`build.yml`): runs on pushes to `main`, pull requests and manual dispatch; superseded PR runs are cancelled; the jar is uploaded as the `VanillaPermissionsPlugin` artifact. It uses one JDK, 21, which compiles both the Java 8 modules (`--release 8`) and the Java 21 `paper` module; see [Architecture](architecture.md#java-targets).
+- **Compatibility** (`compat.yml`): runs on main pushes, every PR, manual dispatch and twice-weekly scheduled runs. It builds the compat jar and boots the supported software/version matrix. Spigot jars are built with pinned BuildTools and cached, never uploaded. The `compat` aggregate check follows [setuptools’ `check` job](https://github.com/pypa/setuptools/blob/main/.github/workflows/main.yml) using alls-green. PRs restore download caches; non-PR runs save them (Spigot jar builds also save on PR misses for downstream jobs).
+- If you make a check "required" in branch protection, do not add `paths` or `paths-ignore` to Build or Compatibility (`build` and `compat` required checks); a skipped required check blocks merging.
+- Dependabot (`.github/dependabot.yml`) updates Maven dependencies and GitHub Actions weekly, grouped, with a seven-day cooldown. Paper API, Spigot API and Brigadier are ignored on purpose: they define compatibility floors. Name-only ignores also suppress security-update PRs for those dependencies ([Dependabot docs](https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference#ignore)); these are compile-time APIs, not shaded dependencies. Paper’s API SNAPSHOT can change, so rebuilding an old tag is not fully reproducible.
 
-## Branching model
+### Compatibility boot tests
 
-**Now: trunk only.** All work goes to `main`; releases are tags on `main`. This is what LuckPerms (`master`), spark (`master`), ViaVersion (`master`) and EssentialsX (`2.x`) do for their current line.
+`compat.yml` and `scripts/compat-smoke.sh` boot real servers. The setup follows other projects that do the same:
 
-**Later: add branches only when forced.** Choose by what forces the split:
+- [josemmo/yamipa `tests.yml`](https://github.com/josemmo/yamipa/blob/master/.github/workflows/tests.yml): a matrix of `spigot`, `paper`, `purpur` and `folia`, a Java version chosen per Minecraft version, assertions on the plugin's own log lines, `fail-fast: false`. The checks grep only the plugin's lines, because Purpur and Spigot log exceptions of their own.
+- [ez-plugins/EzShops `smoke-tests.yml`](https://github.com/ez-plugins/EzShops/blob/main/.github/workflows/smoke-tests.yml): a `User-Agent` on Fill requests, the newest STABLE build with a fallback to any channel, and the server log uploaded with `if: always()`.
+- [PaperMC docs: downloads service](https://github.com/PaperMC/docs/blob/main/src/content/docs/misc/downloads-service.mdx): Fill asks for a non-generic `User-Agent` with a contact URL; `compat-smoke.sh` sends one on every request.
+- [jpenilla/run-task](https://github.com/jpenilla/run-task) (`DownloadsAPIServiceImpl.kt`): verify the SHA-256 from the API, download to a temp file, move it into place, cache jars per version and build (`fetch_verified`, the `actions/cache` key).
+- [itzg/docker-minecraft-server](https://github.com/itzg/docker-minecraft-server) (`scripts/start-deployPufferfish`, `start-deployPurpur`): the Pufferfish Jenkins job and the Purpur API as download sources. Builds are pinned with SHA-256 here because Pufferfish publishes no checksums.
 
-| Situation | Do this | Precedent |
-|---|---|---|
-| A fix for an older plugin major | Branch `N.x` from the last `vN.x.y` tag, fix there, tag `vN.x.(y+1)` from that branch; cherry-pick forward to `main`. | EssentialsX develops on `2.x` and has tagged older lines (`stable-2.13.1`). |
-| One jar can no longer cover the Paper range (for example a NMS or internals break) | Prefer one source tree that builds a jar per Minecraft version (Stonecutter, as DrexHD/VanillaPermissions does). Version the artifacts `X.Y.Z+<mc>`. | DrexHD/VanillaPermissions moved from the branches `1.19.2` ... `1.21.5` to a single `main` plus `versions/<mc>`; its tags are `0.3.5+1.20.1`, `0.3.6+26.1.2`. |
-| You must maintain old and new Minecraft sources separately | Branch per Minecraft version, named exactly by it (`1.21.1`); new work lands on the newest and is cherry-picked back. | Fabric API (`26.3`, `26.4`, ... with maintainers cherry-picking, per its CONTRIBUTING "Targeted Minecraft versions") and Carpet (`1.21.11`, `26.1`, ...). |
+## Branching
 
-Recommendation: never start with per-Minecraft branches. Fabric API and Carpet need them because mods are compiled against one exact Minecraft version; a Paper plugin built against the oldest supported Paper API is not. DrexHD/VanillaPermissions still has the old `1.19.2` ... `1.21.5` branches, but current releases build from `main` with Stonecutter.
+Trunk only: all work goes to `main`, and releases are tags on `main`, as in LuckPerms, spark, ViaVersion and EssentialsX. If a fix for an older major is ever needed, branch `N.x` from the last `vN.x.y` tag, fix there, tag `vN.x.(y+1)` from that branch and cherry-pick forward (EssentialsX does this with `2.x`).
 
-**Support policy.** Say in `docs/compatibility.md` which Paper versions are tested and which are only expected to work, and drop old versions by a MAJOR bump. Fabric API's rule ("the latest stable version and the latest snapshot are always supported; older ones as far as feasible") is a workable template.
-
-## Multi-platform layout (later)
-
-Not needed while this is a single Paper plugin on Maven. Adopt it when a second platform (Velocity, Fabric, Sponge) is actually planned, not before.
-
-When it is time, move to **Gradle with a shared core and one module per platform**, as spark and Geyser do:
-
-```
-core/           (spark: spark-common, Geyser: core) platform-independent permission logic
-paper/          (spark: spark-paper, Geyser: bootstrap/spigot) the current plugin
-fabric/         (spark: spark-fabric, Geyser: bootstrap/mod/fabric)
-velocity/       ...
-```
-
-- `settings.gradle(.kts)` includes the modules; Geyser maps directories with `project(":spigot").projectDir = file("bootstrap/spigot")`.
-- One `ci.yml` builds everything with `./gradlew build` and uploads every platform jar in one artifact, like spark's `jars` or LuckPerms' `jars`.
-- Name jars `<Project>-<Platform>-<version>.jar` (LuckPerms: `LuckPerms-Bukkit-*.jar`; Geyser: `Geyser-Spigot.jar`; CommandAPI: `CommandAPI-12.1.0-Paper.jar`). Keep one shared version for all platforms (CommandAPI, LuckPerms).
-- Keep a single tag and a single GitHub Release for all platform jars (CommandAPI attaches Paper, Spigot and Velocity jars to one release).
-- Gradle is justified only by the multi-module need. A single-module Maven build stays simpler.
-
-## Publishing to Modrinth and Hangar (later)
-
-The project publishes to GitHub Releases only. When that changes, leave the tag, the changelog and the checksum as they are and add steps after the release job:
-
-- **Gradle projects**: `me.modmuss50.mod-publish-plugin` with `publishMods { modrinth {...} }`, as in DrexHD/VanillaPermissions and Fabric API; the changelog comes from the same changelog section. For Hangar, ViaVersion calls `publishAllPublicationsToHangar` and `modrinth` from `publish.yml` (secrets `HANGAR_TOKEN`, `MODRINTH_TOKEN`).
-- **Maven**: call the Modrinth and Hangar REST APIs from a workflow step, or move to Gradle.
-- Keep publishing in the same job or a dependent job, and run it only on tags. Mark pre-release tags as such (Carpet maps GitHub's pre-release flag to a beta channel on Modrinth/CurseForge).
-- Declare the supported game versions in the upload metadata (`minecraftVersions`), kept in one property so the README and the upload cannot disagree (ViaVersion: `mcVersions` and `mcVersionRange` in `gradle.properties`).
-
-## Sources
-
-- DrexHD/VanillaPermissions: `build.gradle.kts`, `stonecutter.gradle.kts`, `settings.gradle.kts`, `gradle.properties`, `.github/workflows/{build,release}.yml`, `CHANGELOG.md`, branch list, releases.
-- gnembon/fabric-carpet: `.github/workflows/{build-on-pr,devbuild,publish-release}.yml`, `gradle.properties`, branch list, releases.
-- lucko/spark: `.github/workflows/ci.yml`, `settings.gradle`, tags, `README.md`.
-- GeyserMC/Geyser: `.github/workflows/{build,pull-request}.yml`, `settings.gradle.kts`, `README.md`, `CONTRIBUTING.md`.
-- LuckPerms/LuckPerms: `.github/workflows/ci.yml`, `build.gradle`, `CONTRIBUTING.md`, tags.
-- EssentialsX/Essentials: `.github/workflows/{build-master,build-pr}.yml`, `.github/ISSUE_TEMPLATE/`, `.github/PULL_REQUEST_TEMPLATE/`, `CONTRIBUTING.md`, releases.
-- FabricMC/fabric: `.github/workflows/{build,release}.yml`, `CONTRIBUTING.md` ("Targeted Minecraft versions"), branch list, releases.
-- ViaVersion/ViaVersion (and ViaBackwards): `.github/workflows/{build,publish}.yml`, `.github/dependabot.yml`, `.github/ISSUE_TEMPLATE/`, `SECURITY.md`, `.editorconfig`, `gradle.properties`, `README.md`.
-- JorelAli/CommandAPI (CommandAPI/CommandAPI): `.github/workflows/build.yml`, `.github/dependabot.yml`, `SECURITY.md`, `CONTRIBUTING.md`, releases.
-- walterhiggins/ScriptCraft: `README.md`, branch list, last commit (2020-02-04): a Bukkit/Spigot/CanaryMod-era plugin that supports "Java 7 or later" and was never ported on. Lesson: state a support policy, so that an unmaintained version range does not linger in the docs.
-- [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/), [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html).
-- All repository data was read with `gh api repos/<owner>/<repo>/contents/<path>`, `/branches`, `/releases` and `/tags` on 2026-10-20.
+**Support policy.** `docs/compatibility.md` says which versions are tested and which are only expected to work. Old versions are dropped by a MAJOR bump.
