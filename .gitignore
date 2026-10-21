@@ -10,7 +10,6 @@ mvnw.cmd
 *.test
 *.log
 opencode.md
-AGENTS.md
 VanillaPermissionsPlugin.iml
 
 # Node
