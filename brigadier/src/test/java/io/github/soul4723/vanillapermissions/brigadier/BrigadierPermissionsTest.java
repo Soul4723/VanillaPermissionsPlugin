@@ -6,6 +6,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import com.mojang.brigadier.tree.RootCommandNode;
+import io.github.soul4723.vanillapermissions.platform.PluginScheduler;
 import io.github.soul4723.vanillapermissions.selector.SelectorRules;
 import io.github.soul4723.vanillapermissions.util.LuckPermsHook;
 import io.github.soul4723.vanillapermissions.util.LuckPermsPermissionProvider;
@@ -27,10 +28,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
 import static io.github.soul4723.vanillapermissions.util.TestLuckPerms.proxy;
@@ -124,6 +127,42 @@ class BrigadierPermissionsTest {
     @AfterEach
     void restoreHook() throws Exception {
         hookField.set(null, previousHook);
+    }
+
+    /** Folia: a command tree may only be resent from the player's own thread, so the resend goes through the scheduler. */
+    @Test
+    void commandTreeRefreshRunsOnThePlayersSchedulerOrAtOnceWhenDisabling() {
+        AtomicInteger updates = new AtomicInteger();
+        Player player = proxy(Player.class, (proxy, method, values) -> {
+            if (method.getName().equals("updateCommands")) {
+                updates.incrementAndGet();
+                return null;
+            }
+            throw new AssertionError("Unexpected Player call: " + method);
+        });
+        List<Runnable> scheduled = new ArrayList<>();
+        boolean[] disabled = {false};
+        PluginScheduler scheduler = new PluginScheduler() {
+            @Override
+            public void runLater(Player target, Runnable task, long ticks, Runnable retired) {
+                assertSame(player, target);
+                if (disabled[0]) throw new IllegalStateException("Plugin attempted to register task while disabled");
+                scheduled.add(task);
+            }
+
+            @Override
+            public void runGlobal(Runnable task) {
+                throw new AssertionError("runGlobal");
+            }
+        };
+        BrigadierPermissions permissions = new BrigadierPermissions(null, new TestBridge(), scheduler);
+        permissions.refresh(List.of(player), null);
+        assertEquals(0, updates.get(), "Resent off the player's thread");
+        scheduled.forEach(Runnable::run);
+        assertEquals(1, updates.get());
+        disabled[0] = true;
+        permissions.refresh(List.of(player), null);
+        assertEquals(2, updates.get());
     }
 
     @Test

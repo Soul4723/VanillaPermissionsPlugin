@@ -10,7 +10,7 @@ From the repository root, with Bash, curl, Python 3 and the appropriate JDK inst
 mvn verify
 JAVA_BIN=/path/to/jdk21/bin/java bash scripts/compat-smoke.sh 1.21.11 target/VanillaPermissionsPlugin-*.jar --build 132
 JAVA_BIN=/path/to/jdk25/bin/java bash scripts/compat-smoke.sh 26.3 target/VanillaPermissionsPlugin-*.jar --software purpur --build 2652
-# Spigot: obtain BuildTools build 201 and verify the SHA-256 recorded in compat.yml first.
+# Spigot: obtain BuildTools build 201 and verify the SHA-256 recorded in `.github/workflows/build.yml` first.
 # Run BuildTools with JDK 17 for this revision:
 /path/to/jdk17/bin/java -jar BuildTools.jar --rev 1.20.4 --compile spigot --output-dir "$HOME/spigot/1.20.4"
 JAVA_BIN=/path/to/jdk17/bin/java bash scripts/compat-smoke.sh 1.20.4 target/VanillaPermissionsPlugin-*.jar \
@@ -26,7 +26,7 @@ Run a clean build first if `target` contains jars from multiple versions; the gl
 | 1.20.5–1.21.11 | 21 |
 | 26.x | 25 |
 
-`JAVA_BIN` selects Java; `MIN_NODES` sets the minimum patched-node count (default 1000; use the matching `compat.yml` row for older versions). `CACHE_DIR` defaults to `~/.cache/vpp-compat`, including per-software/version server caches. `WORK_DIR` defaults to a unique directory under `$CACHE_DIR/runs`; `KEEP_WORK=1` preserves it. `LOG_DIR` copies the final log out before cleanup. `JAVA_OPTS` adds JVM flags and `BOOT_TIMEOUT` changes the 240-second boot limit. The script chooses LuckPerms 5.4.158 for Java 8 and the current release from LuckPerms' metadata API for Java 11+.
+`JAVA_BIN` selects Java; `MIN_NODES` sets the minimum patched-node count (default 1000; use the matching `min_nodes` value in the boot matrix in `.github/workflows/build.yml` for older versions). `CACHE_DIR` defaults to `~/.cache/vpp-compat`, including per-software/version server caches. `WORK_DIR` defaults to a unique directory under `$CACHE_DIR/runs`; `KEEP_WORK=1` preserves it. `LOG_DIR` copies the final log out before cleanup. `JAVA_OPTS` adds JVM flags and `BOOT_TIMEOUT` changes the 240-second boot limit. The script chooses LuckPerms 5.4.158 for Java 8 and the current release from LuckPerms' metadata API for Java 11+.
 
 ## Running it
 
@@ -123,14 +123,7 @@ The scenarios in `scenarios/`:
 
 ## Results
 
-Run with VanillaPermissionsPlugin 1.0.0 and LuckPerms 5.5.87, `--time-scale 2`. Cells are passed/total checks; skipped checks are not counted (tab completion is only checked before 1.13, the command tree only from 1.13).
-
-| Server | Java | Backend | gamemode | selectors | execute | bypass | vanilla-smoke | Other |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Paper 1.21.11 build 132 | 21 | LuckPerms | 10/10 | 9/9 | 8/8 | 13/13 | 6/6 | |
-| Paper 1.21.11 build 132 | 21 | `permissions.yml` | | | | | | bukkit-permissions-yml 5/5 |
-| Paper 1.20.6 build 151 | 21 | LuckPerms | 10/10 | 9/9 | 8/8 | 13/13 | 6/6 | |
-| Paper 26.3 build 206 + ViaVersion/ViaBackwards 5.12.1, bot as 26.1 | 25 | LuckPerms | 10/10 | 9/9 | | | 6/6 | |
+This page keeps no per-run pass counts: they go stale with every release. Boot and install is checked on every push and pull request by the boot matrix in `.github/workflows/build.yml`. Live bot results are written in the description of the pull request that ran them; the versions covered are summarised in [Compatibility](../compatibility.md#how-each-level-was-verified). Other projects do the same: spark, LuckPerms, Geyser and ViaVersion keep no per-run results in the repository.
 
 Behaviour the harness accounts for:
 
@@ -140,22 +133,8 @@ Behaviour the harness accounts for:
 - **Flat worlds spawn slimes** even with `spawn-monsters=false`, and a dead bot gets `chat.disabled.options` for every command. The harness uses `difficulty=peaceful`.
 - **Player data persists between scenarios** in one boot, so each scenario's first join resets the bot to survival.
 - **Spigot 1.8–1.12** answer `deop` of a non-operator with `Could not de-op <name>`. **LuckPerms' first command** after boot can print an untranslated key (`luckperms.command.generic.clear`).
-
-### Spigot and older Paper
-
-Run with VanillaPermissionsPlugin 1.1.0-SNAPSHOT, LuckPerms 5.5.87 (5.5.88 on Spigot 1.21.11 and 26.3) and `--time-scale 3`, scenarios `gamemode.json`, `selectors.json`, `execute.json` and `bypass.json` (plus `aliases.json` where noted). Cells are totals over those scenarios; skipped checks are the version conditions in the scenarios (no command tree before 1.13, no `/execute if permission` before 1.13, `@s` from 1.12, no force-gamemode bypass on Spigot 1.13+).
-
-| Server | Java | Adapter | Passed | Failed | Skipped |
-| --- | --- | --- | --- | --- | --- |
-| Paper 1.21.11 build 132 | 21 | `paper` | 42 (+ 12 `aliases.json`) | 0 | 3 (+ 1) |
-| Spigot 26.3 (BuildTools) + ViaVersion/ViaBackwards 5.12.1, bot as 26.1 | 25 | `spigot` | 50 incl. `aliases.json` | 0 | 5 |
-| Spigot 1.21.11 (BuildTools) | 21 | `spigot` | 50 incl. `aliases.json` | 0 | 5 |
-| Spigot 1.20.4 (BuildTools) | 17 | `spigot` | 53 incl. `aliases.json` | 0 | 5 |
-| Paper 1.16.5 build 794 | 11 | `spigot` | 53 incl. `aliases.json` | 0 | 3 |
-| Spigot 1.12.2 (BuildTools) | 11 | `legacy` | 32 | 0 | 6 |
-| Spigot 1.8.8 (BuildTools) | 11 | `legacy` | 32 | 0 | 6 |
-
-CraftBukkit gates `/tp` by `minecraft.command.teleport` before the plugin's checks, so the `spigot` adapter gates redirect aliases by their own node or the target's, as Paper 1.20.6+ does; `aliases.json` covers it.
+- **Skipped checks** are the version conditions in the scenarios: tab completion is only checked before 1.13, the command tree only from 1.13, `@s` from 1.12, and there is no force-gamemode bypass on Spigot 1.13+.
+- CraftBukkit gates `/tp` by `minecraft.command.teleport` before the plugin's checks, so the `spigot` adapter gates redirect aliases by their own node or the target's, as Paper 1.20.6+ does; `aliases.json` covers it.
 
 ## Client and version coverage
 

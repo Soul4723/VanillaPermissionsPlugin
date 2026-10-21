@@ -7,7 +7,7 @@ Terms used on every page: an **operator** is a player with op status; a **node**
 > **Read this first**
 >
 > - **Granting a root opens everything under it that you have not set.** `minecraft.command.time true` lets the player use `/time set`, `/time add` and `/time query`, because the sub-nodes are unset and an unset sub-node follows vanilla. Set the branches you want closed to `false`.
-> - **To find the node for a command,** run `/lp verbose on <player>`, have the player run or tab-complete the command, then `/lp verbose off`. Every node the command checked is printed with its value.
+> - **To find the node for a command,** start with `/vanillapermissions check <player> <node>`, which shows how one node resolves. If you do not know the node, run `/lp verbose on <player> & minecraft.command`, have the player run the command, then `/lp verbose off`. The filter keeps the output to command nodes; without it LuckPerms prints every check, which can be thousands of lines when the player's command list is sent.
 
 ## How a node is resolved
 
@@ -27,7 +27,7 @@ Rules that apply everywhere:
 - **Unset command roots follow vanilla:** operators (level 2 or higher) only. Open to everyone on Paper by default: `/minecraft:help` (plain `/help` is Bukkit's), `/me`, `/msg` (`/tell`, `/w`), `/teammsg` (`/tm`) and `/trigger`. Our node names are the same strings as Paper's own Bukkit command permissions, so a value set in your permissions plugin is also what Paper sees.
 - **Parent and child nodes are checked independently along the command path.** The player needs the root and every node on the path to be allowed. An unset sub-node follows vanilla, which usually means "open to anyone who can use the command". A few sub-commands keep their own vanilla operator requirement (for example `/random reset`); `/lp verbose` shows them. See the note at the top of this page about granting a root.
 - **Console and command blocks** are never affected by command or selector nodes.
-- **To see every node a command checks,** use `/lp verbose`, as described at the top of this page.
+- **To see every node a command checks,** use `/lp verbose` with a filter, as described at the top of this page.
 
 ## Wildcards
 
@@ -83,21 +83,23 @@ Upstream's `/execute` extensions are added and use normal command nodes:
 | `minecraft.selector.self.<path>` | node | Targeting yourself. |
 | `minecraft.selector.player.<path>` | node | Targeting other players. |
 | `minecraft.selector.entity.<path>` | node | Targeting non-player entities. |
-| `minecraft.selector.limit.<path>` | integer meta | Maximum number of targets. |
-| `minecraft.selector.weight.<path>` | integer meta | You cannot target players whose weight for the same path is higher than yours. Only checked if you have a weight, and only for targets whose LuckPerms data is loaded (normally online players). |
+| `minecraft.selector.limit.<path>` | integer meta | Maximum number of targets. A shorter key covers every longer form (see below). |
+| `minecraft.selector.weight.<path>` | integer meta | You cannot target players whose weight for the same path is higher than yours. Only checked if you have a weight, and only for targets whose LuckPerms data is loaded (normally online players). A shorter key covers every longer form (see below). |
 
 - `<path>` is the command name, then the argument name, then every other node of the command as typed, **including optional arguments**:
   - `/gamemode survival @s` → `gamemode.target.survival.target`
   - `/effect give @s speed` → `effect.targets.give.targets.effect`
   - `/effect give @s speed 5` → `effect.targets.give.targets.effect.seconds`
   - Aliases use the full command's path: `/minecraft:gamemode creative Bob` → `gamemode.target.creative.target`, `/tp Bob` → `teleport.destination.destination`.
-- Because the path changes with optional arguments, use wildcards for scope nodes (`minecraft.selector.player.effect.targets.*`) and set limit and weight meta for each form (meta has no wildcards).
+- Because the path changes with optional arguments, use wildcards for scope nodes (`minecraft.selector.player.effect.targets.*`). Meta has no wildcards, but limit and weight fall back to shorter keys: the plugin looks up the full key first and, if it is not set, drops the last part of the path and tries again, down to `minecraft.selector.limit.<command>.<argument>`. `meta set minecraft.selector.limit.effect.targets 5` therefore caps every form of `/effect` (give and clear), while `minecraft.selector.limit.effect.targets.give 5` caps only `/effect give`. A longer key that is set wins over a shorter one, so keys written in upstream's full form keep working. A player's weight is the most specific `weight` key set for them along the same chain.
 - Scope, limit and weight apply to every player or entity argument, whether a name or a selector was typed. `minecraft.selector` only controls `@` syntax.
 - Fake scoreboard names are not players or entities; only the limit applies to them.
 - The whole selection is checked before the command runs, so a partly denied `@a` changes nothing.
 - Limit and weight are read from LuckPerms meta, or from Vault chat info with other plugins; see [Permissions plugins](providers.md).
 
-Random selectors and selectors in `/execute` forks are not fully checked; see [Limits](compatibility.md#limits).
+Random selectors (`@r`, or any selector with `sort=random`) are checked against every entity they could pick, not only the one picked, because the server picks again when the command runs. A weight rule therefore denies `/kill @r` if any possible target outranks the sender. The target-count limit still uses the number of targets actually selected.
+
+Selectors in `/execute` forks are not fully checked; see [Limits](compatibility.md#limits).
 
 ### Bypass nodes
 
@@ -169,7 +171,14 @@ Operator blocks cover command blocks and structure blocks (from 1.10). The `/exe
 
 ## What players see when denied
 
-- **Command nodes:** denied commands and branches disappear from the client's command list and tab completion. Typing one gives vanilla's "Unknown or incomplete command". How quickly the list updates after a permission change depends on the permissions plugin; see [Permissions plugins](providers.md).
+- **Command nodes:** what a denied player sees depends on the server. Denied commands and branches also disappear from the client's command list and tab completion, except on 1.8.8. How quickly the list updates after a permission change depends on the permissions plugin; see [Permissions plugins](providers.md).
+
+  | Server | Denied root command | Denied sub-command or argument |
+  | --- | --- | --- |
+  | Paper and forks 1.20.6 and later | Missing from tab completion; typing it usually gives vanilla's `Unknown or incomplete command, see below for error`. | Missing from tab completion; typing it usually gives `Unknown or incomplete command, see below for error` or `Incorrect argument for command`. |
+  | Spigot 1.13 and later, Paper 1.13 - 1.20.5 | CraftBukkit's no-permission message, which the server software can change. On Spigot this is `messages.no-permission` in `spigot.yml` (default `I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.`). Redirect aliases such as `/tp` get the same message. | Missing from tab completion; typing it usually gives vanilla's `Unknown or incomplete command, see below for error` or `Incorrect argument for command`. |
+  | 1.8.8 - 1.12.2 | CraftBukkit's permission message, as above. | Red `You do not have permission to use this command`. |
+
 - **Selector checks:** the command fails with a red message, one of:
   - `You do not have permission to use target selectors`
   - `You can select at most N targets here`

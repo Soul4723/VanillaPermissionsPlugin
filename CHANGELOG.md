@@ -7,20 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Upgrading from 1.0.0
+
+Replace the jar: stop the server, swap `VanillaPermissionsPlugin-1.0.0.jar` for the new one in `plugins/`, and start it. There is no config file and the node names are unchanged. On Paper 1.20.6 and later the behaviour is the same as in 1.0.0 except for the changes listed below; in particular, shorter selector meta keys now apply, and random selectors are checked more strictly.
+
 ### Added
-- Spigot, old Paper, Purpur, Pufferfish and Folia are supported by the same jar, from Minecraft 1.8.8 to 26.3. The plugin picks one of three adapters at startup by probing the server: `paper` (Paper, Folia and forks, 1.20.6 and later), `spigot` (Brigadier on Spigot 1.13+ and Paper 1.13 - 1.20.5) and `legacy` (1.8.8 - 1.12.2). See [Compatibility](docs/compatibility.md) for the version table, the limits and what was tested.
-- The `spigot` adapter reads `PermissionSet` operator levels, so Spigot 1.21.11 and 26.x are supported.
-- Folia 1.20.6 and later, through the `paper` adapter: LuckPerms refreshes run on each player's entity scheduler and global work on the global scheduler. `plugin.yml` declares `folia-supported: true`. Older Folia is refused instead of falling through to the `spigot` adapter.
+- Spigot (1.8.8 – 26.3), old Paper, Purpur, Pufferfish and Folia are supported by the same jar, from Minecraft 1.8.8 to 26.3. The plugin picks one of three modes at startup by looking at the server: Paper mode (Paper, Folia and forks, 1.20.6 and later), Spigot mode (Spigot 1.13+ and Paper 1.13 - 1.20.5) and legacy mode (1.8.8 - 1.12.2). See [Compatibility](docs/compatibility.md) for the version table, the limits and what was tested.
+- Folia 1.20.6 and later, in Paper mode: command list resends run on each player's entity scheduler and global work on the global scheduler. `plugin.yml` declares `folia-supported: true`. Older Folia is refused with a clear message.
 - On 1.8.8 - 1.12.2 the modern sub-nodes for ten commands (`gamemode`, `time`, `weather`, `kill`, `effect`, `give`, `clear`, `tp`/`teleport`, `execute`, `scoreboard`) are checked before the command runs, with selector rules, tab completion filtering (1.9+), operator blocks, and the force-gamemode and move-speed bypasses. Other commands keep `minecraft.command.<name>`; `/tp` follows `minecraft.command.teleport` as on 1.13+. See [Permissions](docs/permissions.md#188---1122-legacy-servers).
 - The startup warning and `/vanillapermissions debug` compare the server with the tested versions of its own software (Paper, Folia, Spigot, Purpur or Pufferfish).
-- Compatibility workflow rows for Spigot (1.8.8 - 26.3) and old Paper (1.8.8 - 1.20.5), Java 8 to 25, Folia, Purpur and Pufferfish, and the live-test harness (`scripts/live-test`). `scripts/compat-smoke.sh` takes `--software` and `--server-jar`.
+- Limit and weight meta now fall back to shorter keys. `minecraft.selector.limit.effect.targets` caps every form of `/effect`, while `minecraft.selector.limit.effect.targets.give` caps only `/effect give`. Keys written in the full form keep working and win over shorter ones.
+- The startup log names the mode in use (for example `Using Paper mode on Paper 1.21.11 (...)`), and `/vanillapermissions debug` has a `Mode:` line and shows the detected server software and version.
 
 ### Changed
 - `plugin.yml` declares `api-version: '1.13'` (it was `'1.20.6'`), the lowest value every 1.13+ server accepts.
-- The jar is Java 8 bytecode, except the `paper` adapter, which only loads on Java 21 and later. The manifest no longer claims Java 21.
-- The build is a Maven reactor (`core`, `brigadier`, `paper`, `spigot`, `legacy`, `plugin`); the jar is still written to `target/VanillaPermissionsPlugin-<version>.jar`. Development builds are `1.1.0-SNAPSHOT`.
+- The jar now runs on Java 8 and later; the Paper 1.20.6+ part only loads on Java 21 and later, as those servers need. The manifest no longer claims Java 21.
+- Development builds are `1.1.0-SNAPSHOT`; the release jar is still `VanillaPermissionsPlugin-<version>.jar`.
 
 ### Fixed
+- Random selectors (`@r`, or any selector with `sort=random`) are checked against every entity they could pick, because the server picks again when the command runs. A weight rule now denies `/kill @r` if any possible target outranks the sender.
+- The plugin no longer resends command lists itself when LuckPerms permissions change. LuckPerms already does this (its `update-client-command-list` option, on by default). If you turned that option off, tab completion updates when the player rejoins.
+- The failure messages at startup say what went wrong and where to find the supported servers. `/vanillapermissions check` says when a node has no effect on this server, and an unknown subcommand is reported instead of silently showing the help.
+- On 1.8.8 - 1.12.2 a command whose check fails with an error is refused instead of running unchecked, and tab completion for the command an `/execute` runs is filtered too.
+- On Spigot 1.13+, a vanilla command that another plugin changed (and that is therefore left unchecked) is logged as a warning.
 - Console and command blocks no longer fail on `/scoreboard players … *` and on `/execute unless entity …` with an empty selection. Selector validation now skips non-player sources, and player checks keep vanilla's wildcard score holders (`*`) and empty selections. This also fixes the behaviour shipped on Paper in 1.0.0.
 - Paper 1.20.5 no longer refuses the plugin because of its `api-version`.
 - The operator-block nodes now also cover the 1.21.5+ test blocks and test instance blocks.

@@ -11,9 +11,9 @@ Maintainer and contributor notes: how one jar serves every Bukkit-family server 
 | How server internals are reached | Reflection with per-version name tables; no NMS, BuildTools or paperweight at build time |
 | Adapter choice | Ordered candidate list in `core`, each with a minimum Java version and a class-presence probe; the first match is loaded by class name |
 | Shipped artifacts | One jar, `VanillaPermissionsPlugin-<version>.jar`, at the root `target/`; the adapter is chosen at startup |
-| Java | Shipped bytecode is Java 8 except the modern Paper adapter (Java 21), which is loaded only on Java 21+ |
+| Java | Shipped bytecode is Java 8 except the modern Paper adapter (Java 21), which is loaded only on Java 21+. The README only says which Java the server needs; this row and [Compatibility](../compatibility.md) carry the bytecode detail |
 | Tests | Unit tests on JDK 21 for every module (`testRelease` 21); real-JVM coverage from server boots in CI |
-| CI | `compat.yml` boot matrix with a row per software and version; Spigot jars built once with BuildTools and cached |
+| CI | Boot matrix in `build.yml` with a row per software and version; Spigot jars built once with BuildTools and cached |
 | `api-version` | `'1.13'` |
 
 ## Module layout
@@ -68,7 +68,7 @@ Listeners, by where they live:
 
 ### `plugin`
 
-`plugin` holds `plugin.yml` and uses `maven-shade-plugin` to merge `core` and every adapter into one jar. The jar is written to the root `target/`, so `build.yml`, `compat.yml` and `release.yml` do not depend on the module layout. ViaVersion writes its universal jar to the root `build/libs` in the same way. The jar keeps the manifest entry `paperweight-mappings-namespace: mojang`. Paper 1.20.5+ reads it and leaves the jar unremapped, which the `paper` adapter needs. Older Paper and Spigot ignore it, which is right for the `spigot` and `legacy` adapters too, since they look names up per version themselves.
+`plugin` holds `plugin.yml` and uses `maven-shade-plugin` to merge `core` and every adapter into one jar. The jar is written to the root `target/`, so `build.yml` and `release.yml` do not depend on the module layout. ViaVersion writes its universal jar to the root `build/libs` in the same way. The jar keeps the manifest entry `paperweight-mappings-namespace: mojang`. Paper 1.20.5+ reads it and leaves the jar unremapped, which the `paper` adapter needs. Older Paper and Spigot ignore it, which is right for the `spigot` and `legacy` adapters too, since they look names up per version themselves.
 
 ## Choosing the adapter at runtime
 
@@ -145,29 +145,29 @@ Citizens2 uses the same pattern on Maven: a `main` module at `<release>8</releas
 Every module's tests are compiled with `testRelease` 21 and run on JDK 21, including the tests of Java 8 modules. JUnit 6 needs Java 17+ at runtime, but it can test classes compiled with `--release 8` (the test JVM simply loads older bytecode). This rules out running unit tests on a real Java 8 JVM, which this design does not need:
 
 - Java 8 API misuse is caught at compile time by `--release 8`.
-- Behaviour on a real Java 8 JVM is covered by booting 1.8.8, 1.12.2 and 1.16.5 servers on Temurin 8 in `compat.yml`.
+- Behaviour on a real Java 8 JVM is covered by booting 1.8.8, 1.12.2 and 1.16.5 servers on Temurin 8 in the boot matrix in `.github/workflows/build.yml`.
 
 | Layer | Where | What |
 | --- | --- | --- |
 | Unit | each module, JDK 21 | Permission model and providers (`core`); tree patching against a fake Brigadier dispatcher built in the test (`paper`, `brigadier`); name-table validation against the real-shaped `v1_16_R3` fake server plus focused nested fake argument/selector cases, 1.21.11-shaped and Mojang-named (Spigot 26.x, Paper 1.20.5) fake sources and `PermissionSet` classes (`spigot`); grammar and selector tests (`legacy`) |
 | Shared helpers | `core` test-jar | `TestLuckPerms` and proxy helpers, reused by adapter modules |
 | Packaging | `plugin` | `plugin.yml` filtering and declared nodes (`PluginDescriptorTest`, `BypassNodesDeclaredTest`) |
-| Boot | `compat.yml` via `scripts/compat-smoke.sh` | Each matrix row boots a real server with the jar and LuckPerms and checks the success line and node count |
+| Boot | The boot matrix in `build.yml`, via `scripts/compat-smoke.sh` | Each matrix row boots a real server with the jar and LuckPerms and checks the success line and node count |
 | Behaviour | the [live tests](testing.md), recorded in [Compatibility](../compatibility.md) | Commands, selectors, bypasses on a live server with a client, for at least one version per adapter |
 
 Every adapter must log the same success line, `Added permission checks to <n> vanilla command nodes`, and the same failure prefix, `Could not add permission checks`, so that the smoke script and `CompatSmokeLogPatternsTest` work unchanged. The expected minimum count differs by version range (797 nodes on Spigot 1.13.2 against 1867 on Paper 1.20.6 and 2577 on 26.3), so every matrix row carries its own `min_nodes`, which the script reads as `MIN_NODES`. On `legacy` the count is the number of node paths its grammars can produce, not vanilla tree nodes.
 
 ## CI matrix
 
-`compat.yml` keeps one job per row. Rows have two more fields, `software` (`paper`, `spigot`, `purpur`, ...) and `java`. Rows are chosen per **name-table boundary**, not per patch release: the newest patch of each Minecraft minor, plus every version where a table changes.
+The boot matrix in `build.yml` has one entry per row. Rows have two more fields, `software` (`paper`, `spigot`, `purpur`, ...) and `java`. Rows are chosen per **name-table boundary**, not per patch release: the newest patch of each Minecraft minor, plus every version where a table changes.
 
 | Software | Range | Server jar | Java |
 | --- | --- | --- | --- |
 | Paper | 1.8.8 - 26.x | Paper's download API (`fill.papermc.io/v3/projects/paper`), pinned build | 8 up to 1.16.5, 17 for 1.17.x - 1.20.4, 21 for 1.20.5 - 1.21.11, 25 for 26.x |
 | Spigot | 1.8.8 - 26.3 | BuildTools, cached (below) | 8 up to 1.16.5, 17 for 1.17.1 - 1.20.4, 21 for 1.20.6 - 1.21.11, 25 for 26.3 |
-| Folia, Purpur, Pufferfish | see `compat.yml` | their download APIs | same |
+| Folia, Purpur, Pufferfish | see the matrix in `build.yml` | their download APIs | same |
 
-**Spigot jars in CI.** Spigot cannot be downloaded, so a `spigot-jar` job builds each needed revision once:
+**Spigot jars in CI.** Spigot cannot be downloaded, so the `spigot-jar` job in `build.yml` builds each needed revision once:
 
 1. It runs `java -jar BuildTools.jar --rev <version> --compile spigot` with a pinned BuildTools build and the JDK that revision needs (Java 8 up to 1.16.5, 17 for 1.17.1 - 1.20.4, 21 for 1.20.6 - 1.21.11, 25 for 26.3).
 2. It stores the result with `actions/cache`, keyed `spigot-<version>-bt<buildtools build>`.
@@ -220,7 +220,7 @@ To add an adapter:
 2. Implement `VersionAdapter` with a public no-argument constructor. A Brigadier adapter implements `BrigadierBridge` and passes it to `BrigadierPermissions`.
 3. Add an `AdapterCandidate` to `Adapters.candidates()` in the right order (most specific probe first).
 4. Add the module as a dependency of `plugin`, so it is shaded in.
-5. Add `compat.yml` rows.
+5. Add rows to the boot matrix in `build.yml`.
 
 All permission decisions go through `PermissionManager` (`queryPermission`, `hasPermissionOrFallback`, `getIntegerMeta`), so adapters never talk to LuckPerms or Vault directly. These calls can come from worker threads (Paper 1.16.5+ builds command trees asynchronously), so providers must be thread-safe.
 
@@ -283,7 +283,7 @@ Design notes for the `legacy` adapter:
 
 ## Spigot 1.20.5 and later
 
-- **Paper 1.20.5 works through the `spigot` adapter.** It has Mojang names but no `LifecycleEvents.COMMANDS`, so the `paper` probe fails and the `spigot` probe matches. The name table carries the Mojang names (`MappingGeneration.MOJANG`, detected by a class probe). Boot-tested (1784 nodes) and in `compat.yml`.
+- **Paper 1.20.5 works through the `spigot` adapter.** It has Mojang names but no `LifecycleEvents.COMMANDS`, so the `paper` probe fails and the `spigot` probe matches. The name table carries the Mojang names (`MappingGeneration.MOJANG`, detected by a class probe). Boot-tested (1784 nodes) and in the boot matrix in `build.yml`.
 - **The selector override is the toggle, not Paper's flag**, on every `spigot` version, because `bypassSelectorPermissions` is inverted on Paper 1.19.4 - 1.20.4.
 - **Spigot 1.21.11 and 26.x use the same adapter.** 1.21.11 still runs Spigot class names with obfuscated members (CraftBukkit package `v1_21_R7`). 26.x runs Mojang names and an unversioned `org.bukkit.craftbukkit` package. Both replace the integer operator level with Minecraft's `PermissionSet`. Mapping detection (`MappingGeneration`), dispatcher access (`CraftServerAccess`) and adapter selection are unchanged.
 - **The operator-level shape is probed, not taken from the mapping generation.** The Mojang generation covers both shapes: Paper 1.20.5 has int levels, Spigot 26.x has `PermissionSet`. Each `SpigotNames` entry is tagged with a shape (`SpigotNames.LevelShape`: `ANY`, `INT`, `PERMISSION_SET`). `NativeAccess` checks whether the command source class has CraftBukkit's `hasPermission(int, String)`. If it does, it resolves the `INT` entries, so servers before 1.21.11 never load `PermissionSet` classes. If not, it resolves the `PERMISSION_SET` ones when the server has `PermissionSet` under its names; anything else is an unknown shape and fails the install.

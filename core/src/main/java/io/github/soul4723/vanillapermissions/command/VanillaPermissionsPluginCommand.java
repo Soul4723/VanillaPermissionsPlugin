@@ -1,7 +1,10 @@
 package io.github.soul4723.vanillapermissions.command;
 
 import io.github.soul4723.vanillapermissions.VanillaPermissionsPlugin;
+import io.github.soul4723.vanillapermissions.platform.AdapterLog;
 import io.github.soul4723.vanillapermissions.platform.ServerVersion;
+import io.github.soul4723.vanillapermissions.platform.VersionAdapter;
+import io.github.soul4723.vanillapermissions.selector.SelectorRules;
 import io.github.soul4723.vanillapermissions.util.PermissionManager;
 import io.github.soul4723.vanillapermissions.util.PermissionProvider;
 import io.github.soul4723.vanillapermissions.util.ServerSoftware;
@@ -64,18 +67,24 @@ public final class VanillaPermissionsPluginCommand implements TabExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (args.length == 0 || !SUBCOMMANDS.contains(args[0].toLowerCase(Locale.ROOT))) {
+        if (args.length == 0) {
             sendHelp(sender, label);
             return true;
         }
         String subcommand = args[0].toLowerCase(Locale.ROOT);
+        if (!SUBCOMMANDS.contains(subcommand)) {
+            sender.sendMessage("§cUnknown subcommand '" + args[0] + "'.");
+            sendHelp(sender, label);
+            return true;
+        }
         if (!sender.hasPermission(ADMIN_PERMISSION)) {
             sender.sendMessage("§cYou do not have permission to use /" + label + " " + subcommand
                 + " (requires " + ADMIN_PERMISSION + ").");
             return true;
         }
         if (subcommand.equals("debug")) {
-            sendDebug(sender);
+            if (args.length != 1) sender.sendMessage("§cUsage: /" + label + " debug");
+            else sendDebug(sender);
         } else if (args.length < 2 || args.length > 3) {
             sender.sendMessage("§cUsage: /" + label + " check <player> [node]");
         } else {
@@ -98,7 +107,11 @@ public final class VanillaPermissionsPluginCommand implements TabExecutor {
             return;
         }
         if (node != null) {
-            sender.sendMessage("§6" + target.getName() + "§7: §f" + node + " §7= " + describe(target, node.toLowerCase(Locale.ROOT)));
+            String lower = node.toLowerCase(Locale.ROOT);
+            VersionAdapter adapter = plugin.getVersionAdapter();
+            String inactive = adapter == null ? null : adapter.inactiveReason(lower);
+            sender.sendMessage("§6" + target.getName() + "§7: §f" + node + " §7= " + describe(target, lower)
+                + (inactive == null ? "" : " §e(no effect on this server: " + inactive + ")"));
             return;
         }
         sender.sendMessage("§6Nodes for " + target.getName() + " §7(operator: " + (target.isOp() ? "§ayes" : "§fno") + "§7)");
@@ -109,10 +122,13 @@ public final class VanillaPermissionsPluginCommand implements TabExecutor {
     }
 
     private static String describe(Player target, String node) {
-        boolean limit = node.startsWith("minecraft.selector.limit.");
-        if (limit || node.startsWith("minecraft.selector.weight.")) {
-            OptionalInt value = PermissionManager.getIntegerMeta(target.getUniqueId(), target, node);
-            if (value.isPresent()) return "§f" + value.getAsInt() + " §7(meta)";
+        String metaPrefix = node.startsWith(SelectorRules.LIMIT_PREFIX) ? SelectorRules.LIMIT_PREFIX
+            : node.startsWith(SelectorRules.WEIGHT_PREFIX) ? SelectorRules.WEIGHT_PREFIX : null;
+        if (metaPrefix != null && node.length() > metaPrefix.length()) {
+            for (String key : SelectorRules.fallbackKeys(metaPrefix, node.substring(metaPrefix.length()))) {
+                OptionalInt value = PermissionManager.getIntegerMeta(target.getUniqueId(), target, key);
+                if (value.isPresent()) return "§f" + value.getAsInt() + " §7(meta" + (key.equals(node) ? "" : " from " + key) + ")";
+            }
             return "§7unset (" + unsetMeaning(node) + ")";
         }
         String meaning = unsetMeaning(node);
@@ -148,14 +164,19 @@ public final class VanillaPermissionsPluginCommand implements TabExecutor {
         sender.sendMessage("§6VanillaPermissionsPlugin " + plugin.getDescription().getVersion());
         String minecraft = ServerVersion.minecraft();
         ServerSoftware software = ServerSoftware.detect();
-        sender.sendMessage("§7Server: §f" + Bukkit.getName() + " " + minecraft
+        sender.sendMessage("§7Server: §f" + software.displayName() + " " + minecraft
             + (SupportedVersions.isVerified(software, minecraft) ? " §a(tested)"
-                : " §e(untested; tested on " + software.displayName() + " " + SupportedVersions.range(software) + ")"));
+                : " §e(untested; tested: " + SupportedVersions.describe(software) + ")")
+            + " §7- " + Bukkit.getVersion());
+        VersionAdapter adapter = plugin.getVersionAdapter();
+        if (adapter != null) {
+            sender.sendMessage("§7Mode: §f" + AdapterLog.mode(adapter.id()) + " §7(" + AdapterLog.scope(adapter.id()) + ")");
+        }
 
         PermissionProvider provider = PermissionManager.getProvider();
         sender.sendMessage("§7Permissions: " + provider.describePermissions());
         sender.sendMessage("§7Selector limits and weights: " + provider.describeMeta());
-        int nodes = plugin.getVersionAdapter().checkedNodeCount();
+        int nodes = adapter == null ? 0 : adapter.checkedNodeCount();
         sender.sendMessage("§7Vanilla command nodes with permission checks: "
             + (nodes > 0 ? "§f" + nodes : "§c0 (see the startup log)"));
     }

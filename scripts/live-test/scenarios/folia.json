@@ -7,7 +7,7 @@
     { "connect": "Bot" },
     { "connect": "Bot2" },
     { "name": "debug identifies Folia server", "console": "vanillapermissions debug", "expect": "Server: Folia " },
-    { "name": "debug reports LuckPerms connected", "console": "vanillapermissions debug", "expect": "Permissions: .*LuckPerms [^ ]+ .*command list refresh on changes" },
+    { "name": "debug reports LuckPerms connected", "console": "vanillapermissions debug", "expect": "Permissions: .*LuckPerms [^ ]+ .*LuckPerms refreshes command lists on changes" },
     { "name": "debug reports selector metadata", "console": "vanillapermissions debug", "expect": "Selector limits and weights: .*LuckPerms meta" },
     { "name": "check reports Bot's default-false gamemode node", "console": "vanillapermissions check Bot minecraft.command.gamemode", "expect": "Bot: minecraft\\.command\\.gamemode = false" },
     { "name": "tree initially lacks gamemode", "tree": { "lacks": ["gamemode"] } },

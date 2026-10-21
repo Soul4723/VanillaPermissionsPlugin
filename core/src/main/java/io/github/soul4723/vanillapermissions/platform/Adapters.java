@@ -32,7 +32,7 @@ public final class Adapters {
         return Collections.unmodifiableList(Arrays.asList(
             // Paper 1.20.6+: Brigadier through the lifecycle COMMANDS event, which Spigot does not have.
             new AdapterCandidate("paper", 21, PAPER_ADAPTER,
-                () -> hasStaticField("io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents", "COMMANDS")),
+                () -> hasStaticField("io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents", "COMMANDS", serverLoader())),
             // Spigot 1.13+ and Paper 1.13 - 1.20.5: Brigadier (LuckPerms' isBrigadierSupported probe) on a CraftBukkit server.
             new AdapterCandidate("spigot", 8, SPIGOT_ADAPTER,
                 () -> !folia && isBrigadierCraftBukkit(Bukkit.getServer())),
@@ -124,14 +124,24 @@ public final class Adapters {
     }
 
     /** Whether {@code server} is CraftBukkit's server class (Spigot, Paper and their forks), relocated or not. */
-    static boolean isCraftBukkit(Object server) {
+    public static boolean isCraftBukkit(Object server) {
         return server != null && server.getClass().getName().startsWith("org.bukkit.craftbukkit.");
     }
 
-    /** Whether {@code className} exists and has a public static field {@code field}; loads nothing else. */
-    static boolean hasStaticField(String className, String field) {
+    /**
+     * The server's own class loader, or Bukkit's when there is no server yet (tests). Probes use it rather than this
+     * plugin's loader, which also sees classes other plugins bundle: one shipping Paper's API unrelocated would
+     * otherwise pass for Paper on Spigot.
+     */
+    static ClassLoader serverLoader() {
+        Object server = Bukkit.getServer();
+        return server != null ? server.getClass().getClassLoader() : Bukkit.class.getClassLoader();
+    }
+
+    /** Whether {@code className} exists in {@code loader} and has a public static field {@code field}; loads nothing else. */
+    static boolean hasStaticField(String className, String field, ClassLoader loader) {
         try {
-            Field found = Class.forName(className, false, Adapters.class.getClassLoader()).getField(field);
+            Field found = Class.forName(className, false, loader).getField(field);
             return Modifier.isStatic(found.getModifiers());
         } catch (ClassNotFoundException | NoSuchFieldException | LinkageError e) {
             return false;

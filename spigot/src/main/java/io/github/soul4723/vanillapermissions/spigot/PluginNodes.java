@@ -4,7 +4,11 @@ import com.mojang.brigadier.tree.ArgumentCommandNode;
 import com.mojang.brigadier.tree.CommandNode;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Tells the vanilla root commands of CraftBukkit's {@code vanillaCommandDispatcher} from those other plugins add to it.
@@ -16,6 +20,21 @@ import java.util.List;
 final class PluginNodes {
 
     static final String BUKKIT_COMMAND_WRAPPER = "BukkitCommandWrapper";
+
+    /**
+     * Vanilla's command names from 1.13 to 26.x, so a vanilla command that another plugin changed (and that is then
+     * left unchecked) can be told from a command the plugin added. Only used to pick the log level.
+     */
+    static final Set<String> VANILLA_COMMANDS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+        "advancement", "attribute", "ban", "ban-ip", "banlist", "bossbar", "clear", "clone", "damage", "data", "datapack",
+        "debug", "defaultgamemode", "deop", "dialog", "difficulty", "effect", "enchant", "execute", "experience", "fill",
+        "fillbiome", "forceload", "function", "gamemode", "gamerule", "give", "help", "item", "jfr", "kick", "kill", "list",
+        "locate", "locatebiome", "loot", "me", "msg", "op", "pardon", "pardon-ip", "particle", "perf", "place", "playsound",
+        "publish", "random", "recipe", "reload", "replaceitem", "return", "ride", "rotate", "save-all", "save-off",
+        "save-on", "say", "schedule", "scoreboard", "seed", "setblock", "setidletimeout", "setworldspawn", "spawnpoint",
+        "spectate", "spreadplayers", "stop", "stopsound", "summon", "tag", "team", "teammsg", "teleport", "tell", "tellraw",
+        "test", "tick", "time", "title", "tm", "tp", "transfer", "trigger", "version", "w", "waypoint", "weather",
+        "whitelist", "worldborder", "xp")));
 
     private PluginNodes() {}
 

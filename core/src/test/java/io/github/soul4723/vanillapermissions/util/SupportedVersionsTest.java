@@ -20,10 +20,10 @@ class SupportedVersionsTest {
     private static final Path REPO = Path.of(System.getProperty("repo.root", ".."));
 
     private static String workflow() throws IOException {
-        return Files.readString(REPO.resolve(".github/workflows/compat.yml"));
+        return Files.readString(REPO.resolve(".github/workflows/build.yml"));
     }
 
-    /** The {@code minecraft:} values of every {@code software: <id>} row in compat.yml, in file order. */
+    /** The {@code minecraft:} values of every {@code software: <id>} row in build.yml, in file order. */
     private static List<String> matrixRows(String software) throws IOException {
         Matcher entry = Pattern.compile("software: " + software + ", minecraft: '([^']+)'").matcher(workflow());
         List<String> rows = new ArrayList<>();
@@ -34,7 +34,7 @@ class SupportedVersionsTest {
     @Test
     void compatMatrixBootsEveryVerifiedVersionOfEverySoftware() throws IOException {
         for (ServerSoftware software : ServerSoftware.values()) {
-            assertEquals(SupportedVersions.verified(software), matrixRows(software.id()), software + " rows in compat.yml");
+            assertEquals(SupportedVersions.verified(software), matrixRows(software.id()), software + " rows in build.yml");
         }
     }
 
@@ -81,8 +81,6 @@ class SupportedVersionsTest {
         assertEquals(List.of("1.20.6", "1.21.11", "26.1.2", "26.3"), SupportedVersions.verified(ServerSoftware.FOLIA));
         assertFalse(SupportedVersions.isVerified(ServerSoftware.FOLIA, "1.20.4"));
         assertFalse(SupportedVersions.isVerified(ServerSoftware.FOLIA, "1.21.4"));
-        assertEquals("1.8.8 to 26.3", SupportedVersions.range(ServerSoftware.PAPER));
-        assertEquals("1.8.8 to 26.3", SupportedVersions.range(ServerSoftware.SPIGOT));
     }
 
     @Test

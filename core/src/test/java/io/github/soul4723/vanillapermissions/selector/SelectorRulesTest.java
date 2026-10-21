@@ -132,6 +132,53 @@ class SelectorRulesTest {
     }
 
     @Test
+    void metaKeysFallBackToCommandAndArgument() {
+        assertEquals(List.of(
+                "minecraft.selector.limit.teleport.targets.targets.destination",
+                "minecraft.selector.limit.teleport.targets.targets",
+                "minecraft.selector.limit.teleport.targets"),
+                SelectorRules.fallbackKeys(SelectorRules.LIMIT_PREFIX, PERMISSION_PATH));
+        assertEquals(List.of("minecraft.selector.weight.kill.targets"),
+                SelectorRules.fallbackKeys(SelectorRules.WEIGHT_PREFIX, "kill.targets"));
+    }
+
+    @Test
+    void limitFallsBackToShorterKeyAndExactKeyWins() {
+        List<SelectorRules.Target> two = List.of(targetPlayer(SOURCE_ID, source), targetPlayer(OTHER_ID, other));
+        permissions.meta.put(SOURCE_ID + ":minecraft.selector.limit.teleport.targets", 1);
+        assertEquals(1, denial(two).limit());
+        permissions.meta.put(SOURCE_ID + ":minecraft.selector.limit.teleport.targets.targets", 3);
+        assertAllowed(two);
+        permissions.meta.put(SOURCE_ID + ":minecraft.selector.limit." + PERMISSION_PATH, 0);
+        assertEquals(0, denial(two).limit());
+        // A bare command key is not part of the chain.
+        permissions.meta.clear();
+        permissions.meta.put(SOURCE_ID + ":minecraft.selector.limit.teleport", 1);
+        assertAllowed(two);
+    }
+
+    @Test
+    void weightsFallBackPerSubject() {
+        permissions.meta.put(SOURCE_ID + ":minecraft.selector.weight.teleport.targets", 2);
+        permissions.meta.put(OTHER_ID + ":minecraft.selector.weight." + PERMISSION_PATH, 3);
+        assertDenied(List.of(targetPlayer(OTHER_ID, other)), SelectorDenial.Reason.WEIGHT,
+                "You do not have permission to target players with a higher selector weight than yours");
+        permissions.meta.put(SOURCE_ID + ":minecraft.selector.weight.teleport.targets.targets", 5);
+        assertAllowed(List.of(targetPlayer(OTHER_ID, other)));
+    }
+
+    @Test
+    void randomSelectionsCheckEveryCandidateButLimitThePick() {
+        permissions.nodes.put("minecraft.selector.player." + PERMISSION_PATH, false);
+        permissions.meta.put(SOURCE_ID + ":minecraft.selector.limit." + PERMISSION_PATH, 1);
+        List<SelectorRules.Target> picked = List.of(targetPlayer(SOURCE_ID, source));
+        List<SelectorRules.Target> pool = List.of(targetPlayer(SOURCE_ID, source), targetPlayer(OTHER_ID, other));
+        assertEquals(Optional.empty(), SelectorRules.check(source, COMMAND_PATH, "targets", picked, picked, permissions));
+        Optional<SelectorDenial> denial = SelectorRules.check(source, COMMAND_PATH, "targets", picked, pool, permissions);
+        assertEquals(SelectorDenial.Reason.PLAYER, denial.orElseThrow().reason());
+    }
+
+    @Test
     void tooManyNeedsALimit() {
         assertThrows(IllegalArgumentException.class, () -> SelectorDenial.of(SelectorDenial.Reason.TOO_MANY));
         assertEquals("You can select at most 3 targets here", SelectorDenial.tooMany(3).message());

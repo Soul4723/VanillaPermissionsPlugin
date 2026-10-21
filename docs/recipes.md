@@ -13,7 +13,7 @@ Copy-paste setups, written for LuckPerms. They assume a non-operator group calle
 /lp group member permission set minecraft.selector.player.gamemode.target.survival.target false
 ```
 
-`/gamemode survival` and `/gamemode survival @s` work; `/gamemode survival Steve` is refused, and `@a` is refused while anyone else is online (the check only refuses targets other than the caller). Checked on Paper 1.21.11 with LuckPerms; `@a` is accepted when the caller is the only player online.
+`/gamemode survival` and `/gamemode survival @s` work; `/gamemode survival Steve` is refused, and `@a` is refused while anyone else is online (the check only refuses targets other than the caller). Checked on Paper 1.21.11 with LuckPerms only; `@a` is accepted when the caller is the only player online.
 
 The selector node (`…gamemode.target.survival.target`) is shaped differently from the command node (`minecraft.command.gamemode.survival.target`) because the selector path starts with the command and the argument being checked (`gamemode.target`) and then lists the rest of what was typed (`survival.target`), the layout upstream uses, while the command node follows the command tree (mode first, then target).
 
@@ -27,7 +27,7 @@ Not to or of other players:
 /lp group member permission set minecraft.command.teleport.targets false
 ```
 
-Checked on Paper 1.21.11 with LuckPerms, as a non-operator:
+Checked on Paper 1.21.11 with LuckPerms only, as a non-operator:
 
 - `/tp 100 64 100` works. Its node is `minecraft.command.teleport.location`, which the recipe leaves unset (allowed).
 - `/tp <player>`, `/tp @s <player>`, `/tp Bob 1 64 1` and `/tp @a 1 64 1` are refused.
@@ -40,16 +40,12 @@ Moderators can apply `/effect` to other players, at most five at a time:
 ```text
 /lp group moderator permission set minecraft.command.effect true
 /lp group moderator permission set minecraft.selector true
-/lp group moderator meta set minecraft.selector.limit.effect.targets.give.targets.effect 5
-/lp group moderator meta set minecraft.selector.limit.effect.targets.give.targets.effect.seconds 5
-/lp group moderator meta set minecraft.selector.limit.effect.targets.give.targets.effect.seconds.amplifier 5
-/lp group moderator meta set minecraft.selector.limit.effect.targets.give.targets.effect.seconds.amplifier.hideParticles 5
-/lp group moderator meta set minecraft.selector.limit.effect.targets.give.targets.effect.infinite 5
-/lp group moderator meta set minecraft.selector.limit.effect.targets.give.targets.effect.infinite.amplifier 5
-/lp group moderator meta set minecraft.selector.limit.effect.targets.give.targets.effect.infinite.amplifier.hideParticles 5
+/lp group moderator meta set minecraft.selector.limit.effect.targets 5
 ```
 
-Meta has no wildcards, so every way of typing `/effect give` needs its own line: with or without `<seconds>` or `infinite`, `<amplifier>` and `<hideParticles>`. A form without a line has no limit. To find the key for a form you want to limit, run `/lp verbose on <player>`, have the player type that form with a selector, then `/lp verbose off`: the output has a line such as `meta: minecraft.selector.limit.effect.targets.give.targets.effect.seconds.amplifier - null`, and that key is what `meta set` takes. Checked on Paper 1.21.11.
+Limit and weight meta have no wildcards, but the plugin looks for the most specific key first and then drops the last part of the path until it finds one that is set. `minecraft.selector.limit.effect.targets` is the shortest key, so it caps every way of typing `/effect` (give and clear, with or without `<seconds>`, `<amplifier>` and `<hideParticles>`). To cap only `/effect give`, set `minecraft.selector.limit.effect.targets.give` instead. A longer key set on the same group overrides a shorter one for its own form, so you can allow more targets for one form. Weights work the same way: each player's weight is the most specific `minecraft.selector.weight…` key set for them along the same path. Keys written in upstream's full form still work.
+
+To find the key for a form you want to limit, run `/lp verbose on <player> & minecraft.selector`, have the player type that form with a selector, then `/lp verbose off`: the output has a line such as `meta: minecraft.selector.limit.effect.targets.give.targets.effect.seconds.amplifier - null`, and you can set that key or any shorter one that starts the same way. The verbose output was checked on Paper 1.21.11 only.
 
 ## Debug stick for builders
 
@@ -66,37 +62,31 @@ Builders can use the debug stick in creative mode, except on oak trapdoors:
 /lp group admin permission set minecraft.operator_block.* false
 ```
 
-## Allow only `/time`
+## Take every vanilla command away from staff
 
-Deny every vanilla command except `/time` (plugin commands are not affected):
+Operators have every vanilla command. To take them all away from a group of operators (plugin commands are not affected), deny the wildcard and grant back only what the group needs, here `/time`:
 
 ```text
-/lp group member permission set minecraft.command.* false
-/lp group member permission set minecraft.command.time true
-/lp group member permission set minecraft.command.time.* true
+/lp group admin permission set minecraft.command.* false
+/lp group admin permission set minecraft.command.time true
+/lp group admin permission set minecraft.command.time.* true
 ```
 
-`minecraft.command.time.*` does not match the root `minecraft.command.time`, so grant the root separately. The `.*` grant is needed because `minecraft.command.* false` also covers every sub-command of `/time`. See [Wildcards](permissions.md#wildcards).
+`minecraft.command.time.*` does not match the root `minecraft.command.time`, so grant the root separately. The `.*` grant is needed here only because `minecraft.command.* false` also covers every sub-command of `/time`. See [Wildcards](permissions.md#wildcards).
+
+You do not need this for ordinary players. A non-operator has no vanilla operator command until you grant one, and `minecraft.command.time true` alone is enough for `/time`.
 
 ### What `minecraft.command.* false` also turns off
 
-On Paper 1.21.11 with LuckPerms, a non-operator in a group with `minecraft.command.* false` lost `/me`, `/msg`, `/tell`, `/w`, `/teammsg`, `/tm`, `/trigger` and `/minecraft:help` (all answered "Unknown or incomplete command"), because Paper gives these to everyone through nodes that the wildcard also matches. The wildcard also matches Paper's `minecraft.command.selector`, so `@` selectors stopped working. Bukkit's own `/help` was not affected. To keep them, add these lines (checked: each command works again, with arguments):
+On Paper 1.21.11 with LuckPerms, a non-operator in a group with `minecraft.command.* false` lost `/me`, `/msg`, `/tell`, `/w`, `/teammsg`, `/tm`, `/trigger` and `/minecraft:help` (all answered "Unknown or incomplete command"), because Paper gives these to everyone through nodes that the wildcard also matches. The wildcard also matches Paper's `minecraft.command.selector`, so `@` selectors stopped working. Bukkit's own `/help` was not affected. To keep them, add these lines (checked on Paper 1.21.11 only: each command works again, with arguments):
 
 ```text
-/lp group member permission set minecraft.command.me true
-/lp group member permission set minecraft.command.me.* true
-/lp group member permission set minecraft.command.msg true
-/lp group member permission set minecraft.command.msg.* true
-/lp group member permission set minecraft.command.tell true
-/lp group member permission set minecraft.command.w true
-/lp group member permission set minecraft.command.teammsg true
-/lp group member permission set minecraft.command.teammsg.* true
-/lp group member permission set minecraft.command.tm true
-/lp group member permission set minecraft.command.trigger true
-/lp group member permission set minecraft.command.trigger.* true
-/lp group member permission set minecraft.command.help true
-/lp group member permission set minecraft.selector true
+/lp group admin permission set minecraft.command.{me,msg,tell,w,teammsg,tm,trigger,help} true
+/lp group admin permission set minecraft.command.{me,msg,teammsg,trigger}.* true
+/lp group admin permission set minecraft.selector true
 ```
+
+The `{a,b}` groups are LuckPerms shorthand, which works while its `apply-shorthand` option is on (the default). With another permissions plugin, or if you turned it off, write one line per node: the first line is `me`, `msg`, `tell`, `w`, `teammsg`, `tm`, `trigger` and `help` as `minecraft.command.<name> true`, and the second is `minecraft.command.<name>.* true` for `me`, `msg`, `teammsg` and `trigger`.
 
 `/tell`, `/w` and `/tm` are redirects with their own root node but use `/msg`'s and `/teammsg`'s argument nodes, so they need no `.*` line of their own. Leave out `minecraft.selector true` if the group should not use `@` selectors.
 
@@ -137,5 +127,5 @@ How GroupManager's nodes behave with this plugin (Paper 1.21.11, checked with `/
 
 - `-node` shows as `false`. It only affects its own node, not the broader one: with `minecraft.command.time`, `minecraft.command.time.query` and `-minecraft.command.time.set` in one group, `/time query daytime` works, `/time set day` is refused, and `/time add 1` (unset) follows vanilla.
 - `+minecraft.command.time.query` shows as `true`.
-- **Wildcards do nothing here.** `minecraft.command.*` and `minecraft.command.time.*` show their sub-nodes as unset, so list nodes explicitly. A `-minecraft.command.*` in the group also made an explicit `minecraft.command.time` in the same group show as unset (GroupManager's own `manucheckp` reported the negation for it). The "Allow only `/time`" recipe above therefore does not translate; non-operators already lack vanilla commands whose nodes are unset, so grant only what the group needs.
+- **Wildcards do nothing here.** `minecraft.command.*` and `minecraft.command.time.*` show their sub-nodes as unset, so list nodes explicitly. A `-minecraft.command.*` in the group also made an explicit `minecraft.command.time` in the same group show as unset (GroupManager's own `manucheckp` reported the negation for it). The "Take every vanilla command away from staff" recipe above therefore does not translate; non-operators already lack vanilla commands whose nodes are unset, so grant only what the group needs.
 - Selector limits and weights were not tested with GroupManager.

@@ -9,7 +9,7 @@ import java.util.Map;
 /**
  * Minecraft versions each server software has been booted and checked against. Support is decided by feature
  * detection at install time, not by these lists; they only decide whether to warn that a (software, version) pair is
- * untested. Each list mirrors that software's rows in {@code .github/workflows/compat.yml}
+ * untested. Each list mirrors that software's rows in {@code .github/workflows/build.yml}
  * ({@code SupportedVersionsTest} checks it).
  */
 public final class SupportedVersions {
@@ -43,12 +43,6 @@ public final class SupportedVersions {
 
     public static boolean isVerified(ServerSoftware software, String minecraftVersion) {
         return VERIFIED.get(software).contains(minecraftVersion);
-    }
-
-    /** For logs, e.g. "1.8.8 to 26.3". */
-    public static String range(ServerSoftware software) {
-        List<String> versions = VERIFIED.get(software);
-        return versions.get(0) + " to " + versions.get(versions.size() - 1);
     }
 
     /** The warning's tail and the debug line's list: {@code "Paper 1.8.8, 1.12.2, ..."}. */

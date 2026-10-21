@@ -41,6 +41,18 @@ public final class SelectorPolicy {
         if (denial.isPresent()) throw exception(denial.get());
     }
 
+    /** {@link #validate} with every target a random selector could pick; see {@link SelectorRules#check(CommandSender, List, String, Collection, Collection, SelectorRules.Permissions)}. */
+    public static void validate(
+            CommandSender sender,
+            List<String> parsedNodePath,
+            String argumentName,
+            Collection<SelectorRules.Target> selected,
+            Collection<SelectorRules.Target> candidates,
+            SelectorRules.Permissions permissions) throws CommandSyntaxException {
+        Optional<SelectorDenial> denial = SelectorRules.check(sender, parsedNodePath, argumentName, selected, candidates, permissions);
+        if (denial.isPresent()) throw exception(denial.get());
+    }
+
     /** The Brigadier error for a core denial; its message is {@link SelectorDenial#message()}. */
     public static CommandSyntaxException exception(SelectorDenial denial) {
         if (denial.reason() == SelectorDenial.Reason.TOO_MANY) return TOO_MANY.create(denial.limit());

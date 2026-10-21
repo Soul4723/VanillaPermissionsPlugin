@@ -22,6 +22,7 @@ import java.util.UUID;
 import static io.github.soul4723.vanillapermissions.util.TestLuckPerms.proxy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** The interception logic against a fake command map, resolver and permission source. */
 class CommandGuardTest {
@@ -137,6 +138,27 @@ class CommandGuardTest {
         nodes.put("minecraft.selector.entity.kill.targets.targets", false);
         server.targets.put("@e[type=Pig]", List.of(pig));
         assertEquals("You do not have permission to target non-player entities here", guard.check(alice, "kill @e[type=Pig]"));
+    }
+
+    @Test
+    void randomSelectorsAreCheckedAgainstEveryPlayerTheyCouldPick() {
+        nodes.put("minecraft.selector", true);
+        server.targets.put("@r", List.of(alice));
+        server.targets.put("@a", List.of(alice, bob));
+        assertNull(guard.check(alice, "kill @r"));
+        nodes.put("minecraft.selector.player.kill.targets.targets", false);
+        // This resolution picked Alice herself, but vanilla resolves @r again and may pick Bob.
+        assertEquals("You do not have permission to target other players here", guard.check(alice, "kill @r"));
+        assertEquals(List.of("@r players=false from Alice", "@a players=false from Alice"),
+            server.resolved.subList(server.resolved.size() - 2, server.resolved.size()));
+
+        // The count limit still applies to what is picked, not to the pool.
+        nodes.remove("minecraft.selector.player.kill.targets.targets");
+        meta.put("minecraft.selector.limit.kill.targets", 1);
+        assertNull(guard.check(alice, "kill @r"));
+        // Unresolvable pools fail closed like any selector.
+        server.targets.put("@r[team=red]", List.of(alice));
+        assertEquals(CommandGuard.UNRESOLVED, guard.check(alice, "kill @r[team=red]"));
     }
 
     @Test
@@ -339,6 +361,32 @@ class CommandGuardTest {
     }
 
     @Test
+    void tabCompletionFiltersTheCommandExecuteRuns() {
+        nodes.put("minecraft.command.gamemode.creative", false);
+        List<String> modes = List.of("survival", "creative");
+        assertEquals(List.of("survival"), guard.filterCompletions(alice, "/execute @s ~ ~ ~ gamemode ", modes));
+        assertEquals(List.of("survival"), guard.filterCompletions(alice, "/execute @s ~ ~ ~ execute @p ~ ~ ~ gamemode ", modes));
+        nodes.put("minecraft.command.execute.run", false);
+        assertEquals(List.of(), guard.filterCompletions(alice, "/execute @s ~ ~ ~ gamemode ", modes));
+    }
+
+    @Test
+    void tabCompletionLooksEachNodeUpOncePerEvent() {
+        Map<String, Integer> lookups = new HashMap<>();
+        CommandGuard counting = new CommandGuard(server, new FakePermissions() {
+            @Override
+            public boolean hasPermission(CommandSender sender, String node, boolean fallback) {
+                lookups.merge(node, 1, Integer::sum);
+                return super.hasPermission(sender, node, fallback);
+            }
+        }, LegacyVersion.V1_12_2);
+        List<String> names = new ArrayList<>();
+        for (int i = 0; i < 200; i++) names.add("Player" + i);
+        assertEquals(names, counting.filterCompletions(alice, "/tp ", names));
+        assertTrue(lookups.values().stream().allMatch(count -> count == 1), "Repeated lookups: " + lookups);
+    }
+
+    @Test
     void splitMatchesCraftBukkit() {
         assertEquals(List.of("gamemode", "", "c"), Arrays.asList(Tokens.split("gamemode  c ")));
         assertEquals(List.of(), Arrays.asList(Tokens.split("")));
@@ -357,7 +405,7 @@ class CommandGuardTest {
             });
     }
 
-    private final class FakePermissions implements SelectorRules.Permissions {
+    private class FakePermissions implements SelectorRules.Permissions {
         @Override
         public boolean hasPermission(CommandSender sender, String node, boolean fallback) {
             Boolean value = nodes.get(node);

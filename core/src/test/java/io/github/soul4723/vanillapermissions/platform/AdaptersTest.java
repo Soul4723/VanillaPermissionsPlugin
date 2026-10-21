@@ -172,8 +172,20 @@ class AdaptersTest {
 
     @Test
     void staticFieldProbeNeedsBothClassAndStaticField() {
-        assertTrue(Adapters.hasStaticField("java.lang.Integer", "MAX_VALUE"));
-        assertFalse(Adapters.hasStaticField("java.lang.Integer", "NO_SUCH_FIELD"));
-        assertFalse(Adapters.hasStaticField("io.github.soul4723.vanillapermissions.platform.NoSuchClass", "COMMANDS"));
+        assertTrue(Adapters.hasStaticField("java.lang.Integer", "MAX_VALUE", Adapters.serverLoader()));
+        assertFalse(Adapters.hasStaticField("java.lang.Integer", "NO_SUCH_FIELD", Adapters.serverLoader()));
+        assertFalse(Adapters.hasStaticField("io.github.soul4723.vanillapermissions.platform.NoSuchClass", "COMMANDS", Adapters.serverLoader()));
+    }
+
+    @Test
+    void staticFieldProbeOnlySeesTheGivenLoader() {
+        // A loader that cannot see this test class stands in for the server's, which does not see plugin classes.
+        ClassLoader platformOnly = ClassLoader.getPlatformClassLoader();
+        assertTrue(Adapters.hasStaticField(AdaptersTest.class.getName() + "$Marker", "COMMANDS", AdaptersTest.class.getClassLoader()));
+        assertFalse(Adapters.hasStaticField(AdaptersTest.class.getName() + "$Marker", "COMMANDS", platformOnly));
+    }
+
+    static final class Marker {
+        public static final Object COMMANDS = new Object();
     }
 }

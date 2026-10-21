@@ -24,4 +24,12 @@ public interface VersionAdapter {
 
     /** Number of vanilla command nodes currently carrying a permission check, for {@code /vanillapermissions debug}. */
     int checkedNodeCount();
+
+    /**
+     * Why setting {@code node} (lower case) does nothing on this server, for {@code /vanillapermissions check}, e.g. a
+     * sub-command node the 1.8.8 - 1.12.2 checks do not know; {@code null} if it can take effect.
+     */
+    default String inactiveReason(String node) {
+        return null;
+    }
 }

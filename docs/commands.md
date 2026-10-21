@@ -4,7 +4,9 @@ The plugin adds one command, `/vanillapermissions`. It needs `vanillapermissions
 
 ## `/vanillapermissions check <player> [node]`
 
-Shows how a node resolves for an online player in their current context: `true`, `false`, or `unset` followed by what unset means for that node. The meaning per node family is the table in [How a node is resolved](permissions.md#how-a-node-is-resolved); for limit and weight nodes the output is the meta value or `unset (no limit)` / `unset (no weight check)`.
+Shows how a node resolves for an online player in their current context: `true`, `false`, or `unset` followed by what unset means for that node. The meaning per node family is the table in [How a node is resolved](permissions.md#how-a-node-is-resolved); for limit and weight nodes the output is the meta value (with the shorter key it came from, if any; see [Selectors](permissions.md#selectors)) or `unset (no limit)` / `unset (no weight check)`.
+
+- When a node has no effect on this server, the line ends with `(no effect on this server: …)`, for example a sub-command node the 1.8.8 - 1.12.2 checks do not know, a debug stick node before 1.13, or the force-gamemode and move-speed bypasses on Spigot.
 
 - Paper's own nodes that the docs tell you to set (`minecraft.commandblock`, `minecraft.debugstick`, `minecraft.debugstick.always`, `minecraft.admin.command_feedback`) and this plugin's own nodes (below) are recognised too. Their unset text is `Paper's default: operators`, `Paper's default: nobody` or `this plugin's default: operators`. With LuckPerms the registered default is already applied, so you see `true` for an operator and `false` for everyone else.
 - Any other node shows its value followed by `(not a node this plugin checks)`, which usually means a typo.
@@ -13,7 +15,7 @@ Without a node it shows a summary of a few nodes. It reports the permissions plu
 
 ## `/vanillapermissions debug`
 
-Shows the plugin and server version (tested or not), where node values and selector limits and weights come from (LuckPerms and its version, a Bukkit permissions plugin, Vault chat meta, or nothing), and how many vanilla command nodes carry checks.
+Shows the plugin version, the mode (`Mode: Paper mode (checks on every vanilla command and sub-command)`, or Spigot or legacy mode), the server software and version as `Bukkit.getVersion()` reports it (tested or not), where node values and selector limits and weights come from (LuckPerms and its version, a Bukkit permissions plugin, Vault chat meta, or nothing), and how many vanilla command nodes carry checks.
 
 ## Nodes this plugin adds
 

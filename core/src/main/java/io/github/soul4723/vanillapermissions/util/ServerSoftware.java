@@ -6,7 +6,8 @@ import org.bukkit.Bukkit;
 import java.util.Locale;
 
 /**
- * The server software families {@code compat.yml} boots, used to look up which versions were tested on this one.
+ * The server software families CI boots (the boot matrix in {@code build.yml}), used to look up which versions were
+ * tested on this one.
  * Seen on real boots: Paper, Purpur and Pufferfish report their own name from {@code Bukkit.getName()}
  * ("Running on Bukkit - Purpur" in LuckPerms' banner); Spigot (and CraftBukkit) report "CraftBukkit" with
  * "Spigot" in {@code Bukkit.getVersion()} ("git-Spigot-..."), so Spigot is what is left when no Paper API exists.
@@ -24,12 +25,12 @@ public enum ServerSoftware {
         this.displayName = displayName;
     }
 
-    /** The name used in logs and in {@code compat.yml}'s {@code software:} field, capitalised. */
+    /** The name used in logs and in the {@code build.yml} boot matrix's {@code software:} field, capitalised. */
     public String displayName() {
         return displayName;
     }
 
-    /** The lower-case name {@code compat.yml} uses in {@code software:}. */
+    /** The lower-case name the {@code build.yml} boot matrix uses in {@code software:}. */
     public String id() {
         return name().toLowerCase(Locale.ROOT);
     }

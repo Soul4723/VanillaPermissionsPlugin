@@ -1,6 +1,5 @@
 package io.github.soul4723.vanillapermissions.util;
 
-import io.github.soul4723.vanillapermissions.platform.PluginScheduler;
 import org.bukkit.Server;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -40,16 +39,16 @@ public class PermissionManager {
      * permission source and one for selector meta, so admins can see what works without LuckPerms. This runs in
      * {@code onEnable}, before plugins that enable after this one; {@link #reselectProvider} runs once they all have.
      */
-    public static PermissionProvider selectProvider(Plugin plugin, PluginScheduler scheduler) {
+    public static PermissionProvider selectProvider(Plugin plugin) {
         PluginManager plugins = plugin.getServer().getPluginManager();
         Logger log = plugin.getLogger();
 
         Plugin luckPerms = plugins.getPlugin("LuckPerms");
         if (luckPerms != null) {
-            PermissionProvider connected = LuckPermsPermissionProvider.connect(plugin, scheduler);
+            PermissionProvider connected = LuckPermsPermissionProvider.connect(plugin);
             if (connected != null) {
                 log.info("Using LuckPerms " + luckPerms.getDescription().getVersion()
-                    + " for permission checks, contexts, selector limits and weights, and command list refresh");
+                    + " for permission checks, contexts, and selector limits and weights");
                 return connected;
             }
             log.severe("Falling back to Bukkit permissions without LuckPerms; fix LuckPerms to restore its nodes");

@@ -5,7 +5,6 @@ import net.luckperms.api.event.EventBus;
 import net.luckperms.api.event.EventSubscription;
 import net.milkbowl.vault.chat.Chat;
 import net.milkbowl.vault.permission.Permission;
-import io.github.soul4723.vanillapermissions.platform.PluginScheduler;
 import org.bukkit.Server;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
@@ -115,7 +114,7 @@ class PermissionProviderSelectionTest {
         installed("LuckPerms", true);
         registerLuckPerms();
         installed("Vault", true);
-        PermissionProvider provider = PermissionManager.selectProvider(owner, PluginScheduler.bukkit(owner));
+        PermissionProvider provider = PermissionManager.selectProvider(owner);
         try {
             assertInstanceOf(LuckPermsPermissionProvider.class, provider);
             assertTrue(logged("Using LuckPerms 5.4"), "No LuckPerms line logged");
@@ -128,7 +127,7 @@ class PermissionProviderSelectionTest {
     @Test
     void disabledLuckPermsFallsBackToBukkit() {
         installed("LuckPerms", false);
-        PermissionProvider provider = PermissionManager.selectProvider(owner, PluginScheduler.bukkit(owner));
+        PermissionProvider provider = PermissionManager.selectProvider(owner);
         BukkitPermissionProvider bukkit = assertInstanceOf(BukkitPermissionProvider.class, provider);
         assertFalse(at(Level.SEVERE).isEmpty(), "Broken LuckPerms was not reported");
         assertFalse(bukkit.hasMeta(), "Meta without a source");
@@ -137,7 +136,7 @@ class PermissionProviderSelectionTest {
     @Test
     void luckPermsWithoutRegisteredApiFallsBackToBukkit() {
         installed("LuckPerms", true);
-        assertInstanceOf(BukkitPermissionProvider.class, PermissionManager.selectProvider(owner, PluginScheduler.bukkit(owner)));
+        assertInstanceOf(BukkitPermissionProvider.class, PermissionManager.selectProvider(owner));
         assertFalse(at(Level.SEVERE).isEmpty(), "Missing LuckPerms API was not reported");
     }
 
@@ -147,7 +146,7 @@ class PermissionProviderSelectionTest {
         services.put(Permission.class, VaultHookTest.permission("GroupManager"));
         services.put(Chat.class, chatNamed("TestChat"));
         BukkitPermissionProvider provider =
-            assertInstanceOf(BukkitPermissionProvider.class, PermissionManager.selectProvider(owner, PluginScheduler.bukkit(owner)));
+            assertInstanceOf(BukkitPermissionProvider.class, PermissionManager.selectProvider(owner));
         assertEquals("GroupManager", provider.getPermissionsPlugin());
         assertTrue(provider.hasMeta(), "Chat registration gave no meta");
         assertTrue(logged("Vault chat meta (TestChat)"), "Meta source not logged");
@@ -158,7 +157,7 @@ class PermissionProviderSelectionTest {
     void knownPluginWithoutVaultHasNoMeta() {
         installed("PermissionsEx", true);
         BukkitPermissionProvider provider =
-            assertInstanceOf(BukkitPermissionProvider.class, PermissionManager.selectProvider(owner, PluginScheduler.bukkit(owner)));
+            assertInstanceOf(BukkitPermissionProvider.class, PermissionManager.selectProvider(owner));
         assertEquals("PermissionsEx", provider.getPermissionsPlugin());
         assertFalse(provider.hasMeta(), "Meta without Vault");
         assertTrue(logged("Using Bukkit permissions from PermissionsEx"), "Source not logged");
@@ -170,14 +169,14 @@ class PermissionProviderSelectionTest {
         installed("PermissionsEx", false);
         installed("GroupManager", true);
         BukkitPermissionProvider provider =
-            assertInstanceOf(BukkitPermissionProvider.class, PermissionManager.selectProvider(owner, PluginScheduler.bukkit(owner)));
+            assertInstanceOf(BukkitPermissionProvider.class, PermissionManager.selectProvider(owner));
         assertEquals("GroupManager", provider.getPermissionsPlugin());
     }
 
     @Test
     void noPermissionsPluginWarnsOnceAfterFinalSelection() {
         BukkitPermissionProvider provider =
-            assertInstanceOf(BukkitPermissionProvider.class, PermissionManager.selectProvider(owner, PluginScheduler.bukkit(owner)));
+            assertInstanceOf(BukkitPermissionProvider.class, PermissionManager.selectProvider(owner));
         assertNull(provider.getPermissionsPlugin());
         assertFalse(provider.hasMeta(), "Meta without a source");
         assertTrue(at(Level.WARNING).isEmpty(), "Early selection warned");
@@ -193,7 +192,7 @@ class PermissionProviderSelectionTest {
     @Test
     void pluginEnablingLaterIsPickedUpOnReselect() {
         BukkitPermissionProvider early =
-            assertInstanceOf(BukkitPermissionProvider.class, PermissionManager.selectProvider(owner, PluginScheduler.bukkit(owner)));
+            assertInstanceOf(BukkitPermissionProvider.class, PermissionManager.selectProvider(owner));
         PermissionManager.initialize(early, owner);
         records.clear();
 
@@ -214,7 +213,7 @@ class PermissionProviderSelectionTest {
     @Test
     void unchangedSelectionDoesNotSwapOrLog() {
         installed("PermissionsEx", true);
-        PermissionProvider early = PermissionManager.selectProvider(owner, PluginScheduler.bukkit(owner));
+        PermissionProvider early = PermissionManager.selectProvider(owner);
         PermissionManager.initialize(early, owner);
         records.clear();
         PermissionManager.reselectProvider(owner);
@@ -226,7 +225,7 @@ class PermissionProviderSelectionTest {
     void runningLuckPermsIsKeptOnReselect() throws Exception {
         installed("LuckPerms", true);
         registerLuckPerms();
-        PermissionProvider early = PermissionManager.selectProvider(owner, PluginScheduler.bukkit(owner));
+        PermissionProvider early = PermissionManager.selectProvider(owner);
         PermissionManager.initialize(early, owner);
         records.clear();
         try {

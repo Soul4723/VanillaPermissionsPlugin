@@ -3,6 +3,7 @@ package io.github.soul4723.vanillapermissions;
 import io.github.soul4723.vanillapermissions.command.VanillaPermissionsPluginCommand;
 import io.github.soul4723.vanillapermissions.listener.LuckPermsPreLoginListener;
 import io.github.soul4723.vanillapermissions.listener.WhitelistBypassListener;
+import io.github.soul4723.vanillapermissions.platform.AdapterLog;
 import io.github.soul4723.vanillapermissions.platform.Adapters;
 import io.github.soul4723.vanillapermissions.platform.ServerVersion;
 import io.github.soul4723.vanillapermissions.platform.VersionAdapter;
@@ -32,26 +33,30 @@ public class VanillaPermissionsPlugin extends JavaPlugin {
 
         adapter = Adapters.select(getClassLoader(), getLogger());
         if (adapter == null) {
-            getLogger().severe(getServer().getName() + " " + minecraftVersion + " is not supported yet, so VanillaPermissionsPlugin "
-                + "is disabling itself and leaving vanilla commands unchanged; "
-                + (software == ServerSoftware.FOLIA ? "Folia is supported from 1.20.6; " : "")
-                + "supported servers are listed in docs/compatibility.md");
+            String reason = software == ServerSoftware.FOLIA ? "Folia is supported from 1.20.6"
+                : !Adapters.isCraftBukkit(getServer()) ? "not a CraftBukkit-based server"
+                : "none of the ways this plugin adds its checks fits it; see the warnings above";
+            getLogger().severe(software.displayName() + " " + minecraftVersion + " is not supported (" + reason + "), so "
+                + "VanillaPermissionsPlugin is disabling itself and leaving vanilla commands unchanged; supported servers are "
+                + "listed in docs/compatibility.md");
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
+        getLogger().info(AdapterLog.using(adapter.id(), software.displayName(), minecraftVersion));
 
         // Chosen now because the commands below need a provider at once; the adapter's listeners repeat the choice
         // on ServerLoadEvent, which fires after every plugin has enabled.
-        permissionProvider = PermissionManager.selectProvider(this, adapter.scheduler(this));
+        permissionProvider = PermissionManager.selectProvider(this);
         PermissionManager.initialize(permissionProvider, this);
 
         VanillaPermissionsPluginCommand.register(this);
         registerListeners();
         try {
             adapter.enable(this);
-        } catch (Exception error) {
-            getLogger().log(Level.SEVERE, "Could not enable the " + adapter.id() + " adapter, so VanillaPermissionsPlugin is "
-                + "disabling itself and leaving vanilla commands unchanged", error);
+        } catch (Exception | LinkageError error) {
+            // An Error left unhandled would leave the plugin enabled, with its listeners but no checks.
+            getLogger().log(Level.SEVERE, AdapterLog.installFailed(software.displayName(), minecraftVersion,
+                SupportedVersions.describe(software)), error);
             getServer().getPluginManager().disablePlugin(this);
         }
     }

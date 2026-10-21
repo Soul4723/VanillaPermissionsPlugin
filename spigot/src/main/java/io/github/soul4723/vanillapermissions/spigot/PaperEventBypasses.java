@@ -1,6 +1,7 @@
 package io.github.soul4723.vanillapermissions.spigot;
 
 import io.github.soul4723.vanillapermissions.util.PermissionManager;
+import io.github.soul4723.vanillapermissions.util.ServerSoftware;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventPriority;
@@ -12,6 +13,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -33,16 +35,23 @@ final class PaperEventBypasses {
 
     private PaperEventBypasses() {}
 
-    /** Registers whichever bypasses this server's API supports and logs which ones it could not. */
-    static void register(JavaPlugin plugin) {
+    /** Registers whichever bypasses this server's API supports, logs which ones it could not and returns those. */
+    static List<String> register(JavaPlugin plugin) {
         List<String> missing = new ArrayList<>();
         if (!registerForceGamemode(plugin)) missing.add(FORCE_GAMEMODE_PERMISSION);
         if (!registerMoveSpeed(plugin)) missing.add(MOVE_SPEED_PERMISSION);
-        if (!missing.isEmpty()) {
-            plugin.getLogger().info("This server's API has no event for " + String.join(" or ", missing)
-                    + (missing.size() == 1 ? ", so that bypass node has" : ", so those bypass nodes have")
-                    + " no effect here (they need events from a newer Paper)");
+        if (!missing.isEmpty()) plugin.getLogger().info(unavailableMessage(ServerSoftware.detect(), missing));
+        return Collections.unmodifiableList(missing);
+    }
+
+    static String unavailableMessage(ServerSoftware software, List<String> missing) {
+        if (software == ServerSoftware.SPIGOT) {
+            return "These bypasses need Paper's API and do nothing on Spigot (see docs/compatibility.md#limits): "
+                    + String.join(", ", missing);
         }
+        return "This server's API has no event for " + String.join(" or ", missing)
+                + (missing.size() == 1 ? ", so that bypass node has" : ", so those bypass nodes have")
+                + " no effect here (they need events from a newer Paper; see docs/compatibility.md#limits)";
     }
 
     /** Paper: cancel the change to the default game mode when {@code force-gamemode} is on, for players with the node. */
