@@ -105,9 +105,8 @@ final class CommandGuard {
         if (!command.testPermissionSilent(player)) return null;
 
         String name = command.getName();
-        String modernRoot = Grammars.MODERN_ROOTS.get(name);
-        if (modernRoot != null && denied(player, modernRoot)
-                && !(name.equals("tp") && permissions.hasPermission(player, "minecraft.command.tp", false))) return NO_PERMISSION;
+        Map<String, Boolean> deniedNodes = new HashMap<>();
+        if (modernRootDenied(player, name, deniedNodes)) return NO_PERMISSION;
 
         Grammar grammar = Grammars.forCommand(name);
         if (grammar == null) return null;
@@ -118,7 +117,7 @@ final class CommandGuard {
             if (!SelectorRules.allowSelectorSyntax(player,
                     player.hasPermission("minecraft.command.selector"), permissions)) return SELECTOR_DENIED;
         }
-        if (!nodesAllowed(player, parse)) return NO_PERMISSION;
+        if (!nodesAllowed(player, parse.checkedNodes(), deniedNodes)) return NO_PERMISSION;
 
         List<Entity> executeTargets = null;
         for (Parse.Segment segment : parse.segments()) {
@@ -127,11 +126,11 @@ final class CommandGuard {
                 List<Entity> entities = new ArrayList<>();
                 String denial = checkTargets(player, origin, segment, step, args, name.equals("scoreboard"), entities);
                 if (denial != null) return denial;
-                if (executeTargets == null && parse.innerCommandStart() >= 0) executeTargets = entities;
+                if (executeTargets == null) executeTargets = entities;
             }
         }
 
-        if (parse.innerCommandStart() >= 0 && parse.innerCommandStart() < args.length) {
+        if (parse.innerCommandStart() >= 0) {
             String inner = stripSlash(join(args, parse.innerCommandStart()).trim()).trim();
             boolean innerOffset = offsetContext || !args[1].equals("~") || !args[2].equals("~") || !args[3].equals("~");
             String[] innerTokens = Tokens.split(inner);
@@ -150,7 +149,7 @@ final class CommandGuard {
         return null;
     }
 
-    /** Applies the selector syntax node and the selector rules to one entity argument. */
+    /** Applies the selector rules to one entity argument and adds what it selects to {@code entities}. */
     private String checkTargets(Player player, Entity origin, Parse.Segment segment, Parse.Step step, String[] args,
                                 boolean wildcard, List<Entity> entities) {
         List<SelectorRules.Target> targets = new ArrayList<>();
@@ -207,9 +206,7 @@ final class CommandGuard {
         if (tokens.length < 2) return completions;
         Command command = server.command(tokens[0]);
         if (command == null || !server.isVanilla(command) || !command.testPermissionSilent(player)) return completions;
-        String modernRoot = Grammars.MODERN_ROOTS.get(command.getName());
-        if (modernRoot != null && denied(player, modernRoot, deniedNodes)
-                && !(command.getName().equals("tp") && permissions.hasPermission(player, "minecraft.command.tp", false))) return Collections.emptyList();
+        if (modernRootDenied(player, command.getName(), deniedNodes)) return Collections.emptyList();
         Grammar grammar = Grammars.forCommand(command.getName());
         if (grammar == null) return completions;
         String[] args = Arrays.copyOfRange(tokens, 1, tokens.length);
@@ -231,11 +228,11 @@ final class CommandGuard {
         return allowed;
     }
 
-    private boolean nodesAllowed(Player player, Parse parse) {
-        for (String node : parse.checkedNodes()) {
-            if (denied(player, node)) return false;
-        }
-        return true;
+    /** The modern root of a renamed legacy command is denied; an explicit {@code minecraft.command.tp} keeps /tp. */
+    private boolean modernRootDenied(Player player, String name, Map<String, Boolean> deniedNodes) {
+        String modernRoot = Grammars.MODERN_ROOTS.get(name);
+        return modernRoot != null && denied(player, modernRoot, deniedNodes)
+            && !(name.equals("tp") && permissions.hasPermission(player, "minecraft.command.tp", false));
     }
 
     private boolean nodesAllowed(Player player, List<String> nodes, Map<String, Boolean> deniedNodes) {
