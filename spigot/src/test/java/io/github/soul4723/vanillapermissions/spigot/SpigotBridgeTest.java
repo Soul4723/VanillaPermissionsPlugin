@@ -198,6 +198,22 @@ class SpigotBridgeTest {
         assertEquals(SelectorRules.Target.Kind.SCORE_HOLDER, bridge.selectorTarget("Notch").kind());
     }
 
+    /** An entity whose getBukkitEntity() fails, which is a ScoreHolder with a scoreboard name from 1.20.3. */
+    public static final class UnwrappedEntity extends Entity implements ScoreHolder {
+        public UnwrappedEntity() {
+            super(0);
+        }
+
+        public String getScoreboardName() {
+            return "unwrapped";
+        }
+    }
+
+    @Test
+    void anEntityCraftBukkitCannotWrapIsNotAScoreHolder() {
+        assertEquals(SelectorRules.Target.Kind.UNSUPPORTED, bridge.selectorTarget(new UnwrappedEntity()).kind());
+    }
+
     @Test
     @SuppressWarnings("unchecked")
     void feedbackOnlyUnsilencesCopiesAndKeepsTheOriginalSender() throws Exception {
