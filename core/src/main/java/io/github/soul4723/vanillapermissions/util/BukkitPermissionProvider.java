@@ -97,7 +97,6 @@ public final class BukkitPermissionProvider implements PermissionProvider {
     /** Whether {@code other} reads node values and meta from the same places, so swapping to it changes nothing. */
     boolean sameSourceAs(BukkitPermissionProvider other) {
         return Objects.equals(permissionsPlugin, other.permissionsPlugin)
-            && (meta == null) == (other.meta == null)
             && (loginPermissions == null) == (other.loginPermissions == null)
             && describeMeta().equals(other.describeMeta());
     }

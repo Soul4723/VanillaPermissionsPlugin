@@ -6,8 +6,8 @@ import org.bukkit.plugin.Plugin;
 /** Scheduling needed by core, supplied by the selected server adapter. */
 public interface PluginScheduler {
 
-    /** Runs on the player's owning thread, or calls {@code retired} if the player is no longer available. */
-    void runLater(Player player, Runnable task, long ticks, Runnable retired);
+    /** Runs on the player's owning thread, unless the player has left by then. */
+    void runLater(Player player, Runnable task, long ticks);
 
     /** Runs later on the server's global thread. */
     void runGlobal(Runnable task);
@@ -15,10 +15,9 @@ public interface PluginScheduler {
     static PluginScheduler bukkit(Plugin plugin) {
         return new PluginScheduler() {
             @Override
-            public void runLater(Player player, Runnable task, long ticks, Runnable retired) {
+            public void runLater(Player player, Runnable task, long ticks) {
                 plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
                     if (player.isOnline()) task.run();
-                    else retired.run();
                 }, ticks);
             }
 

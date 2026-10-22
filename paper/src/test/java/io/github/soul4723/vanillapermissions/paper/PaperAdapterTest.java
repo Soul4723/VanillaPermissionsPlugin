@@ -15,7 +15,7 @@ class PaperAdapterTest {
 
     @Test
     void paperApiSelectsThePaperAdapter() {
-        assertTrue(Adapters.candidates().get(0).probe().matches(), "Paper probe missed LifecycleEvents.COMMANDS");
+        assertTrue(Adapters.candidates().get(0).probe().getAsBoolean(), "Paper probe missed LifecycleEvents.COMMANDS");
         VersionAdapter adapter = Adapters.select(PaperAdapterTest.class.getClassLoader(), Logger.getAnonymousLogger());
         PaperAdapter paper = assertInstanceOf(PaperAdapter.class, adapter);
         assertEquals("paper", paper.id());

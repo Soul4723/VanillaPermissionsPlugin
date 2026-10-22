@@ -13,17 +13,13 @@ import java.util.function.Consumer;
 import static io.github.soul4723.vanillapermissions.util.TestLuckPerms.proxy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
 
+/** Folia: a command tree may only be resent from the player's own thread, so the resend goes through its scheduler. */
 class PaperSchedulerTest {
-    private final PluginScheduler scheduler = new PaperAdapter().scheduler(null);
-    private final AtomicInteger ran = new AtomicInteger();
-    private final AtomicInteger retired = new AtomicInteger();
-    private final AtomicReference<Consumer<ScheduledTask>> callback = new AtomicReference<>();
-    private final AtomicReference<Runnable> retiredCallback = new AtomicReference<>();
 
-    private Player player(boolean accepts) {
-        ScheduledTask accepted = proxy(ScheduledTask.class, (p, m, a) -> { throw new AssertionError(m); });
+    @Test
+    void taskRunsOnlyWhenTheEntitySchedulerCallsIt() {
+        AtomicReference<Consumer<ScheduledTask>> callback = new AtomicReference<>();
         EntityScheduler entity = proxy(EntityScheduler.class, (p, m, a) -> {
             assertEquals("runDelayed", m.getName());
             assertNull(a[0]);
@@ -31,38 +27,17 @@ class PaperSchedulerTest {
             @SuppressWarnings("unchecked")
             Consumer<ScheduledTask> task = (Consumer<ScheduledTask>) a[1];
             callback.set(task);
-            retiredCallback.set((Runnable) a[2]);
-            return accepts ? accepted : null;
+            return null;
         });
-        return proxy(Player.class, (p, m, a) -> {
+        Player player = proxy(Player.class, (p, m, a) -> {
             assertEquals("getScheduler", m.getName());
             return entity;
         });
-    }
-
-    @Test
-    void refreshRunsOnlyWhenTheEntitySchedulerCallsIt() {
-        scheduler.runLater(player(true), ran::incrementAndGet, 10, retired::incrementAndGet);
+        AtomicInteger ran = new AtomicInteger();
+        PluginScheduler scheduler = new PaperAdapter().scheduler(null);
+        scheduler.runLater(player, ran::incrementAndGet, 10);
         assertEquals(0, ran.get());
         callback.get().accept(null);
         assertEquals(1, ran.get());
-        assertEquals(0, retired.get());
-    }
-
-    @Test
-    void acceptedTaskCanRetireWithoutRunning() {
-        Runnable onRetired = retired::incrementAndGet;
-        scheduler.runLater(player(true), ran::incrementAndGet, 10, onRetired);
-        assertSame(onRetired, retiredCallback.get());
-        retiredCallback.get().run();
-        assertEquals(1, retired.get());
-        assertEquals(0, ran.get());
-    }
-
-    @Test
-    void alreadyRetiredEntityStillRunsCleanupWhenRunDelayedReturnsNull() {
-        scheduler.runLater(player(false), ran::incrementAndGet, 10, retired::incrementAndGet);
-        assertEquals(1, retired.get());
-        assertEquals(0, ran.get());
     }
 }

@@ -45,7 +45,7 @@ public class PermissionManager {
 
         Plugin luckPerms = plugins.getPlugin("LuckPerms");
         if (luckPerms != null) {
-            PermissionProvider connected = LuckPermsPermissionProvider.connect(plugin);
+            PermissionProvider connected = LuckPermsPermissionProvider.connect(plugin, luckPerms);
             if (connected != null) {
                 log.info("Using LuckPerms " + luckPerms.getDescription().getVersion()
                     + " for permission checks, contexts, and selector limits and weights");
@@ -55,12 +55,12 @@ public class PermissionManager {
         }
 
         BukkitSelection selection = selectBukkitProvider(plugin, true);
-        if (selection.provider().getPermissionsPlugin() != null) {
-            log.info("Using Bukkit permissions from " + selection.provider().getPermissionsPlugin()
+        if (selection.provider.getPermissionsPlugin() != null) {
+            log.info("Using Bukkit permissions from " + selection.provider.getPermissionsPlugin()
                 + "; whether command lists refresh after a permission change depends on that plugin");
         }
-        log.info(selection.metaLine());
-        return selection.provider();
+        log.info(selection.metaLine);
+        return selection.provider;
     }
 
     /**
@@ -76,10 +76,13 @@ public class PermissionManager {
         if (!keepLuckPerms) {
             BukkitSelection selection = selectBukkitProvider(plugin, false);
             if (!(current instanceof BukkitPermissionProvider)
-                    || !((BukkitPermissionProvider) current).sameSourceAs(selection.provider())) {
-                provider = selection.provider();
+                    || !((BukkitPermissionProvider) current).sameSourceAs(selection.provider)) {
+                provider = selection.provider;
                 current.close();
-                plugin.getLogger().info("Selected after all plugins enabled: " + selection.summary());
+                String permissionsPlugin = selection.provider.getPermissionsPlugin();
+                plugin.getLogger().info("Selected after all plugins enabled: "
+                    + (permissionsPlugin == null ? "Bukkit defaults only" : "Bukkit permissions from " + permissionsPlugin)
+                    + "; " + selection.metaLine.substring(0, 1).toLowerCase(Locale.ROOT) + selection.metaLine.substring(1));
             }
         }
         PermissionProvider selected = provider;
@@ -89,28 +92,14 @@ public class PermissionManager {
         }
     }
 
-    /** A Bukkit provider with the text to log for it. */
+    /** A Bukkit provider with the line to log about its selector meta. */
     private static final class BukkitSelection {
-        private final BukkitPermissionProvider provider;
-        private final String summary;
-        private final String metaLine;
+        final BukkitPermissionProvider provider;
+        final String metaLine;
 
-        BukkitSelection(BukkitPermissionProvider provider, String summary, String metaLine) {
+        BukkitSelection(BukkitPermissionProvider provider, String metaLine) {
             this.provider = provider;
-            this.summary = summary;
             this.metaLine = metaLine;
-        }
-
-        BukkitPermissionProvider provider() {
-            return provider;
-        }
-
-        String summary() {
-            return summary;
-        }
-
-        String metaLine() {
-            return metaLine;
         }
     }
 
@@ -138,10 +127,7 @@ public class PermissionManager {
         String metaLine = vault != null
             ? "Selector limits and weights come from Vault chat meta (" + vault.getChatName() + ")"
             : "Selector limits and weights are off: they need LuckPerms, or Vault with a chat meta provider";
-        String summary = (permissionsPlugin == null ? "Bukkit defaults only" : "Bukkit permissions from " + permissionsPlugin)
-            + "; " + metaLine.substring(0, 1).toLowerCase(Locale.ROOT) + metaLine.substring(1);
-        return new BukkitSelection(new BukkitPermissionProvider(permissionsPlugin, vault, loginPermissions, logger),
-            summary, metaLine);
+        return new BukkitSelection(new BukkitPermissionProvider(permissionsPlugin, vault, loginPermissions, logger), metaLine);
     }
 
     static String detectPermissionsPlugin(PluginManager plugins) {

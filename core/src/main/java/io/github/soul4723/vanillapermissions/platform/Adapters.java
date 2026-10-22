@@ -51,7 +51,7 @@ public final class Adapters {
             if (candidate.minimumJava() > javaVersion) continue;
             boolean matches;
             try {
-                matches = candidate.probe().matches();
+                matches = candidate.probe().getAsBoolean();
             } catch (LinkageError | RuntimeException error) {
                 logger.log(Level.WARNING, "Could not load the " + candidate.id() + " adapter", error);
                 continue;

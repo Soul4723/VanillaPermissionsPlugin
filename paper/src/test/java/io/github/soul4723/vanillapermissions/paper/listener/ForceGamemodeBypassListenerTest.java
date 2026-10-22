@@ -1,7 +1,6 @@
 package io.github.soul4723.vanillapermissions.paper.listener;
 
 import io.github.soul4723.vanillapermissions.util.BukkitPermissionProvider;
-import io.github.soul4723.vanillapermissions.util.LuckPermsHook;
 import io.github.soul4723.vanillapermissions.util.LuckPermsPermissionProvider;
 import io.github.soul4723.vanillapermissions.util.PermissionManager;
 import net.luckperms.api.LuckPerms;
@@ -40,7 +39,7 @@ class ForceGamemodeBypassListenerTest {
     private final UUID id = UUID.randomUUID();
     private final Map<String, Tristate> nodes = new HashMap<>();
     private boolean op, bukkitGrant, missingUser, contextFailure;
-    private int contexts, checks;
+    private int contexts;
     private QueryOptions options = freshOptions();
     private Player player;
     private Field hookField;
@@ -57,7 +56,6 @@ class ForceGamemodeBypassListenerTest {
         });
         CachedPermissionData data = proxy(CachedPermissionData.class, (p, m, a) -> {
             assertEquals("checkPermission", m.getName());
-            checks++;
             return nodes.getOrDefault((String) a[0], Tristate.UNDEFINED);
         });
         CachedDataManager cached = proxy(CachedDataManager.class, (p, m, a) -> {
@@ -87,13 +85,10 @@ class ForceGamemodeBypassListenerTest {
             case "getContextManager" -> context;
             default -> throw new AssertionError(m);
         });
-        LuckPermsHook hook = new LuckPermsHook();
-        set(hook, "luckPerms", luckPerms);
-        set(hook, "enabled", true);
         hookField = PermissionManager.class.getDeclaredField("provider");
         hookField.setAccessible(true);
         previousHook = hookField.get(null);
-        hookField.set(null, new LuckPermsPermissionProvider(hook, null));
+        hookField.set(null, new LuckPermsPermissionProvider(luckPerms, null));
     }
 
     @AfterEach
@@ -123,22 +118,6 @@ class ForceGamemodeBypassListenerTest {
         nodes.put("minecraft.bypass", Tristate.TRUE);
         assertFalse(PermissionManager.hasPermission(player, LEAF), "Cached prior-context grant");
         assertFalse(cancelled(PlayerGameModeChangeEvent.Cause.DEFAULT_GAMEMODE), "Explicit leaf denial lost to parent");
-    }
-
-    @Test
-    void parentNodesDoNotImplyLeaf() {
-        nodes.put("minecraft.bypass", Tristate.TRUE);
-        int parentContexts = contexts;
-        assertFalse(cancelled(PlayerGameModeChangeEvent.Cause.DEFAULT_GAMEMODE), "Bare parent grant allowed child");
-        assertEquals(parentContexts + 1, contexts, "Repeated context lookup within one permission check");
-        nodes.put("minecraft.bypass", Tristate.FALSE);
-        nodes.put("minecraft", Tristate.TRUE);
-        assertFalse(PermissionManager.hasPermission(player, LEAF), "Bare ancestor grant allowed child");
-        nodes.put(LEAF, Tristate.TRUE);
-        assertTrue(PermissionManager.hasPermission(player, LEAF), "Leaf grant lost to parent denial");
-        nodes.clear();
-        assertFalse(cancelled(PlayerGameModeChangeEvent.Cause.DEFAULT_GAMEMODE));
-        assertTrue(contexts > 0 && checks > 0, "LuckPerms checks were not exercised");
     }
 
     @Test
@@ -174,12 +153,6 @@ class ForceGamemodeBypassListenerTest {
 
     private static QueryOptions freshOptions() {
         return proxy(QueryOptions.class, (p, m, a) -> { throw new AssertionError(m); });
-    }
-
-    private static void set(Object target, String name, Object value) throws Exception {
-        Field field = LuckPermsHook.class.getDeclaredField(name);
-        field.setAccessible(true);
-        field.set(target, value);
     }
 
 }

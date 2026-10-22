@@ -8,18 +8,7 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import com.mojang.brigadier.tree.RootCommandNode;
 import io.github.soul4723.vanillapermissions.platform.PluginScheduler;
 import io.github.soul4723.vanillapermissions.selector.SelectorRules;
-import io.github.soul4723.vanillapermissions.util.LuckPermsHook;
-import io.github.soul4723.vanillapermissions.util.LuckPermsPermissionProvider;
-import io.github.soul4723.vanillapermissions.util.PermissionManager;
-import net.luckperms.api.LuckPerms;
-import net.luckperms.api.cacheddata.CachedDataManager;
-import net.luckperms.api.cacheddata.CachedPermissionData;
-import net.luckperms.api.cacheddata.Result;
-import net.luckperms.api.context.ContextManager;
-import net.luckperms.api.model.user.User;
-import net.luckperms.api.model.user.UserManager;
-import net.luckperms.api.node.Node;
-import net.luckperms.api.query.QueryOptions;
+import io.github.soul4723.vanillapermissions.util.TestLuckPerms;
 import net.luckperms.api.util.Tristate;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -27,7 +16,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -50,66 +38,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class BrigadierPermissionsTest {
     private static final String PERMISSION = "minecraft.command.gamemode.survival";
 
-    private final UUID id = UUID.randomUUID();
-    private Tristate result = Tristate.UNDEFINED;
+    private final TestLuckPerms luckPerms = new TestLuckPerms();
     private boolean vanilla = true;
     private int fallbackCalls;
     private TestSource source;
     private Predicate<Object> predicate;
-    private Field hookField;
-    private Object previousHook;
+
+    BrigadierPermissionsTest() throws ReflectiveOperationException {}
 
     @BeforeEach
-    void installPredicate() throws Exception {
-        Player player = proxy(Player.class, (proxy, method, values) -> {
+    void installPredicate() {
+        UUID id = UUID.randomUUID();
+        source = new TestSource(proxy(Player.class, (proxy, method, values) -> {
             if (method.getName().equals("getUniqueId")) return id;
             throw new AssertionError("Unexpected Player call: " + method);
-        });
-        QueryOptions options = proxy(QueryOptions.class, (proxy, method, values) -> {
-            throw new AssertionError("Unexpected QueryOptions call: " + method);
-        });
-        CachedPermissionData permissionData = proxy(CachedPermissionData.class, (proxy, method, values) -> {
-            assertEquals("queryPermission", method.getName());
-            assertEquals(PERMISSION, values[0]);
-            return new Result<Tristate, Node>() {
-                @Override public Tristate result() { return result; }
-                @Override public Node node() { return null; }
-            };
-        });
-        CachedDataManager cachedData = proxy(CachedDataManager.class, (proxy, method, values) -> {
-            assertEquals("getPermissionData", method.getName());
-            assertSame(options, values[0]);
-            return permissionData;
-        });
-        User user = proxy(User.class, (proxy, method, values) -> {
-            assertEquals("getCachedData", method.getName());
-            return cachedData;
-        });
-        UserManager users = proxy(UserManager.class, (proxy, method, values) -> {
-            assertEquals("getUser", method.getName());
-            assertEquals(id, values[0]);
-            return user;
-        });
-        ContextManager context = proxy(ContextManager.class, (proxy, method, values) -> {
-            assertEquals("getQueryOptions", method.getName());
-            assertSame(player, values[0]);
-            return options;
-        });
-        LuckPerms luckPerms = proxy(LuckPerms.class, (proxy, method, values) -> switch (method.getName()) {
-            case "getUserManager" -> users;
-            case "getContextManager" -> context;
-            default -> throw new AssertionError("Unexpected LuckPerms call: " + method);
-        });
-        LuckPermsHook hook = new LuckPermsHook() {
-            @Override public boolean isEnabled() { return true; }
-            @Override public LuckPerms getLuckPerms() { return luckPerms; }
-        };
-        hookField = PermissionManager.class.getDeclaredField("provider");
-        hookField.setAccessible(true);
-        previousHook = hookField.get(null);
-        hookField.set(null, new LuckPermsPermissionProvider(hook, null));
-
-        source = new TestSource(player);
+        }));
         Predicate<Object> fallback = value -> {
             assertSame(source, value, "Vanilla fallback received wrong command source");
             fallbackCalls++;
@@ -121,12 +64,12 @@ class BrigadierPermissionsTest {
                 return ((TestSource) value).getBukkitSender();
             }
         };
-        predicate = new BrigadierPermissions(null, bridge, null).permissionPredicate("gamemode.survival", fallback);
+        predicate = new BrigadierPermissions(null, bridge, null).new PermissionPredicate("gamemode.survival", fallback);
     }
 
     @AfterEach
-    void restoreHook() throws Exception {
-        hookField.set(null, previousHook);
+    void restoreProvider() throws IllegalAccessException {
+        luckPerms.close();
     }
 
     /** Folia: a command tree may only be resent from the player's own thread, so the resend goes through the scheduler. */
@@ -144,7 +87,7 @@ class BrigadierPermissionsTest {
         boolean[] disabled = {false};
         PluginScheduler scheduler = new PluginScheduler() {
             @Override
-            public void runLater(Player target, Runnable task, long ticks, Runnable retired) {
+            public void runLater(Player target, Runnable task, long ticks) {
                 assertSame(player, target);
                 if (disabled[0]) throw new IllegalStateException("Plugin attempted to register task while disabled");
                 scheduled.add(task);
@@ -167,14 +110,14 @@ class BrigadierPermissionsTest {
 
     @Test
     void explicitDenialOverridesVanilla() {
-        result = Tristate.FALSE;
+        luckPerms.nodes.put(PERMISSION, Tristate.FALSE);
         assertFalse(predicate.test(source), "Explicit LuckPerms denial yielded to vanilla permission");
         assertEquals(0, fallbackCalls, "Explicit denial invoked vanilla fallback");
     }
 
     @Test
     void explicitGrantOverridesVanilla() {
-        result = Tristate.TRUE;
+        luckPerms.nodes.put(PERMISSION, Tristate.TRUE);
         vanilla = false;
         assertTrue(predicate.test(source), "Explicit LuckPerms grant yielded to vanilla denial");
         assertEquals(0, fallbackCalls, "Explicit grant invoked vanilla fallback");
@@ -182,7 +125,6 @@ class BrigadierPermissionsTest {
 
     @Test
     void undefinedUsesVanillaRequirement() {
-        result = Tristate.UNDEFINED;
         vanilla = true;
         assertTrue(predicate.test(source), "Undefined LuckPerms permission lost vanilla grant");
         vanilla = false;

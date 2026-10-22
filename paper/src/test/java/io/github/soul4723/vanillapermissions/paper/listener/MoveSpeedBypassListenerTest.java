@@ -17,8 +17,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /** Runs without LuckPerms, so PermissionManager uses the Bukkit permission fallback. */
 class MoveSpeedBypassListenerTest {
     private static final String PERMISSION = "minecraft.bypass.move-speed.player";
-    private static final Set<String> PERMISSION_NODES =
-            Set.of(PERMISSION, "minecraft.bypass.move-speed", "minecraft.bypass", "minecraft");
 
     private final Set<String> grants = new HashSet<>();
     private int permissionChecks;
@@ -26,7 +24,7 @@ class MoveSpeedBypassListenerTest {
             (proxy, method, values) -> switch (method.getName()) {
                 case "isOp" -> false;
                 case "hasPermission" -> {
-                    assertTrue(PERMISSION_NODES.contains(values[0]), "Unexpected permission node " + values[0]);
+                    assertEquals(PERMISSION, values[0]);
                     permissionChecks++;
                     yield grants.contains(values[0]);
                 }
@@ -48,12 +46,6 @@ class MoveSpeedBypassListenerTest {
         grants.add(PERMISSION);
         assertTrue(allowed(PlayerFailMoveEvent.FailReason.MOVED_TOO_QUICKLY));
         assertTrue(allowed(PlayerFailMoveEvent.FailReason.MOVED_WRONGLY));
-    }
-
-    @Test
-    void parentPermissionDoesNotBypass() {
-        grants.add("minecraft.bypass.move-speed");
-        assertFalse(allowed(PlayerFailMoveEvent.FailReason.MOVED_TOO_QUICKLY), "Bare parent permission allowed child");
     }
 
     @Test

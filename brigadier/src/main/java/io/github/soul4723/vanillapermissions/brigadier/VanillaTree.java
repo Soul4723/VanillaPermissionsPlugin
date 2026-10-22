@@ -140,9 +140,19 @@ public final class VanillaTree {
      * {@code minecraft:<name>} alias (Paper 1.21.4+) is named without its namespace, like the command.
      */
     public static List<String> parsedPath(CommandContext<?> context) {
+        return path(HAS_ROOT_NODE ? context.getRootNode() : null, parsedNodes(context));
+    }
+
+    /**
+     * Brigadier 1.0.14 has no root node: it records the redirect target as the child's first parsed node instead,
+     * which after {@code execute … run} is the dispatcher root, whose empty name must not start the path.
+     */
+    static List<String> path(CommandNode<?> rootNode, List<ParsedNode> nodes) {
         List<String> path = new ArrayList<>();
-        if (HAS_ROOT_NODE && !(context.getRootNode() instanceof RootCommandNode<?>)) path.add(context.getRootNode().getName());
-        for (ParsedNode parsed : parsedNodes(context)) path.add(parsed.node().getName());
+        if (rootNode != null && !(rootNode instanceof RootCommandNode<?>)) path.add(rootNode.getName());
+        for (ParsedNode parsed : nodes) {
+            if (!(parsed.node() instanceof RootCommandNode<?>)) path.add(parsed.node().getName());
+        }
         if (!path.isEmpty() && path.get(0).startsWith(VANILLA_NAMESPACE)) {
             path.set(0, path.get(0).substring(VANILLA_NAMESPACE.length()));
         }

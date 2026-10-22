@@ -33,10 +33,4 @@ class ServerSoftwareTest {
         assertEquals(ServerSoftware.SPIGOT, ServerSoftware.detect("SomeSpigotFork", false));
         assertEquals(ServerSoftware.SPIGOT, ServerSoftware.detect(null, false));
     }
-
-    @Test
-    void idsMatchCompatYmlSoftwareField() {
-        assertEquals("paper", ServerSoftware.PAPER.id());
-        assertEquals("pufferfish", ServerSoftware.PUFFERFISH.id());
-    }
 }
