@@ -2,7 +2,6 @@ package io.github.soul4723.vanillapermissions.spigot;
 
 import com.mojang.brigadier.context.CommandContext;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -270,7 +269,7 @@ final class SpigotNames {
             this.kind = kind;
             this.owner = owner;
             this.type = type;
-            this.parameters = Collections.unmodifiableList(new ArrayList<>(Arrays.asList(parameters)));
+            this.parameters = Collections.unmodifiableList(Arrays.asList(parameters));
             this.mojang = mojang;
             this.rows = Collections.unmodifiableList(Arrays.asList(rows));
         }
