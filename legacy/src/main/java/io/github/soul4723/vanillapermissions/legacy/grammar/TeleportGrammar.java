@@ -34,7 +34,7 @@ public final class TeleportGrammar extends Grammar {
     }
 
     @Override
-    public Parse parse(String command, String[] args, LegacyVersion version) {
+    public Parse parse(String command, String[] args) {
         Parse.Builder parse = Parse.root("teleport");
         int count = args.length;
         if ("teleport".equalsIgnoreCase(command)) {

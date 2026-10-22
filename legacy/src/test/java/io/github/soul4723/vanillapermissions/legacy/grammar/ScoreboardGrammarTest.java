@@ -159,8 +159,8 @@ class ScoreboardGrammarTest {
     @Test
     void playersTagIsParsedButNotListedOnOnePointEight() {
         assertEquals("tag.targets.add.name", grammar.parse("scoreboard",
-            new String[] {"players", "tag", "Bob", "add", "vip"}, V8).describe());
-        assertEquals("tag", grammar.parse("scoreboard", new String[] {"players", "tag"}, V8).describe());
+            new String[] {"players", "tag", "Bob", "add", "vip"}).describe());
+        assertEquals("tag", grammar.parse("scoreboard", new String[] {"players", "tag"}).describe());
         assertFalse(grammar.nodePaths(V8).contains("tag"));
     }
 
@@ -245,7 +245,7 @@ class ScoreboardGrammarTest {
             sb(v, "teams option red collisionRule " + value, "team.modify.team.collisionRule." + value);
         }
         assertEquals("team.modify.team.collisionRule." + value,
-            grammar.parse("scoreboard", new String[] {"teams", "option", "red", "collisionRule", value}, V8).describe());
+            grammar.parse("scoreboard", new String[] {"teams", "option", "red", "collisionRule", value}).describe());
         assertFalse(grammar.nodePaths(V8).contains("team.modify.team.collisionRule"));
     }
 

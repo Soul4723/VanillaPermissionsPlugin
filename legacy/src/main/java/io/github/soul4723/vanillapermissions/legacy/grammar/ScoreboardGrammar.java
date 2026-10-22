@@ -99,7 +99,7 @@ public final class ScoreboardGrammar extends Grammar {
     }
 
     @Override
-    public Parse parse(String command, String[] args, LegacyVersion version) {
+    public Parse parse(String command, String[] args) {
         String group = Tokens.at(args, 0);
         if (Tokens.is(group, "objectives")) return objectives(args);
         if (Tokens.is(group, "players")) return players(args);

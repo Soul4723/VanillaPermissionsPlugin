@@ -22,7 +22,7 @@ public final class WeatherGrammar extends Grammar {
     }
 
     @Override
-    public Parse parse(String command, String[] args, LegacyVersion version) {
+    public Parse parse(String command, String[] args) {
         Parse.Builder parse = Parse.root("weather");
         String token = Tokens.at(args, 0);
         for (String keyword : KEYWORDS) {

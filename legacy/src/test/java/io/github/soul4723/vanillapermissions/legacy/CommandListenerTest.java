@@ -1,6 +1,5 @@
 package io.github.soul4723.vanillapermissions.legacy;
 
-import io.github.soul4723.vanillapermissions.legacy.grammar.LegacyVersion;
 import io.github.soul4723.vanillapermissions.selector.SelectorRules;
 import org.bukkit.Server;
 import org.bukkit.command.Command;
@@ -44,7 +43,7 @@ class CommandListenerTest {
         CommandGuard guard = new CommandGuard(broken, new SelectorRules.Permissions() {
             @Override public boolean hasPermission(CommandSender sender, String node, boolean fallback) { return fallback; }
             @Override public OptionalInt getIntegerMeta(UUID id, CommandSender subject, String node) { return OptionalInt.empty(); }
-        }, LegacyVersion.V1_12_2);
+        });
         Logger logger = Logger.getAnonymousLogger();
         logger.setUseParentHandlers(false);
         CommandListener listener = new CommandListener(guard, logger);

@@ -71,7 +71,7 @@ public final class LegacyAdapter implements VersionAdapter {
         LegacyServer server = new LegacyServer(plugin.getServer(), plugin.getLogger());
         List<String> vanilla = server.vanillaCommandNames();
         if (vanilla.isEmpty()) throw new IllegalStateException("CraftBukkit registered no VanillaCommandWrapper commands");
-        CommandGuard guard = new CommandGuard(server, SelectorRules.PERMISSION_MANAGER, version);
+        CommandGuard guard = new CommandGuard(server, SelectorRules.PERMISSION_MANAGER);
 
         CommandListener commands = new CommandListener(guard, plugin.getLogger());
         plugin.getServer().getPluginManager().registerEvents(commands, plugin);

@@ -21,7 +21,7 @@ public final class GiveGrammar extends Grammar {
     }
 
     @Override
-    public Parse parse(String command, String[] args, LegacyVersion version) {
+    public Parse parse(String command, String[] args) {
         Parse.Builder parse = Parse.root("give");
         if (args.length > 0) parse.players("targets", 0);
         parse.arguments(args, 1, "item", "count");

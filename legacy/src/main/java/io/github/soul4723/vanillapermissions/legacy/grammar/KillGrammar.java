@@ -17,7 +17,7 @@ public final class KillGrammar extends Grammar {
     }
 
     @Override
-    public Parse parse(String command, String[] args, LegacyVersion version) {
+    public Parse parse(String command, String[] args) {
         Parse.Builder parse = Parse.root("kill");
         if (args.length > 0) parse.entities("targets", 0);
         return parse.build();

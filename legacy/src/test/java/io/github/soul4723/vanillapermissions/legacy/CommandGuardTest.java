@@ -1,6 +1,5 @@
 package io.github.soul4723.vanillapermissions.legacy;
 
-import io.github.soul4723.vanillapermissions.legacy.grammar.LegacyVersion;
 import io.github.soul4723.vanillapermissions.legacy.grammar.Tokens;
 import io.github.soul4723.vanillapermissions.selector.SelectorRules;
 import org.bukkit.command.Command;
@@ -40,7 +39,7 @@ class CommandGuardTest {
             default -> null;
         });
     private final FakeServer server = new FakeServer();
-    private final CommandGuard guard = new CommandGuard(server, new FakePermissions(), LegacyVersion.V1_12_2);
+    private final CommandGuard guard = new CommandGuard(server, new FakePermissions());
 
     CommandGuardTest() {
         for (String name : List.of("gamemode", "time", "kill", "execute", "tell", "xp", "say", "tp", "scoreboard")) server.vanilla(name);
@@ -392,7 +391,7 @@ class CommandGuardTest {
                 lookups.merge(node, 1, Integer::sum);
                 return super.hasPermission(sender, node, fallback);
             }
-        }, LegacyVersion.V1_12_2);
+        });
         List<String> names = new ArrayList<>();
         for (int i = 0; i < 200; i++) names.add("Player" + i);
         assertEquals(names, counting.filterCompletions(alice, "/tp ", names));

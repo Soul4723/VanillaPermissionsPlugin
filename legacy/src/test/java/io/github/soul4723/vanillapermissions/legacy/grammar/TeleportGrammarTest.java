@@ -70,8 +70,8 @@ class TeleportGrammarTest {
     @Test
     void emptyTokensCountLikeVanilla() {
         // "tp a  b" splits into three tokens, one empty
-        assertEquals("teleport.location", grammar.parse("tp", new String[] {"a", "", "b"}, LegacyVersion.V1_8_8).describe());
-        assertEquals("teleport.destination", grammar.parse("tp", new String[] {""}, LegacyVersion.V1_8_8).describe());
+        assertEquals("teleport.location", grammar.parse("tp", new String[] {"a", "", "b"}).describe());
+        assertEquals("teleport.destination", grammar.parse("tp", new String[] {""}).describe());
     }
 
     @Test
@@ -90,19 +90,11 @@ class TeleportGrammarTest {
         }
     }
 
-    @Test
-    void teleportParsingDoesNotApplyVersionGate() {
-        for (LegacyVersion v : new LegacyVersion[] {LegacyVersion.V1_8_8, LegacyVersion.V1_9_4}) {
-            assertEquals("teleport.targets.location",
-                grammar.parse("teleport", new String[] {"Alice", "1", "2", "3"}, v).describe());
-        }
-    }
-
     @ParameterizedTest
     @ValueSource(strings = {"TELEPORT", "Teleport"})
     void commandNameIgnoresCase(String name) {
         assertEquals("teleport.targets.location",
-            grammar.parse(name, new String[] {"a", "1", "2", "3"}, LegacyVersion.V1_12_2).describe());
+            grammar.parse(name, new String[] {"a", "1", "2", "3"}).describe());
     }
 
     @Test

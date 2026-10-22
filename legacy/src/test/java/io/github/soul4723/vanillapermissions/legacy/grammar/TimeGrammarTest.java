@@ -35,7 +35,7 @@ class TimeGrammarTest {
 
     @Test
     void queryDayIsParsedButOnlyListedFrom1_12() {
-        Parse older = grammar.parse("time", new String[] {"query", "day"}, LegacyVersion.V1_11_2);
+        Parse older = grammar.parse("time", new String[] {"query", "day"});
         assertEquals("time.query.day", older.describe());
         assertPath(grammar, LegacyVersion.V1_12_2, "query day", "time.query.day");
         assertFalse(grammar.nodePaths(LegacyVersion.V1_11_2).contains("time.query.day"));

@@ -2,7 +2,6 @@ package io.github.soul4723.vanillapermissions.legacy;
 
 import io.github.soul4723.vanillapermissions.legacy.grammar.Grammar;
 import io.github.soul4723.vanillapermissions.legacy.grammar.Grammars;
-import io.github.soul4723.vanillapermissions.legacy.grammar.LegacyVersion;
 import io.github.soul4723.vanillapermissions.legacy.grammar.Parse;
 import io.github.soul4723.vanillapermissions.legacy.grammar.Tokens;
 import io.github.soul4723.vanillapermissions.selector.RandomSelectors;
@@ -66,12 +65,10 @@ final class CommandGuard {
 
     private final Server server;
     private final SelectorRules.Permissions permissions;
-    private final LegacyVersion version;
 
-    CommandGuard(Server server, SelectorRules.Permissions permissions, LegacyVersion version) {
+    CommandGuard(Server server, SelectorRules.Permissions permissions) {
         this.server = server;
         this.permissions = permissions;
-        this.version = version;
     }
 
     /** Checks a typed line without its slash. Returns the message to show, or {@code null} to let it run. */
@@ -114,7 +111,7 @@ final class CommandGuard {
 
         Grammar grammar = Grammars.forCommand(name);
         if (grammar == null) return null;
-        Parse parse = grammar.parse(name, args, version);
+        Parse parse = grammar.parse(name, args);
         for (int token : parse.selectorTokens()) {
             if (!args[token].startsWith("@")) continue;
             if (offsetContext) return NO_PERMISSION;
@@ -216,7 +213,7 @@ final class CommandGuard {
         Grammar grammar = Grammars.forCommand(command.getName());
         if (grammar == null) return completions;
         String[] args = Arrays.copyOfRange(tokens, 1, tokens.length);
-        Parse typed = grammar.parse(command.getName(), args, version);
+        Parse typed = grammar.parse(command.getName(), args);
         // The last token belongs to the command /execute runs: filter it as that command's completion, once the
         // /execute part itself (which no longer depends on the last token) is allowed.
         if (typed.innerCommandStart() >= 0 && typed.innerCommandStart() < args.length - 1) {
@@ -227,7 +224,7 @@ final class CommandGuard {
         List<String> allowed = new ArrayList<>(completions.size());
         for (String completion : completions) {
             probe[probe.length - 1] = completion;
-            if (nodesAllowed(player, grammar.parse(command.getName(), probe, version).checkedNodes(), deniedNodes)) {
+            if (nodesAllowed(player, grammar.parse(command.getName(), probe).checkedNodes(), deniedNodes)) {
                 allowed.add(completion);
             }
         }

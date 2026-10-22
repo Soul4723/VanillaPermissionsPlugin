@@ -54,8 +54,7 @@ public abstract class Grammar {
      *
      * @param command the legacy command name, one of {@link #commands()}
      * @param args the tokens after the label, split on single spaces like CraftBukkit does (may contain empty tokens)
-     * @param version the running server's version
      * @return the deepest path the tokens reach; at least the root
      */
-    public abstract Parse parse(String command, String[] args, LegacyVersion version);
+    public abstract Parse parse(String command, String[] args);
 }

@@ -22,7 +22,7 @@ final class GrammarAssertions {
      * every segment of the parse is one of {@link Grammar#nodePaths}, so the start-up count cannot drift.
      */
     static Parse assertPath(Grammar grammar, LegacyVersion version, String command, String line, String expected) {
-        Parse parse = grammar.parse(command, Tokens.split(line), version);
+        Parse parse = grammar.parse(command, Tokens.split(line));
         assertEquals(expected, parse.describe(), () -> "/" + command + " " + line + " on " + version);
         assertProducible(grammar, version, parse);
         return parse;

@@ -26,7 +26,7 @@ public final class EffectGrammar extends Grammar {
     }
 
     @Override
-    public Parse parse(String command, String[] args, LegacyVersion version) {
+    public Parse parse(String command, String[] args) {
         Parse.Builder parse = Parse.root("effect");
         if (args.length < 2) return parse.build();
         if (Tokens.is(args[1], "clear")) {
