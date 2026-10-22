@@ -94,6 +94,7 @@ Command nodes and selector control work on every supported version. Some feature
 
 - **Bypasses:** the force-gamemode and move-speed bypasses need Paper's events, so they do nothing on Spigot 1.13+. The force-gamemode bypass also needs Paper 1.16.5 or later and the move-speed bypass Paper 1.20.4 or later; on older Paper versions the nodes have no effect. `/vanillapermissions check` says so.
 - **Selectors:** random selectors (`@r`, `sort=random`) are checked against every entity they could pick, because the server draws again when the command runs. On 1.13+, selectors in `/execute` forks (`as`, `at`) are not checked per fork. See [Selectors](permissions.md#selectors).
+- **Selectors in score-holder arguments (Spigot and Paper 1.13 - 1.20.2):** the server hands a selector such as `@a` in `/scoreboard players set @a obj 1` to the plugin as plain names, so there is nothing to tell a player from an entity. Only the `minecraft.selector` syntax node and the limit apply there; the scope and weight rules do not. From 1.20.3 the server returns entities and the scope and weight rules apply as everywhere else. See [Selectors](permissions.md#selectors).
 - **Upstream nodes not added**, because the server has no API for them: `minecraft.bypass.spawn-protection`, `minecraft.bypass.chat-speed`, `minecraft.bypass.move-speed.vehicle.<entity>`, `minecraft.debug_chart`, `minecraft.<query|load>.<entity|block>`, `minecraft.adminbroadcast.receive` (use Paper's `minecraft.admin.command_feedback`) and the operator block `edit` action.
 
 ### Runtime
