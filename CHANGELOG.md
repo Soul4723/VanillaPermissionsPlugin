@@ -28,6 +28,9 @@ Replace the jar to upgrade from 1.0.0; there is no config file and node names ar
 - Random selectors (`@r`, or any selector with `sort=random`) are checked against every entity they could pick, because the server picks again when the command runs. A weight rule now denies `/kill @r` if any possible target outranks the sender.
 - Console and command blocks no longer fail on `/scoreboard players ... *` and on `/execute unless entity ...` with an empty selection. Player checks keep vanilla's wildcard score holders (`*`) and empty selections. This also fixes the behaviour shipped on Paper in 1.0.0.
 - On 1.8.8 - 1.12.2 a command whose check fails with an error is refused instead of running unchecked, and tab completion for the command an `/execute` runs is filtered too.
+- From Minecraft 1.21.9, `/op`, `/deop`, `/ban`, `/pardon` and `/whitelist add|remove` are no longer refused for players with "This target cannot be checked against selector permissions"; their profile targets are checked as players. This also fixes the behaviour shipped on Paper in 1.0.0.
+- Selector rules can no longer be skipped when the second lookup of the command sender fails; the first lookup is used. This also fixes the behaviour shipped on Paper in 1.0.0.
+- An entity that CraftBukkit cannot wrap is refused by selector rules instead of being treated as a score-holder name and skipped. This also fixes the behaviour shipped on Paper in 1.0.0.
 
 ## [1.0.0] - 2026-10-20
 
