@@ -183,7 +183,7 @@ public final class BrigadierPermissions {
                 continue;
             }
             try {
-                scheduler.runLater(player, () -> updateCommands(player, logTarget), 1, () -> {});
+                scheduler.runLater(player, () -> updateCommands(player, logTarget), 1);
             } catch (RuntimeException unschedulable) {
                 updateCommands(player, logTarget);
             }

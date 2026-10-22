@@ -144,7 +144,7 @@ class BrigadierPermissionsTest {
         boolean[] disabled = {false};
         PluginScheduler scheduler = new PluginScheduler() {
             @Override
-            public void runLater(Player target, Runnable task, long ticks, Runnable retired) {
+            public void runLater(Player target, Runnable task, long ticks) {
                 assertSame(player, target);
                 if (disabled[0]) throw new IllegalStateException("Plugin attempted to register task while disabled");
                 scheduled.add(task);

@@ -33,10 +33,8 @@ public final class PaperAdapter implements VersionAdapter {
     public PluginScheduler scheduler(JavaPlugin plugin) {
         return new PluginScheduler() {
             @Override
-            public void runLater(Player player, Runnable task, long ticks, Runnable retired) {
-                if (player.getScheduler().runDelayed(plugin, scheduled -> task.run(), retired, ticks) == null) {
-                    retired.run();
-                }
+            public void runLater(Player player, Runnable task, long ticks) {
+                player.getScheduler().runDelayed(plugin, scheduled -> task.run(), null, ticks);
             }
 
             @Override
