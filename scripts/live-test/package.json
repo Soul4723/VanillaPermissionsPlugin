@@ -4,9 +4,10 @@
   "description": "Live permission tests for VanillaPermissionsPlugin: boots a server and drives a headless bot",
   "license": "MIT",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "dependencies": {
+    "minecraft-data": "3.117.0",
     "minecraft-protocol": "1.68.0",
     "prismarine-nbt": "2.8.0"
   }
