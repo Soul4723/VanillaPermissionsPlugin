@@ -55,4 +55,27 @@ class VanillaTreeTest {
         for (VanillaTree.ParsedNode node : VanillaTree.fromMap(map)) names.add(node.node().getName() + "@" + node.range().getStart());
         assertEquals(List.of("time@0", "set@5", "time@9"), names);
     }
+
+    /**
+     * Brigadier 1.0.14 puts the redirect target first in the child context's node map: the command for {@code /tp},
+     * the dispatcher root for {@code execute run}. Neither may leave the command name out of the selector path.
+     */
+    @Test
+    void mapFormPathsAfterRedirectsStartWithTheCommand() {
+        CommandDispatcher<Object> dispatcher = new CommandDispatcher<>();
+        dispatcher.register(literal("gamemode").then(literal("creative").then(argument("target", word()))));
+        dispatcher.register(literal("teleport").then(argument("destination", word())));
+        CommandNode<Object> root = dispatcher.getRoot();
+        CommandNode<Object> creative = root.getChild("gamemode").getChild("creative");
+        Map<CommandNode<Object>, StringRange> afterRun = new LinkedHashMap<>();
+        afterRun.put(root, StringRange.between(8, 11));
+        afterRun.put(root.getChild("gamemode"), StringRange.between(12, 20));
+        afterRun.put(creative, StringRange.between(21, 29));
+        afterRun.put(creative.getChild("target"), StringRange.between(30, 33));
+        assertEquals(List.of("gamemode", "creative", "target"), VanillaTree.path(null, VanillaTree.fromMap(afterRun)));
+        Map<CommandNode<Object>, StringRange> afterTp = new LinkedHashMap<>();
+        afterTp.put(root.getChild("teleport"), StringRange.between(0, 2));
+        afterTp.put(root.getChild("teleport").getChild("destination"), StringRange.between(3, 6));
+        assertEquals(List.of("teleport", "destination"), VanillaTree.path(null, VanillaTree.fromMap(afterTp)));
+    }
 }
