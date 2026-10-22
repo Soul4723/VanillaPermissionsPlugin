@@ -13,7 +13,7 @@ Copy-paste setups, written for LuckPerms. They assume a non-operator group calle
 /lp group member permission set minecraft.selector.player.gamemode.target.survival.target false
 ```
 
-`/gamemode survival` and `/gamemode survival @s` work; `/gamemode survival Steve` is refused, and `@a` is refused while anyone else is online (the check only refuses targets other than the caller). Checked on Paper 1.21.11 with LuckPerms only; `@a` is accepted when the caller is the only player online.
+`/gamemode survival` and `/gamemode survival @s` work; `/gamemode survival Steve` is refused, and `@a` is refused while anyone else is online (the check only refuses targets other than the caller), so it works when the caller is the only player online.
 
 The selector node (`…gamemode.target.survival.target`) is shaped differently from the command node (`minecraft.command.gamemode.survival.target`) because the selector path starts with the command and the argument being checked (`gamemode.target`) and then lists the rest of what was typed (`survival.target`), the layout upstream uses, while the command node follows the command tree (mode first, then target).
 
@@ -27,7 +27,7 @@ Not to or of other players:
 /lp group member permission set minecraft.command.teleport.targets false
 ```
 
-Checked on Paper 1.21.11 with LuckPerms only, as a non-operator:
+As a non-operator:
 
 - `/tp 100 64 100` works. Its node is `minecraft.command.teleport.location`, which the recipe leaves unset (allowed).
 - `/tp <player>`, `/tp @s <player>`, `/tp Bob 1 64 1` and `/tp @a 1 64 1` are refused.
@@ -45,7 +45,7 @@ Moderators can apply `/effect` to other players, at most five at a time:
 
 Limit and weight meta have no wildcards, but the plugin looks for the most specific key first and then drops the last part of the path until it finds one that is set. `minecraft.selector.limit.effect.targets` is the shortest key, so it caps every way of typing `/effect` (give and clear, with or without `<seconds>`, `<amplifier>` and `<hideParticles>`). To cap only `/effect give`, set `minecraft.selector.limit.effect.targets.give` instead. A longer key set on the same group overrides a shorter one for its own form, so you can allow more targets for one form. Weights work the same way: each player's weight is the most specific `minecraft.selector.weight…` key set for them along the same path. Keys written in upstream's full form still work.
 
-To find the key for a form you want to limit, run `/lp verbose on <player> & minecraft.selector`, have the player type that form with a selector, then `/lp verbose off`: the output has a line such as `meta: minecraft.selector.limit.effect.targets.give.targets.effect.seconds.amplifier - null`, and you can set that key or any shorter one that starts the same way. The verbose output was checked on Paper 1.21.11 only.
+To find the key for a form you want to limit, run `/lp verbose on <player> & minecraft.selector`, have the player type that form with a selector, then `/lp verbose off`: the output has a line such as `meta: minecraft.selector.limit.effect.targets.give.targets.effect.seconds.amplifier - null`, and you can set that key or any shorter one that starts the same way.
 
 ## Debug stick for builders
 
@@ -78,7 +78,7 @@ You do not need this for ordinary players. A non-operator has no vanilla operato
 
 ### What `minecraft.command.* false` also turns off
 
-On Paper 1.21.11 with LuckPerms, a non-operator in a group with `minecraft.command.* false` lost `/me`, `/msg`, `/tell`, `/w`, `/teammsg`, `/tm`, `/trigger` and `/minecraft:help` (all answered "Unknown or incomplete command"), because Paper gives these to everyone through nodes that the wildcard also matches. The wildcard also matches Paper's `minecraft.command.selector`, so `@` selectors stopped working. Bukkit's own `/help` was not affected. To keep them, add these lines (checked on Paper 1.21.11 only: each command works again, with arguments):
+A non-operator in a group with `minecraft.command.* false` loses `/me`, `/msg`, `/tell`, `/w`, `/teammsg`, `/tm`, `/trigger` and `/minecraft:help` (they answer "Unknown or incomplete command"), because Paper gives these to everyone through nodes that the wildcard also matches. The wildcard also matches Paper's `minecraft.command.selector`, so `@` selectors stop working. Bukkit's own `/help` is not affected. To keep them, add these lines:
 
 ```text
 /lp group admin permission set minecraft.command.{me,msg,tell,w,teammsg,tm,trigger,help} true
@@ -96,7 +96,7 @@ Every recipe is just a list of `node value` pairs, so translate each line to you
 
 ### GroupManager
 
-GroupManager 3.2 with Vault 1.7.3, checked on Paper 1.20.6 and 1.21.11. Its `groups.yml` has a top-level `groups:` key, then one entry per group with `default`, a `permissions` list, `inheritance` and `info` (the structure of the `groups.yml` that GroupManager generates on first start). In `permissions`, `node` grants, `-node` negates (the node is `false`) and `+node` is an exception to a broader negation.
+GroupManager 3.2 with Vault 1.7.3. Its `groups.yml` has a top-level `groups:` key, then one entry per group with `default`, a `permissions` list, `inheritance` and `info` (the structure of the `groups.yml` that GroupManager generates on first start). In `permissions`, `node` grants, `-node` negates (the node is `false`) and `+node` is an exception to a broader negation.
 
 The file is per world: `plugins/GroupManager/worlds/<world>/groups.yml` (`worlds/world/groups.yml` for the default world). The self-only survival recipe becomes a new group:
 
@@ -116,16 +116,11 @@ groups:
       build: true
 ```
 
-Add the group to the existing `groups:` list, save the file, run `manload` (console, or `/manload` in game) to reload it, then put a player in it with `manuadd <player> Member`. What was seen on both versions, with a non-operator in `Member`:
+Add the group to the existing `groups:` list, save the file, run `manload` (console, or `/manload` in game) to reload it, then put a player in it with `manuadd <player> Member`. A non-operator in `Member` can use `/gamemode survival` and `/gamemode survival @s`, is refused the other game modes and other players, and cannot use `/time` (not granted).
 
-- `/gamemode survival` works on both versions, and `/gamemode survival @s` and `@a` (alone on the server) work on 1.21.11.
-- `/gamemode creative`, `adventure` and `spectator` are refused.
-- `/gamemode survival <other player>` and `/gamemode survival @a` (with another player online) answer `You do not have permission to target other players here`.
-- `/time set day` is refused (`/time` was not granted).
+How GroupManager's nodes behave with this plugin:
 
-How GroupManager's nodes behave with this plugin (Paper 1.21.11, checked with `/vanillapermissions check`):
-
-- `-node` shows as `false`. It only affects its own node, not the broader one: with `minecraft.command.time`, `minecraft.command.time.query` and `-minecraft.command.time.set` in one group, `/time query daytime` works, `/time set day` is refused, and `/time add 1` (unset) follows vanilla.
+- `-node` shows as `false` and only affects its own node, not the broader one: with `minecraft.command.time`, `minecraft.command.time.query` and `-minecraft.command.time.set` in one group, `/time query daytime` works, `/time set day` is refused, and `/time add 1` (unset) follows vanilla.
 - `+minecraft.command.time.query` shows as `true`.
-- **Wildcards do nothing here.** `minecraft.command.*` and `minecraft.command.time.*` show their sub-nodes as unset, so list nodes explicitly. A `-minecraft.command.*` in the group also made an explicit `minecraft.command.time` in the same group show as unset (GroupManager's own `manucheckp` reported the negation for it). The "Take every vanilla command away from staff" recipe above therefore does not translate; non-operators already lack vanilla commands whose nodes are unset, so grant only what the group needs.
-- Selector limits and weights were not tested with GroupManager.
+- **Wildcards do nothing here.** `minecraft.command.*` and `minecraft.command.time.*` show their sub-nodes as unset, so list nodes explicitly. A `-minecraft.command.*` in the group also makes an explicit `minecraft.command.time` in the same group show as unset. The "Take every vanilla command away from staff" recipe above therefore does not translate; non-operators already lack vanilla commands whose nodes are unset, so grant only what the group needs.
+- Selector limits and weights depend on Vault chat info and were not tested with GroupManager.
