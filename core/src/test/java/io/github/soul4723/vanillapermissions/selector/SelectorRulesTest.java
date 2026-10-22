@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** The platform-free selector rules; the Brigadier wrapper is covered by SelectorPolicyTest. */
+/** The platform-free selector rules; the Brigadier wrapper is covered by SelectorTargetsTest. */
 class SelectorRulesTest {
     private static final UUID SOURCE_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
     private static final UUID OTHER_ID = UUID.fromString("00000000-0000-0000-0000-000000000002");

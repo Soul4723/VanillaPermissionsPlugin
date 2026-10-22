@@ -3,17 +3,16 @@ package io.github.soul4723.vanillapermissions.brigadier;
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.soul4723.vanillapermissions.selector.SelectorRules;
+import io.github.soul4723.vanillapermissions.util.TestLuckPerms;
+import net.luckperms.api.util.Tristate;
 import net.minecraft.server.players.NameAndId;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Proxy;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -21,10 +20,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class SelectorPolicyTest {
+class SelectorTargetsTest {
     private static final UUID SOURCE_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
     private static final UUID OTHER_ID = UUID.fromString("00000000-0000-0000-0000-000000000002");
-    private static final UUID THIRD_ID = UUID.fromString("00000000-0000-0000-0000-000000000003");
     private static final List<String> COMMAND_PATH = List.of("teleport", "targets", "destination");
     private static final String PATH = "teleport.targets.targets.destination";
 
@@ -51,37 +49,15 @@ class SelectorPolicyTest {
     }
 
     @Test
-    void validateRejectsTooManyTargetsWithTheLimit() {
-        Map<String, Integer> meta = Map.of(SOURCE_ID + ":minecraft.selector.limit." + PATH, 1);
-        CommandSyntaxException error = assertThrows(CommandSyntaxException.class, () -> SelectorPolicy.validate(
-                player(SOURCE_ID), COMMAND_PATH, "targets",
-                List.of(SelectorRules.Target.entity(entity(OTHER_ID)), SelectorRules.Target.entity(entity(THIRD_ID))),
-                permissions(Map.of(), meta)));
-        assertEquals("You can select at most 1 target here", error.getMessage());
-    }
-
-    @Test
-    void validateRejectsEntitiesWithoutTheEntityScope() {
-        Map<String, Boolean> nodes = Map.of("minecraft.selector.entity." + PATH, false);
-        CommandSyntaxException error = assertThrows(CommandSyntaxException.class, () -> SelectorPolicy.validate(
-                player(SOURCE_ID), COMMAND_PATH, "targets",
-                List.of(SelectorRules.Target.entity(entity(OTHER_ID))), permissions(nodes, Map.of())));
-        assertEquals("You do not have permission to target non-player entities here", error.getMessage());
-    }
-
-    private static SelectorRules.Permissions permissions(Map<String, Boolean> nodes, Map<String, Integer> meta) {
-        return new SelectorRules.Permissions() {
-            @Override
-            public boolean hasPermission(CommandSender sender, String node, boolean fallback) {
-                return nodes.getOrDefault(node, fallback);
-            }
-
-            @Override
-            public OptionalInt getIntegerMeta(UUID subjectId, CommandSender onlineSubject, String node) {
-                Integer value = meta.get(subjectId + ":" + node);
-                return value == null ? OptionalInt.empty() : OptionalInt.of(value);
-            }
-        };
+    void deniedSelectionsFailWithTheRulesMessage() throws Exception {
+        List<Entity> zombies = List.of(entity(OTHER_ID));
+        SelectorTargets.validate(player(SOURCE_ID), COMMAND_PATH, "targets", zombies, zombies, SelectorTargets::target);
+        try (TestLuckPerms luckPerms = new TestLuckPerms()) {
+            luckPerms.nodes.put("minecraft.selector.entity." + PATH, Tristate.FALSE);
+            CommandSyntaxException error = assertThrows(CommandSyntaxException.class, () -> SelectorTargets.validate(
+                    player(SOURCE_ID), COMMAND_PATH, "targets", zombies, zombies, SelectorTargets::target));
+            assertEquals("You do not have permission to target non-player entities here", error.getMessage());
+        }
     }
 
     private static Player player(UUID id) {

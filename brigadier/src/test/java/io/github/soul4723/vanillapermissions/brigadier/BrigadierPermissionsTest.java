@@ -64,7 +64,7 @@ class BrigadierPermissionsTest {
                 return ((TestSource) value).getBukkitSender();
             }
         };
-        predicate = new BrigadierPermissions(null, bridge, null).permissionPredicate("gamemode.survival", fallback);
+        predicate = new BrigadierPermissions(null, bridge, null).new PermissionPredicate("gamemode.survival", fallback);
     }
 
     @AfterEach

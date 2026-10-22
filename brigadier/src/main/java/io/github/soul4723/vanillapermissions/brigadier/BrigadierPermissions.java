@@ -39,8 +39,8 @@ public final class BrigadierPermissions {
 
     private static volatile Field contextArgumentsField;
 
+    /** Requirements and executors replaced so far, in the order they were replaced. */
     private final List<Mutation> installed = new ArrayList<>();
-    private final List<CommandMutation> selectorInstalled = new ArrayList<>();
     private final AtomicBoolean senderLookupWarning = new AtomicBoolean();
     private final BrigadierBridge bridge;
     private final GameModeLiterals gameModes;
@@ -87,11 +87,8 @@ public final class BrigadierPermissions {
         List<Mutation> applied = new ArrayList<>();
         try {
             for (Mutation mutation : pending) {
-                mutation.field.set(mutation.node, mutation.wrapper);
                 applied.add(mutation);
-                if (mutation.node.getRequirement() != mutation.wrapper) {
-                    throw new IllegalStateException("Brigadier did not retain the replacement requirement for " + mutation.path);
-                }
+                mutation.apply();
             }
         } catch (ReflectiveOperationException | RuntimeException error) {
             restore(applied);
@@ -120,29 +117,9 @@ public final class BrigadierPermissions {
     }
 
     public synchronized void uninstall() {
-        for (int i = installed.size() - 1; i >= 0; i--) {
-            Mutation mutation = installed.get(i);
-            try {
-                if (mutation.node.getRequirement() == mutation.wrapper) {
-                    mutation.field.set(mutation.node, mutation.original);
-                }
-            } catch (IllegalAccessException | RuntimeException ignored) {
-                if (plugin != null) plugin.getLogger().warning("Could not restore a native command permission predicate; restart the server to restore vanilla commands");
-            }
-        }
+        restore(installed);
         installed.clear();
         checkedNodes = 0;
-        for (int i = selectorInstalled.size() - 1; i >= 0; i--) {
-            CommandMutation mutation = selectorInstalled.get(i);
-            try {
-                if (mutation.node.getCommand() == mutation.wrapper) {
-                    mutation.field.set(mutation.node, mutation.original);
-                }
-            } catch (IllegalAccessException | RuntimeException error) {
-                if (plugin != null) plugin.getLogger().warning("Could not restore native selector command executor; restart the server to restore vanilla commands");
-            }
-        }
-        selectorInstalled.clear();
         JavaPlugin logTarget = plugin;
         try {
             gameModes.uninstall();
@@ -178,10 +155,6 @@ public final class BrigadierPermissions {
 
     void refresh(List<? extends Player> players, JavaPlugin logTarget) {
         for (Player player : players) {
-            if (scheduler == null) {
-                updateCommands(player, logTarget);
-                continue;
-            }
             try {
                 scheduler.runLater(player, () -> updateCommands(player, logTarget), 1);
             } catch (RuntimeException unschedulable) {
@@ -223,8 +196,7 @@ public final class BrigadierPermissions {
             }
         }
 
-        PermissionPredicate wrapper = permissionPredicate(path, fallback);
-        pending.add(new Mutation(node, requirementField, current, wrapper, path));
+        pending.add(new Mutation(node, requirementField, current, new PermissionPredicate(path, fallback)));
         installSelectorExecutor(node, commandField);
         for (CommandNode<?> child : node.getChildren()) {
             collect(child, path + "." + child.getName(), requirementField, commandField, visited, pending);
@@ -235,52 +207,41 @@ public final class BrigadierPermissions {
     private void installSelectorExecutor(CommandNode<?> node, Field commandField) throws IllegalAccessException {
         Command<?> original = node.getCommand();
         if (original == null || original instanceof SelectorCommand) return;
-        SelectorCommand wrapper = new SelectorCommand((Command<Object>) original);
-        commandField.set(node, wrapper);
-        if (node.getCommand() != wrapper) throw new IllegalStateException("Brigadier did not retain selector executor wrapper");
-        selectorInstalled.add(new CommandMutation(node, commandField, original, wrapper));
+        Mutation mutation = new Mutation(node, commandField, original, new SelectorCommand((Command<Object>) original));
+        mutation.apply();
+        installed.add(mutation);
     }
 
+    /** Puts back, newest first, every replacement that is still in place. */
     private void restore(List<Mutation> mutations) {
         for (int i = mutations.size() - 1; i >= 0; i--) {
             Mutation mutation = mutations.get(i);
             try {
-                if (mutation.node.getRequirement() == mutation.wrapper) {
-                    mutation.field.set(mutation.node, mutation.original);
-                }
-            } catch (IllegalAccessException | RuntimeException ignored) {
-                if (plugin != null) plugin.getLogger().severe("Could not roll back the native command permission installation");
+                if (mutation.field.get(mutation.node) == mutation.wrapper) mutation.field.set(mutation.node, mutation.original);
+            } catch (IllegalAccessException | RuntimeException error) {
+                if (plugin != null) plugin.getLogger().warning("Could not restore the vanilla command " + mutation.node.getName()
+                    + "; restart the server to restore vanilla commands");
             }
         }
     }
 
+    /** A node's requirement or executor field, replaced by a wrapper around its original value. */
     private static final class Mutation {
         final CommandNode<?> node;
         final Field field;
-        final Predicate<?> original;
-        final Predicate<?> wrapper;
-        final String path;
+        final Object original;
+        final Object wrapper;
 
-        Mutation(CommandNode<?> node, Field field, Predicate<?> original, Predicate<?> wrapper, String path) {
+        Mutation(CommandNode<?> node, Field field, Object original, Object wrapper) {
             this.node = node;
             this.field = field;
             this.original = original;
             this.wrapper = wrapper;
-            this.path = path;
         }
-    }
 
-    private static final class CommandMutation {
-        final CommandNode<?> node;
-        final Field field;
-        final Command<?> original;
-        final Command<?> wrapper;
-
-        CommandMutation(CommandNode<?> node, Field field, Command<?> original, Command<?> wrapper) {
-            this.node = node;
-            this.field = field;
-            this.original = original;
-            this.wrapper = wrapper;
+        void apply() throws IllegalAccessException {
+            field.set(node, wrapper);
+            if (field.get(node) != wrapper) throw new IllegalStateException("Brigadier did not keep the check on " + node.getName());
         }
     }
 
@@ -359,16 +320,13 @@ public final class BrigadierPermissions {
             if (resolver == null) continue;
             Object result = resolve(resolver, context, argument.getName());
             String pool = RandomSelectors.candidates(parsed.range().get(context.getInput()), false);
-            if (pool == null) {
-                SelectorTargets.validate(sender, path, argument.getName(), result, bridge::selectorTarget);
-            } else {
-                Object candidates = resolveCandidates(context, argument, resolver, pool);
-                SelectorTargets.validate(sender, path, argument.getName(), result, candidates, bridge::selectorTarget);
-            }
+            Object candidates = pool == null ? result : resolveCandidates(context, argument, resolver, pool);
+            SelectorTargets.validate(sender, path, argument.getName(), result, candidates, bridge::selectorTarget);
         }
     }
 
-    private static Object resolve(ArgumentResolver resolver, CommandContext<?> context, String name) throws CommandSyntaxException {
+    /** Resolves argument {@code name}, rethrowing vanilla's syntax errors as they are so the player sees vanilla's message. */
+    static Object resolve(ArgumentResolver resolver, CommandContext<?> context, String name) throws CommandSyntaxException {
         try {
             return resolver.resolve(context, name);
         } catch (InvocationTargetException error) {
@@ -424,16 +382,12 @@ public final class BrigadierPermissions {
     }
 
     /** The {@code minecraft.command.<path>} requirement for one node, falling back to vanilla's when unset. */
-    PermissionPredicate permissionPredicate(String path, Predicate<Object> fallback) {
-        return new PermissionPredicate(path, fallback);
-    }
-
     final class PermissionPredicate implements Predicate<Object> {
         final String path;
         final Predicate<Object> fallback;
         private final String permission;
 
-        private PermissionPredicate(String path, Predicate<Object> fallback) {
+        PermissionPredicate(String path, Predicate<Object> fallback) {
             this.path = path;
             this.fallback = fallback;
             this.permission = "minecraft.command." + path;

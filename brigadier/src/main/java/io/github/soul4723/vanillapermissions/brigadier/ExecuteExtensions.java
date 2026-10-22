@@ -235,25 +235,11 @@ final class ExecuteExtensions {
             override = bridge.bypassSelectorCheck(context, name);
         }
         try {
-            Object result = invokeArgument(resolver, context, name);
-            List<String> path = VanillaTree.parsedPath(context);
-            SelectorTargets.validate(sender, path, name, result, bridge::selectorTarget);
+            Object result = BrigadierPermissions.resolve(resolver, context, name);
+            SelectorTargets.validate(sender, VanillaTree.parsedPath(context), name, result, result, bridge::selectorTarget);
             return result;
         } finally {
             if (override != null) override.restore();
-        }
-    }
-
-    private static Object invokeArgument(ArgumentResolver resolver, CommandContext<?> context, String name)
-            throws ReflectiveOperationException, CommandSyntaxException {
-        try {
-            return resolver.resolve(context, name);
-        } catch (InvocationTargetException error) {
-            Throwable cause = error.getCause();
-            if (cause instanceof CommandSyntaxException) throw (CommandSyntaxException) cause;
-            if (cause instanceof ReflectiveOperationException) throw (ReflectiveOperationException) cause;
-            if (cause instanceof RuntimeException) throw (RuntimeException) cause;
-            throw new IllegalStateException("Native selector resolver failed", cause);
         }
     }
 
