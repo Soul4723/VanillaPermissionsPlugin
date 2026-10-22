@@ -68,7 +68,7 @@ public final class VaultHook implements BukkitPermissionProvider.IntegerMeta {
         try {
             // Most providers store meta as text, which their integer getter may not resolve, so read text first.
             String text = chat.getPlayerInfoString(player, key, null);
-            if (text != null && !isBlank(text)) {
+            if (text != null && !text.trim().isEmpty()) {
                 try {
                     return OptionalInt.of(Integer.parseInt(text.trim()));
                 } catch (NumberFormatException e) {
@@ -81,16 +81,6 @@ public final class VaultHook implements BukkitPermissionProvider.IntegerMeta {
             if (logger != null) logger.warning("Could not query Vault integer meta: " + e.getMessage());
             return OptionalInt.empty();
         }
-    }
-
-    /** {@code String#isBlank}, which Java 8 lacks. */
-    static boolean isBlank(String text) {
-        for (int i = 0; i < text.length(); ) {
-            int codePoint = text.codePointAt(i);
-            if (!Character.isWhitespace(codePoint)) return false;
-            i += Character.charCount(codePoint);
-        }
-        return true;
     }
 
     @Override

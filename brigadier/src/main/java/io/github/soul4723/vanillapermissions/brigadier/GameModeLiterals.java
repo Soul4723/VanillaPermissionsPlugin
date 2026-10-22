@@ -175,7 +175,7 @@ public final class GameModeLiterals {
         Field arguments = VanillaTree.accessible(CommandContext.class.getDeclaredField("arguments"),
                 "Brigadier command context arguments are inaccessible");
         String argumentName = modeArgument.getName();
-        Command<Object> selfCommand = unwrapCommand(modeArgument.getCommand());
+        Command<Object> selfCommand = (Command<Object>) VanillaTree.unwrap(modeArgument.getCommand());
         List<CommandNode<Object>> literals = new ArrayList<>(MODES.size());
         for (String mode : MODES) {
             Object value = modeArgument.getType().parse(new StringReader(mode));
@@ -188,28 +188,19 @@ public final class GameModeLiterals {
                     throw new IllegalStateException("Unrecognized native gamemode tree; unexpected node " + child.getName());
                 }
                 ArgumentCommandNode<Object, Object> target = (ArgumentCommandNode<Object, Object>) child;
-                Command<Object> targetCommand = unwrapCommand(target.getCommand());
+                Command<Object> targetCommand = (Command<Object>) VanillaTree.unwrap(target.getCommand());
                 RequiredArgumentBuilder<Object, Object> copy = RequiredArgumentBuilder.argument(target.getName(), target.getType());
-                copy.requires((Predicate<Object>) unwrapRequirement(target.getRequirement()));
+                copy.requires((Predicate<Object>) VanillaTree.unwrap(target.getRequirement()));
                 if (target.getCustomSuggestions() != null) copy.suggests(target.getCustomSuggestions());
                 if (targetCommand != null) {
                     copy.executes(context -> targetCommand.run(withArgument(arguments, context, argumentName, value)));
                 }
                 literal.then(copy);
             }
-            literal.requires((Predicate<Object>) unwrapRequirement(modeArgument.getRequirement()));
+            literal.requires((Predicate<Object>) VanillaTree.unwrap(modeArgument.getRequirement()));
             literals.add(literal.build());
         }
         return literals;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Command<Object> unwrapCommand(Command<Object> command) {
-        return (Command<Object>) VanillaTree.unwrap(command);
-    }
-
-    private static Object unwrapRequirement(Predicate<?> requirement) {
-        return VanillaTree.unwrap(requirement);
     }
 
     @SuppressWarnings("unchecked")

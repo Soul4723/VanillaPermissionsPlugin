@@ -139,7 +139,7 @@ class AdaptersTest {
     @Test
     void spigotProbeNeedsACraftBukkitServer() {
         // Brigadier is not on core's test classpath and there is no server in a unit test.
-        assertFalse(Adapters.candidates().get(1).probe().matches());
+        assertFalse(Adapters.candidates().get(1).probe().getAsBoolean());
         assertFalse(Adapters.isCraftBukkit(null));
         assertFalse(Adapters.isCraftBukkit(new Object()));
     }
@@ -148,8 +148,8 @@ class AdaptersTest {
     void foliaNeverFallsBackToSpigotOrLegacy() {
         List<AdapterCandidate> candidates = Adapters.candidates(true);
         assertEquals("paper", candidates.get(0).id());
-        assertFalse(candidates.get(1).probe().matches());
-        assertFalse(candidates.get(2).probe().matches());
+        assertFalse(candidates.get(1).probe().getAsBoolean());
+        assertFalse(candidates.get(2).probe().getAsBoolean());
         assertNull(Adapters.select(candidates, 17, loader, logger), "Old Folia must be refused");
         assertNull(Adapters.select(candidates, 21, loader, logger), "Folia without COMMANDS must be refused");
     }
