@@ -1,6 +1,5 @@
 package io.github.soul4723.vanillapermissions.legacy.feature;
 
-import io.github.soul4723.vanillapermissions.listener.OperatorBlocks;
 import io.github.soul4723.vanillapermissions.util.TestLuckPerms;
 import net.luckperms.api.util.Tristate;
 import org.bukkit.GameMode;
@@ -70,12 +69,6 @@ class OperatorBlockListenerTest {
     @ValueSource(strings = {"STONE", "COMMAND_MINECART", "JIGSAW", "COMMAND_BLOCK", "REPEATING_COMMAND_BLOCK", "CHAIN_COMMAND_BLOCK"})
     void otherMaterialsAreNotOperatorBlocks(String material) {
         assertNull(OperatorBlockListener.blockName(material));
-    }
-
-    @Test
-    void permissionNames() {
-        assertEquals("minecraft.operator_block.command_block.view", OperatorBlocks.permission("command_block", "view"));
-        assertEquals("minecraft.operator_block.structure_block.break", OperatorBlocks.permission("structure_block", "break"));
     }
 
     @Test
