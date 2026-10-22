@@ -81,12 +81,24 @@ public final class SelectorTargets {
 
         UUID profile = profileId(value);
         if (profile != null) return SelectorRules.Target.player(profile);
-        Object bukkitEntity = invokeOrNull(value, "getBukkitEntity");
-        if (bukkitEntity instanceof Entity) return SelectorRules.Target.entity((Entity) bukkitEntity);
+        // Native entities are score holders too, so one CraftBukkit cannot wrap must not pass for a scoreboard name.
+        if (hasMethod(value, "getBukkitEntity")) {
+            Object bukkitEntity = invokeOrNull(value, "getBukkitEntity");
+            return bukkitEntity instanceof Entity ? SelectorRules.Target.entity((Entity) bukkitEntity) : SelectorRules.Target.unsupported();
+        }
         if (invokeOrNull(value, "getScoreboardName") instanceof String) {
             return SelectorRules.Target.scoreHolder();
         }
         return SelectorRules.Target.unsupported();
+    }
+
+    private static boolean hasMethod(Object target, String methodName) {
+        try {
+            target.getClass().getMethod(methodName);
+            return true;
+        } catch (NoSuchMethodException absent) {
+            return false;
+        }
     }
 
     /**

@@ -38,6 +38,8 @@ class SelectorTargetsTest {
         SelectorRules.Target nativePlayer = SelectorTargets.target(new NativeEntityLike(player(SOURCE_ID)));
         assertEquals(SelectorRules.Target.Kind.PLAYER, nativePlayer.kind(), "Native entity classified as score holder");
         assertEquals(SOURCE_ID, nativePlayer.id());
+        assertEquals(SelectorRules.Target.Kind.UNSUPPORTED, SelectorTargets.target(new NativeEntityLike(null)).kind(),
+                "Native entity without a Bukkit entity passed for a score holder, which skips the selector rules");
     }
 
     /** /op, /ban, /whitelist and /pardon resolve game profiles; from 1.21.9 as NameAndId records. */
@@ -81,7 +83,10 @@ class SelectorTargetsTest {
 
         public NativeEntityLike(Entity bukkitEntity) { this.bukkitEntity = bukkitEntity; }
 
-        public Entity getBukkitEntity() { return bukkitEntity; }
+        public Entity getBukkitEntity() {
+            if (bukkitEntity == null) throw new IllegalStateException("CraftBukkit cannot wrap this entity");
+            return bukkitEntity;
+        }
 
         public String getScoreboardName() { return "native-player"; }
     }
