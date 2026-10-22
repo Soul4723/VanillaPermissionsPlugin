@@ -1,0 +1,12 @@
+{
+  "name": "scoreboard-wildcard",
+  "description": "Console wildcard score holders and an empty execute entity condition remain valid.",
+  "when": { "plugin": true, "minVersion": "1.13", "not": { "software": "folia" } },
+  "players": [],
+  "steps": [
+    { "console": "scoreboard objectives add t dummy", "expect": "Created new objective" },
+    { "console": "scoreboard players set Steve t 1", "expect": "Set \\[t\\] for Steve to 1" },
+    { "console": "scoreboard players add * t 1", "expect": "Added 1 to \\[t\\] for Steve.*2" },
+    { "console": "execute unless entity @e[type=zombie] run say ok", "expect": "\\[.*\\] ok" }
+  ]
+}

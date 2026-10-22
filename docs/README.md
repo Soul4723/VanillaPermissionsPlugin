@@ -6,19 +6,20 @@ Start with the [project README](../README.md) for what the plugin does and how t
 
 | Page | Contents |
 | --- | --- |
-| [Permissions](permissions.md) | Read-this-first notes, how a node resolves (true / false / unset), the full node reference, wildcards, operator defaults |
+| [Permissions](permissions.md) | How a node resolves (true / false / unset), the full node reference, wildcards, operator defaults |
 | [Recipes](recipes.md) | Copy-paste `/lp` setups, and how to adapt them to another permissions plugin |
 | [Permissions plugins](providers.md) | LuckPerms, other Bukkit permissions plugins, Vault, running without one |
-| [Compatibility](compatibility.md) | Supported Minecraft and Java versions, how each was verified, other server software |
+| [Compatibility](compatibility.md) | Supported servers and versions, features per version, limits |
 | [Commands](commands.md) | `/vanillapermissions check` and `debug`, and the plugin's own nodes |
-| [Troubleshooting and limitations](troubleshooting.md) | FAQ and known limitations |
+| [Troubleshooting](troubleshooting.md) | FAQ, reading the startup log, commands from other plugins |
 
-## Project
+## For contributors
 
 | Page | Contents |
 | --- | --- |
-| [Roadmap](roadmap.md) | Other versions and platforms, and what each would take |
-| [Contributing](../CONTRIBUTING.md) | Building, tests, pull requests |
-| [Releasing](development/releasing.md) | Versioning, release process, CI, branching |
-| [Changelog](../CHANGELOG.md) | What changed in each release |
-| [Security policy](../SECURITY.md) | Reporting vulnerabilities |
+| [Contributing](../CONTRIBUTING.md) | Issues, building, pull requests |
+| [Architecture](development/architecture.md) | Modules, adapters per server version, Java targets, CI |
+| [Testing](development/testing.md) | Unit tests, boot smoke test and the live-test harness |
+| [Releasing](development/releasing.md) | Versioning, release process, CI |
+
+See also the [Changelog](../CHANGELOG.md) and the [security policy](../SECURITY.md).

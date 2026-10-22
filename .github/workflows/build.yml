@@ -1,13 +1,28 @@
 name: Build
 
+# The jar is built and unit-tested once; the boot matrix then starts every supported server with that jar.
 on:
   push:
     branches: [main]
+    # Pull requests always run everything, so required checks are never skipped.
+    paths-ignore:
+      - '**.md'
+      - '.github/ISSUE_TEMPLATE/**'
+      - 'scripts/live-test/**'
   pull_request:
   workflow_dispatch:
+  # Twice weekly, so the server caches below are used again before GitHub evicts entries unused for 7 days.
+  schedule:
+    - cron: '17 4 * * 1,4'
 
 permissions:
   contents: read
+
+env:
+  # Pinned by build number and sha256 (from https://hub.spigotmc.org/jenkins/job/BuildTools/) so Spigot jars are
+  # reproducible. The Spigot cache keys carry the build number.
+  BUILDTOOLS_BUILD: 201
+  BUILDTOOLS_SHA256: 81ed06f5ce5fb705b558bf9b3cc2c5c53cdd9742406c5338c452faa13a1e1c24
 
 concurrency:
   group: build-${{ github.ref }}
@@ -16,7 +31,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
+    outputs:
+      artifact-id: ${{ steps.upload.outputs.artifact-id }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -27,8 +44,181 @@ jobs:
           java-version: '21'
           cache: maven
       - run: mvn -B -ntp verify
-      - uses: actions/upload-artifact@v7
+      # Not zipped, so the artifact downloads as the plugin jar itself.
+      - id: upload
+        uses: actions/upload-artifact@v7
         with:
-          name: VanillaPermissionsPlugin
           path: target/VanillaPermissionsPlugin-*.jar
+          archive: false
           if-no-files-found: error
+
+  # Boots each server with the plugin and LuckPerms through scripts/compat-smoke.sh.
+  smoke:
+    name: ${{ matrix.software }} ${{ matrix.minecraft }}
+    needs: build
+    runs-on: ubuntu-latest
+    # A Spigot row that misses its cache builds the server with BuildTools first.
+    timeout-minutes: ${{ matrix.software == 'spigot' && 30 || 10 }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Keep in step with SupportedVersions in
+        # core/src/main/java/io/github/soul4723/vanillapermissions/util/SupportedVersions.java
+        # (SupportedVersionsTest compares each software's rows with its list). Download builds are pinned so runs are
+        # reproducible; bump them deliberately. Spigot cannot be downloaded or redistributed, so Spigot rows have no
+        # build: BuildTools compiles them and the jar is kept only in actions/cache.
+        # java is the JDK the server needs: 8 up to 1.16.5, 17 for 1.17.1 - 1.20.4, 21 for 1.20.5 - 1.21.11, 25 for 26.x.
+        # min_nodes becomes MIN_NODES for the script (default 1000 when a row has none): 797 nodes were counted on
+        # 1.13.2, 1259 on 1.16.5, 1297 on 1.17.1, 1663 on 1.19.4 and 1741 on 1.20.4; rows get about 10% below that.
+        include:
+          - { software: paper, minecraft: '1.8.8', build: 445, java: 8, min_nodes: 120 }
+          - { software: paper, minecraft: '1.12.2', build: 1620, java: 8, min_nodes: 130 }
+          - { software: paper, minecraft: '1.13.2', build: 657, java: 8, min_nodes: 720 }
+          - { software: paper, minecraft: '1.16.5', build: 794, java: 8, min_nodes: 1130 }
+          - { software: paper, minecraft: '1.17.1', build: 411, java: 17, min_nodes: 1170 }
+          - { software: paper, minecraft: '1.18.2', build: 388, java: 17, min_nodes: 1170 }
+          - { software: paper, minecraft: '1.19.4', build: 550, java: 17, min_nodes: 1500 }
+          - { software: paper, minecraft: '1.20.4', build: 499, java: 17, min_nodes: 1570 }
+          - { software: paper, minecraft: '1.20.5', build: 22, java: 21, min_nodes: 1600 }
+          - { software: paper, minecraft: '1.20.6', build: 151, java: 21 }
+          - { software: paper, minecraft: '1.21', build: 130, java: 21 }
+          - { software: paper, minecraft: '1.21.1', build: 133, java: 21 }
+          - { software: paper, minecraft: '1.21.3', build: 83, java: 21 }
+          - { software: paper, minecraft: '1.21.4', build: 232, java: 21 }
+          - { software: paper, minecraft: '1.21.5', build: 114, java: 21 }
+          - { software: paper, minecraft: '1.21.6', build: 48, java: 21 }
+          - { software: paper, minecraft: '1.21.7', build: 32, java: 21 }
+          - { software: paper, minecraft: '1.21.8', build: 60, java: 21 }
+          - { software: paper, minecraft: '1.21.9', build: 59, java: 21 }
+          - { software: paper, minecraft: '1.21.10', build: 130, java: 21 }
+          - { software: paper, minecraft: '1.21.11', build: 132, java: 21 }
+          - { software: paper, minecraft: '26.1.1', build: 29, java: 25 }
+          - { software: paper, minecraft: '26.1.2', build: 74, java: 25 }
+          - { software: paper, minecraft: '26.2', build: 134, java: 25 }
+          - { software: paper, minecraft: '26.3', build: 206, java: 25 }
+          # Spigot: 1780 nodes were counted on 1.20.6, 1951 on 1.21.10, 2081 on 1.21.11 and 2487 on 26.3.
+          - { software: spigot, minecraft: '1.8.8', java: 8, min_nodes: 120 }
+          - { software: spigot, minecraft: '1.12.2', java: 8, min_nodes: 130 }
+          - { software: spigot, minecraft: '1.13.2', java: 8, min_nodes: 720 }
+          - { software: spigot, minecraft: '1.16.5', java: 8, min_nodes: 1130 }
+          - { software: spigot, minecraft: '1.17.1', java: 17, min_nodes: 1170 }
+          - { software: spigot, minecraft: '1.18.2', java: 17, min_nodes: 1170 }
+          - { software: spigot, minecraft: '1.19.4', java: 17, min_nodes: 1500 }
+          - { software: spigot, minecraft: '1.20.4', java: 17, min_nodes: 1570 }
+          - { software: spigot, minecraft: '1.20.6', java: 21, min_nodes: 1600 }
+          - { software: spigot, minecraft: '1.21.10', java: 21, min_nodes: 1750 }
+          - { software: spigot, minecraft: '1.21.11', java: 21, min_nodes: 1870 }
+          - { software: spigot, minecraft: '26.3', java: 25, min_nodes: 2240 }
+          # Folia removes commands: 884, 1062, 1086 and 1116 nodes were counted.
+          - { software: folia, minecraft: '1.20.6', build: 6, java: 21, min_nodes: 795 }
+          - { software: folia, minecraft: '1.21.11', build: 14, java: 21, min_nodes: 950 }
+          - { software: folia, minecraft: '26.1.2', build: 8, java: 25, min_nodes: 975 }
+          - { software: folia, minecraft: '26.3', build: 3, java: 25, min_nodes: 1000 }
+          # Purpur and Pufferfish are Paper forks: the newest build of each minor line.
+          - { software: purpur, minecraft: '1.20.6', build: 2233, java: 21 }
+          - { software: purpur, minecraft: '1.21.11', build: 2568, java: 21 }
+          - { software: purpur, minecraft: '26.1.2', build: 2592, java: 25 }
+          - { software: purpur, minecraft: '26.2', build: 2633, java: 25 }
+          - { software: purpur, minecraft: '26.3', build: 2652, java: 25 }
+          # Drop Pufferfish rows (and SupportedVersions entries) when ci.pufferfish.host goes away.
+          - { software: pufferfish, minecraft: '1.21.1', build: 21, java: 21 }
+          - { software: pufferfish, minecraft: '1.21.10', build: 39, java: 21 }
+    steps:
+      # Spigot rows have no download build; their server caches are keyed on the BuildTools build instead.
+      - id: server
+        env:
+          BUILD: ${{ matrix.build }}
+        run: echo "build=${BUILD:-bt$BUILDTOOLS_BUILD}" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+      - uses: actions/download-artifact@v8
+        with:
+          artifact-ids: ${{ needs.build.outputs.artifact-id }}
+          path: dist
+
+      - id: spigot-cache
+        if: matrix.software == 'spigot'
+        uses: actions/cache/restore@v6
+        with:
+          path: ~/.cache/vpp-spigot/${{ matrix.minecraft }}
+          key: spigot-${{ matrix.minecraft }}-bt${{ env.BUILDTOOLS_BUILD }}
+      - name: Build Spigot ${{ matrix.minecraft }} with BuildTools
+        if: matrix.software == 'spigot' && steps.spigot-cache.outputs.cache-hit != 'true'
+        working-directory: ${{ runner.temp }}
+        env:
+          MINECRAFT: ${{ matrix.minecraft }}
+        run: |
+          curl -fsSL --retry 3 -o BuildTools.jar "https://hub.spigotmc.org/jenkins/job/BuildTools/${BUILDTOOLS_BUILD}/artifact/target/BuildTools.jar"
+          echo "${BUILDTOOLS_SHA256}  BuildTools.jar" | sha256sum -c -
+          java -jar BuildTools.jar --rev "$MINECRAFT" --compile spigot --output-dir "$HOME/.cache/vpp-spigot/$MINECRAFT"
+      # Saved on pull requests too: building takes minutes, restoring seconds.
+      - if: matrix.software == 'spigot' && steps.spigot-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ~/.cache/vpp-spigot/${{ matrix.minecraft }}
+          key: ${{ steps.spigot-cache.outputs.cache-primary-key }}
+
+      - id: server-cache
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            ~/.cache/vpp-compat/${{ matrix.software }}
+            ~/.cache/vpp-compat/server/${{ matrix.software }}-${{ matrix.minecraft }}
+          key: server-${{ matrix.software }}-${{ matrix.minecraft }}-${{ steps.server.outputs.build }}
+      # Java 8 rows use a pinned LuckPerms 5.4 that may come from the Wayback Machine.
+      - id: luckperms-cache
+        if: matrix.java < 11
+        uses: actions/cache/restore@v6
+        with:
+          path: ~/.cache/vpp-compat/luckperms
+          key: luckperms-java8-${{ hashFiles('scripts/compat-smoke.sh') }}
+      - name: Boot ${{ matrix.software }} with the plugin
+        env:
+          LOG_DIR: ${{ runner.temp }}/server-logs
+          MIN_NODES: ${{ matrix.min_nodes }}
+          SOFTWARE: ${{ matrix.software }}
+          MINECRAFT: ${{ matrix.minecraft }}
+          SERVER_BUILD: ${{ steps.server.outputs.build }}
+        run: |
+          args=(--software "$SOFTWARE" --build "$SERVER_BUILD")
+          if [ "$SOFTWARE" = spigot ]; then
+            args+=(--server-jar "$HOME/.cache/vpp-spigot/$MINECRAFT/spigot-$MINECRAFT.jar")
+          fi
+          bash scripts/compat-smoke.sh "$MINECRAFT" dist/VanillaPermissionsPlugin-*.jar "${args[@]}"
+      # Pull request caches are only visible to that pull request, so only other runs save them.
+      - if: github.event_name != 'pull_request' && steps.server-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            ~/.cache/vpp-compat/${{ matrix.software }}
+            ~/.cache/vpp-compat/server/${{ matrix.software }}-${{ matrix.minecraft }}
+          key: ${{ steps.server-cache.outputs.cache-primary-key }}
+      - if: matrix.java < 11 && github.event_name != 'pull_request' && steps.luckperms-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ~/.cache/vpp-compat/luckperms
+          key: ${{ steps.luckperms-cache.outputs.cache-primary-key }}
+      - name: Upload server log
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: server-log-${{ matrix.software }}-${{ matrix.minecraft }}
+          path: ${{ runner.temp }}/server-logs/*.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # One check to require in branch protection, whatever the matrix contains.
+  compat:
+    if: always()
+    needs: [build, smoke]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: re-actors/alls-green@b5b5b37504aa4183270bd3d855c52a67f212be35 # v1.3.0
+        with:
+          jobs: ${{ toJSON(needs) }}
