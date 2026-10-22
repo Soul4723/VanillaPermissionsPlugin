@@ -1,8 +1,8 @@
 package io.github.soul4723.vanillapermissions.legacy.grammar;
 
 /**
- * A pre-1.13 Minecraft version, for the small per-version switches inside a grammar (for example {@code time query
- * day} exists from 1.12, {@code /teleport} from 1.10).
+ * A pre-1.13 Minecraft version, for the node paths a grammar lists on it (for example {@code time.query.day} from
+ * 1.12). Parsing does not depend on it.
  */
 public final class LegacyVersion {
 
