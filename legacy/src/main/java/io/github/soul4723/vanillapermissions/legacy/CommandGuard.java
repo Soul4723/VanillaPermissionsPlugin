@@ -230,7 +230,7 @@ final class CommandGuard {
 
     /** The modern root of a renamed legacy command is denied; an explicit {@code minecraft.command.tp} keeps /tp. */
     private boolean modernRootDenied(Player player, String name, Map<String, Boolean> deniedNodes) {
-        String modernRoot = Grammars.MODERN_ROOTS.get(name);
+        String modernRoot = Grammars.modernRoot(name);
         return modernRoot != null && denied(player, modernRoot, deniedNodes)
             && !(name.equals("tp") && permissions.hasPermission(player, "minecraft.command.tp", false));
     }

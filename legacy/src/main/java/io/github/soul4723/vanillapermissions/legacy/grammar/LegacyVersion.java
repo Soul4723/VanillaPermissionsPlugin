@@ -15,7 +15,7 @@ public final class LegacyVersion {
     private final int minor;
     private final int patch;
 
-    public LegacyVersion(int minor, int patch) {
+    private LegacyVersion(int minor, int patch) {
         this.minor = minor;
         this.patch = patch;
     }
