@@ -91,6 +91,15 @@ class ScoreboardGrammarTest {
     }
 
     @Test
+    void nodeNamesAreTheModernSpellingNotTheTypedOne() {
+        // Vanilla's equalsIgnoreCase matches a long s (U+017F) to s and a dotless i (U+0131) to i; lower-casing does not.
+        sb(V12, "players \u017Fet Bob kills 5", "scoreboard.players.set.targets.objective.score");
+        sb(V12, "players re\u017Fet Bob", "scoreboard.players.reset.targets");
+        sb(V12, "teams l\u0131st", "team.list");
+        sb(V12, "players tag Bob ADD vip", "tag.targets.add.name");
+    }
+
+    @Test
     void playersResetAndEnable() {
         for (LegacyVersion v : ALL) {
             sb(v, "players reset", "scoreboard.players.reset");

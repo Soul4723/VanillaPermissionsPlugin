@@ -128,18 +128,19 @@ public final class ScoreboardGrammar extends Grammar {
 
     private static Parse players(String[] args) {
         int n = args.length;
-        String action = Tokens.at(args, 1);
+        String action = Tokens.match(Tokens.at(args, 1), "list", "set", "add", "remove", "reset", "enable", "operation",
+            "test", "tag");
         if (Tokens.is(action, "tag")) return tag(args);
         Parse.Builder parse = Parse.root("scoreboard").literal("players");
         if (Tokens.is(action, "list")) {
             parse.literal("list");
             if (n > 2) parse.scoreHolders("target", 2);
         } else if (Tokens.is(action, "set", "add", "remove")) {
-            parse.literal(Tokens.lower(action));
+            parse.literal(action);
             if (n > 2) parse.scoreHolders("targets", 2);
             parse.arguments(args, 3, "objective", "score");
         } else if (Tokens.is(action, "reset", "enable")) {
-            parse.literal(Tokens.lower(action));
+            parse.literal(action);
             if (n > 2) parse.scoreHolders("targets", 2);
             if (n > 3) parse.argument("objective");
         } else if (Tokens.is(action, "operation")) {
@@ -160,11 +161,11 @@ public final class ScoreboardGrammar extends Grammar {
         int n = args.length;
         Parse.Builder parse = Parse.root("tag").checkRoot();
         if (n > 2) parse.entities("targets", 2);
-        String operation = Tokens.at(args, 3);
+        String operation = Tokens.match(Tokens.at(args, 3), "list", "add", "remove");
         if (Tokens.is(operation, "list")) {
             parse.literal("list");
         } else if (Tokens.is(operation, "add", "remove")) {
-            parse.literal(Tokens.lower(operation));
+            parse.literal(operation);
             if (n > 4) parse.argument("name");
         }
         return parse.build();
@@ -174,12 +175,12 @@ public final class ScoreboardGrammar extends Grammar {
     private static Parse teams(String[] args) {
         int n = args.length;
         Parse.Builder parse = Parse.root("team").checkRoot();
-        String action = Tokens.at(args, 1);
+        String action = Tokens.match(Tokens.at(args, 1), "add", "remove", "empty", "list", "join", "leave", "option");
         if (Tokens.is(action, "add")) {
             parse.literal("add");
             parse.arguments(args, 2, "team", "displayName");
         } else if (Tokens.is(action, "remove", "empty", "list")) {
-            parse.literal(Tokens.lower(action));
+            parse.literal(action);
             if (n > 2) parse.argument("team");
         } else if (Tokens.is(action, "join")) {
             // with only a team, a player sender joins it itself
