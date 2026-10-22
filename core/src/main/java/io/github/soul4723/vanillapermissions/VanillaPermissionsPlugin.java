@@ -65,7 +65,7 @@ public class VanillaPermissionsPlugin extends JavaPlugin {
         if (permissionProvider instanceof LuckPermsPermissionProvider) {
             LuckPermsPermissionProvider luckPerms = (LuckPermsPermissionProvider) permissionProvider;
             getServer().getPluginManager().registerEvents(
-                new LuckPermsPreLoginListener(luckPerms.getHook().getLuckPerms(), getLogger()), this);
+                new LuckPermsPreLoginListener(luckPerms.getLuckPerms(), getLogger()), this);
         }
         getServer().getPluginManager().registerEvents(new WhitelistBypassListener(), this);
     }

@@ -1,8 +1,6 @@
 package io.github.soul4723.vanillapermissions.util;
 
 import net.luckperms.api.LuckPerms;
-import net.luckperms.api.event.EventBus;
-import net.luckperms.api.event.EventSubscription;
 import net.milkbowl.vault.chat.Chat;
 import net.milkbowl.vault.permission.Permission;
 import org.bukkit.Server;
@@ -38,7 +36,6 @@ class PermissionProviderSelectionTest {
     private final Logger logger = Logger.getAnonymousLogger();
     private final Map<String, Plugin> installed = new HashMap<>();
     private final Map<Class<?>, Object> services = new HashMap<>();
-    private final List<EventSubscription<?>> subscriptions = new ArrayList<>();
     private final Plugin owner;
 
     PermissionProviderSelectionTest() {
@@ -85,19 +82,10 @@ class PermissionProviderSelectionTest {
         return plugin;
     }
 
+    /** A LuckPerms API that fails the test if called: connecting only reads its registration. */
     private void registerLuckPerms() {
-        EventSubscription<?> subscription = proxy(EventSubscription.class, (p, m, a) -> {
-            if (m.getName().equals("close")) return null;
-            throw new AssertionError(m);
-        });
-        subscriptions.add(subscription);
-        EventBus bus = proxy(EventBus.class, (p, m, a) -> {
-            if (!m.getName().equals("subscribe")) throw new AssertionError(m);
-            return subscription;
-        });
         services.put(LuckPerms.class, proxy(LuckPerms.class, (p, m, a) -> {
-            if (!m.getName().equals("getEventBus")) throw new AssertionError(m);
-            return bus;
+            throw new AssertionError("Called LuckPerms while connecting: " + m);
         }));
     }
 

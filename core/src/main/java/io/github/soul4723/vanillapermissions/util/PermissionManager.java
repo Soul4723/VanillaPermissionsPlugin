@@ -45,7 +45,7 @@ public class PermissionManager {
 
         Plugin luckPerms = plugins.getPlugin("LuckPerms");
         if (luckPerms != null) {
-            PermissionProvider connected = LuckPermsPermissionProvider.connect(plugin);
+            PermissionProvider connected = LuckPermsPermissionProvider.connect(plugin, luckPerms);
             if (connected != null) {
                 log.info("Using LuckPerms " + luckPerms.getDescription().getVersion()
                     + " for permission checks, contexts, and selector limits and weights");

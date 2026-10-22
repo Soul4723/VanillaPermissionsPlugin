@@ -45,14 +45,10 @@ public final class TestLuckPerms implements AutoCloseable {
             case "getContextManager" -> context;
             default -> throw new AssertionError(m);
         });
-        LuckPermsHook hook = new LuckPermsHook() {
-            @Override public boolean isEnabled() { return true; }
-            @Override public LuckPerms getLuckPerms() { return luckPerms; }
-        };
         hookField = PermissionManager.class.getDeclaredField("provider");
         hookField.setAccessible(true);
         previousProvider = hookField.get(null);
-        hookField.set(null, new LuckPermsPermissionProvider(hook, null));
+        hookField.set(null, new LuckPermsPermissionProvider(luckPerms, null));
     }
 
     @Override
