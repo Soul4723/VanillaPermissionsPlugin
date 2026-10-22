@@ -1,6 +1,5 @@
 package io.github.soul4723.vanillapermissions.legacy;
 
-import io.github.soul4723.vanillapermissions.legacy.grammar.LegacyVersion;
 import io.github.soul4723.vanillapermissions.legacy.grammar.Tokens;
 import io.github.soul4723.vanillapermissions.selector.SelectorRules;
 import org.bukkit.command.Command;
@@ -40,7 +39,7 @@ class CommandGuardTest {
             default -> null;
         });
     private final FakeServer server = new FakeServer();
-    private final CommandGuard guard = new CommandGuard(server, new FakePermissions(), LegacyVersion.V1_12_2);
+    private final CommandGuard guard = new CommandGuard(server, new FakePermissions());
 
     CommandGuardTest() {
         for (String name : List.of("gamemode", "time", "kill", "execute", "tell", "xp", "say", "tp", "scoreboard")) server.vanilla(name);
@@ -285,13 +284,26 @@ class CommandGuardTest {
     @Test
     void wildcardScoreHoldersCountEveryTrackedEntryForTheLimit() {
         nodes.put("minecraft.command.scoreboard", true);
-        server.holders = 3;
+        server.holders = List.of("Alice", "Bob", "#fake");
         meta.put("minecraft.selector.limit.scoreboard.targets.players.set.targets.objective.score", 2);
         assertEquals("You can select at most 2 targets here", guard.check(alice, "scoreboard players set * obj 0"));
-        server.holders = 2;
+        server.holders = List.of("Alice", "Bob");
         assertNull(guard.check(alice, "scoreboard players set * obj 0"));
-        server.holders = 0;
+        server.holders = List.of();
         assertNull(guard.check(alice, "scoreboard players set * obj 0"));
+    }
+
+    @Test
+    void wildcardTagTargetsEveryTrackedEntity() {
+        nodes.put("minecraft.command.scoreboard", true);
+        nodes.put("minecraft.selector.player.tag.targets.targets.add.name", false);
+        server.holders = List.of("Alice");
+        assertNull(guard.check(alice, "scoreboard players tag * add vip"));
+        server.holders = List.of("Alice", "Bob");
+        assertEquals("You do not have permission to target other players here",
+            guard.check(alice, "scoreboard players tag * add vip"));
+        server.targets.put("*", List.of()); // a plain name elsewhere, which matches nobody
+        assertNull(guard.check(alice, "kill *"), "only /scoreboard has the wildcard");
     }
 
     @Test
@@ -379,7 +391,7 @@ class CommandGuardTest {
                 lookups.merge(node, 1, Integer::sum);
                 return super.hasPermission(sender, node, fallback);
             }
-        }, LegacyVersion.V1_12_2);
+        });
         List<String> names = new ArrayList<>();
         for (int i = 0; i < 200; i++) names.add("Player" + i);
         assertEquals(names, counting.filterCompletions(alice, "/tp ", names));
@@ -421,7 +433,7 @@ class CommandGuardTest {
 
     private final class FakeServer implements CommandGuard.Server {
         boolean override;
-        int holders;
+        List<String> holders = List.of();
         final Map<String, Command> commands = new HashMap<>();
         final List<Command> vanilla = new ArrayList<>();
         final Map<Command, List<String>> aliases = new HashMap<>();
@@ -448,7 +460,7 @@ class CommandGuardTest {
 
         @Override public boolean commandBlockOverride(String token) { return override; }
 
-        @Override public int scoreHolderCount() { return holders; }
+        @Override public List<String> scoreHolders() { return holders; }
 
         @Override
         public boolean isVanilla(Command command) {

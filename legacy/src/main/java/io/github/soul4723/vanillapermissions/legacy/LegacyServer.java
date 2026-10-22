@@ -120,8 +120,8 @@ final class LegacyServer implements CommandGuard.Server {
     }
 
     @Override
-    public int scoreHolderCount() {
-        return server.getScoreboardManager().getMainScoreboard().getEntries().size();
+    public List<String> scoreHolders() {
+        return new ArrayList<>(server.getScoreboardManager().getMainScoreboard().getEntries());
     }
 
     @Override

@@ -20,7 +20,7 @@ public final class ClearGrammar extends Grammar {
     }
 
     @Override
-    public Parse parse(String command, String[] args, LegacyVersion version) {
+    public Parse parse(String command, String[] args) {
         Parse.Builder parse = Parse.root("clear");
         if (args.length > 0) parse.players("targets", 0);
         if (args.length > 1) parse.argument("item");

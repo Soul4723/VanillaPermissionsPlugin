@@ -33,7 +33,6 @@ public final class LegacyAdapter implements VersionAdapter {
 
     private final List<Listener> listeners = new ArrayList<>();
     private LegacyFeatures features;
-    private volatile int checkedNodes;
     /** The sub-command paths the grammars check, without {@code minecraft.command.}; empty until installed. */
     private volatile Set<String> checkedPaths = Collections.emptySet();
 
@@ -71,7 +70,7 @@ public final class LegacyAdapter implements VersionAdapter {
         LegacyServer server = new LegacyServer(plugin.getServer(), plugin.getLogger());
         List<String> vanilla = server.vanillaCommandNames();
         if (vanilla.isEmpty()) throw new IllegalStateException("CraftBukkit registered no VanillaCommandWrapper commands");
-        CommandGuard guard = new CommandGuard(server, SelectorRules.PERMISSION_MANAGER, version);
+        CommandGuard guard = new CommandGuard(server, SelectorRules.PERMISSION_MANAGER);
 
         CommandListener commands = new CommandListener(guard, plugin.getLogger());
         plugin.getServer().getPluginManager().registerEvents(commands, plugin);
@@ -80,8 +79,7 @@ public final class LegacyAdapter implements VersionAdapter {
         if (completions != null) listeners.add(completions);
 
         checkedPaths = Collections.unmodifiableSet(Grammars.nodePaths(vanilla, version));
-        checkedNodes = checkedPaths.size();
-        plugin.getLogger().info(AdapterLog.added(checkedNodes));
+        plugin.getLogger().info(AdapterLog.added(checkedPaths.size()));
         if (completions == null) {
             plugin.getLogger().info("Tab completion is not filtered on Minecraft " + version
                 + " (no TabCompleteEvent before 1.9); denied sub-commands are still refused when run");
@@ -92,7 +90,6 @@ public final class LegacyAdapter implements VersionAdapter {
     public void disable() {
         for (Listener listener : listeners) HandlerList.unregisterAll(listener);
         listeners.clear();
-        checkedNodes = 0;
         checkedPaths = Collections.emptySet();
         if (features != null) {
             features.disable();
@@ -108,7 +105,7 @@ public final class LegacyAdapter implements VersionAdapter {
      */
     @Override
     public int checkedNodeCount() {
-        return checkedNodes;
+        return checkedPaths.size();
     }
 
     @Override

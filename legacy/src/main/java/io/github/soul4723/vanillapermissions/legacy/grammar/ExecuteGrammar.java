@@ -24,7 +24,7 @@ public final class ExecuteGrammar extends Grammar {
     }
 
     @Override
-    public Parse parse(String command, String[] args, LegacyVersion version) {
+    public Parse parse(String command, String[] args) {
         Parse.Builder parse = Parse.root("execute");
         if (args.length == 0) return parse.build();
         parse.literal("as").entities("targets", 0);

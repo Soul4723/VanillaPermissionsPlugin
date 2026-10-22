@@ -26,7 +26,7 @@ public final class GameModeGrammar extends Grammar {
     }
 
     @Override
-    public Parse parse(String command, String[] args, LegacyVersion version) {
+    public Parse parse(String command, String[] args) {
         Parse.Builder parse = Parse.root("gamemode");
         String mode = mode(Tokens.at(args, 0));
         if (mode == null) return parse.build();

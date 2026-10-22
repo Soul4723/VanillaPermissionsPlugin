@@ -17,36 +17,33 @@ class GameModeGrammarTest {
     @ParameterizedTest
     @ValueSource(strings = {"creative", "c", "1", "01", "+1", "CREATIVE", "Creative", "C"})
     void everyCreativeSpellingIsTheCreativeNode(String spelling) {
-        for (LegacyVersion version : GrammarAssertions.EDGE_VERSIONS) {
-            assertPath(grammar, version, spelling, "gamemode.creative");
-            assertPath(grammar, version, spelling + " Bob", "gamemode.creative.target");
-        }
+        assertPath(grammar, spelling, "gamemode.creative");
+        assertPath(grammar, spelling + " Bob", "gamemode.creative.target");
     }
 
     @Test
     void otherModesAndTheirShortForms() {
-        LegacyVersion v = LegacyVersion.V1_12_2;
-        assertPath(grammar, v, "survival", "gamemode.survival");
-        assertPath(grammar, v, "s", "gamemode.survival");
-        assertPath(grammar, v, "0", "gamemode.survival");
-        assertPath(grammar, v, "adventure @a", "gamemode.adventure.target");
-        assertPath(grammar, v, "a", "gamemode.adventure");
-        assertPath(grammar, v, "2", "gamemode.adventure");
-        assertPath(grammar, v, "spectator", "gamemode.spectator");
-        assertPath(grammar, v, "sp Bob", "gamemode.spectator.target");
-        assertPath(grammar, v, "3", "gamemode.spectator");
+        assertPath(grammar, "survival", "gamemode.survival");
+        assertPath(grammar, "s", "gamemode.survival");
+        assertPath(grammar, "0", "gamemode.survival");
+        assertPath(grammar, "adventure @a", "gamemode.adventure.target");
+        assertPath(grammar, "a", "gamemode.adventure");
+        assertPath(grammar, "2", "gamemode.adventure");
+        assertPath(grammar, "spectator", "gamemode.spectator");
+        assertPath(grammar, "sp Bob", "gamemode.spectator.target");
+        assertPath(grammar, "3", "gamemode.spectator");
     }
 
     @Test
     void unknownModeStopsAtTheRoot() {
-        assertPath(grammar, LegacyVersion.V1_8_8, "", "gamemode");
-        assertPath(grammar, LegacyVersion.V1_8_8, "4", "gamemode");
-        assertPath(grammar, LegacyVersion.V1_8_8, "hardcore Bob", "gamemode");
+        assertPath(grammar, "", "gamemode");
+        assertPath(grammar, "4", "gamemode");
+        assertPath(grammar, "hardcore Bob", "gamemode");
     }
 
     @Test
     void targetIsAPlayerArgument() {
-        Parse parse = assertPath(grammar, LegacyVersion.V1_8_8, "c @a[r=5]", "gamemode.creative.target");
+        Parse parse = assertPath(grammar, "c @a[r=5]", "gamemode.creative.target");
         assertEquals(List.of("target@1:PLAYERS"), entities(parse));
         assertEquals(List.of("gamemode.creative", "gamemode.creative.target"), parse.checkedNodes());
     }

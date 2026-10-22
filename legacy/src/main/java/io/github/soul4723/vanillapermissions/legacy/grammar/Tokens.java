@@ -2,7 +2,6 @@ package io.github.soul4723.vanillapermissions.legacy.grammar;
 
 import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.Locale;
 import java.util.Set;
 
 /** Helpers for grammars: loose token matching and node path sets. */
@@ -12,11 +11,20 @@ public final class Tokens {
 
     /** Whether {@code token} equals any of {@code spellings}, ignoring case. */
     public static boolean is(String token, String... spellings) {
-        if (token == null) return false;
+        return match(token, spellings) != null;
+    }
+
+    /**
+     * The one of {@code spellings} that {@code token} equals ignoring case, or {@code null}. Take node names from
+     * here, never from the typed token: {@code equalsIgnoreCase} (vanilla's comparison too) matches {@code set} typed
+     * with a long s (U+017F), which lower-casing leaves as it is.
+     */
+    public static String match(String token, String... spellings) {
+        if (token == null) return null;
         for (String spelling : spellings) {
-            if (token.equalsIgnoreCase(spelling)) return true;
+            if (token.equalsIgnoreCase(spelling)) return spelling;
         }
-        return false;
+        return null;
     }
 
     /** Whether {@code token} parses with {@code Integer.parseInt} (so {@code 01} and {@code +1} count) to {@code value}. */
@@ -32,11 +40,6 @@ public final class Tokens {
     /** {@code args[index]}, or {@code null} past the end. */
     public static String at(String[] args, int index) {
         return index >= 0 && index < args.length ? args[index] : null;
-    }
-
-    /** {@code token} lower-cased with the root locale. */
-    public static String lower(String token) {
-        return token.toLowerCase(Locale.ROOT);
     }
 
     /**

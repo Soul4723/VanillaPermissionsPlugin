@@ -74,11 +74,6 @@ public final class Parse {
         return text.toString();
     }
 
-    @Override
-    public String toString() {
-        return describe();
-    }
-
     /** Kind of a parsed node. Entity kinds are resolved and checked against the selector rules. */
     public enum Kind {
         LITERAL,
@@ -235,8 +230,6 @@ public final class Parse {
         }
 
         private Builder entity(String name, Kind kind, int token, int width) {
-            if (token < 0) throw new IllegalArgumentException("token index must be >= 0");
-            if (width < 1) throw new IllegalArgumentException("an entity argument covers at least one token");
             steps.add(new Step(name, kind, token, width));
             return this;
         }

@@ -34,7 +34,7 @@ public final class TimeGrammar extends Grammar {
     }
 
     @Override
-    public Parse parse(String command, String[] args, LegacyVersion version) {
+    public Parse parse(String command, String[] args) {
         Parse.Builder parse = Parse.root("time");
         String action = Tokens.at(args, 0);
         String value = Tokens.at(args, 1);
