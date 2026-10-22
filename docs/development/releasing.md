@@ -1,54 +1,71 @@
-# Releasing and maintenance
+# Releasing
 
-Maintainer notes. Contributor-facing rules are in [CONTRIBUTING.md](../../CONTRIBUTING.md).
+How versions, tags and the release workflow fit together. Contributor rules are in [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
 ## Versioning
 
-- **Semantic Versioning**, `MAJOR.MINOR.PATCH`, set once in `pom.xml` (`<version>`). Pre-releases use a hyphen: `1.1.0-rc.1`.
-- **Git tag** is `v` + the pom version: `v1.0.0`. The tag is the only thing that triggers a release.
-- **One jar covers the whole supported range**, so its name has no Minecraft version: `VanillaPermissionsPlugin-1.0.0.jar`. The adapter is chosen at startup (see [Architecture](architecture.md#release-artifacts)). Split the jar only for a concrete incompatibility, such as a loader or bytecode conflict, and keep one source tree, one version and one tag if that happens.
-- **The supported range is documented, not encoded**: `api-version` in `plugin.yml`, the version tables in `docs/compatibility.md` and `SupportedVersions`, and a line in the changelog whenever it changes.
+- [Semantic Versioning](https://semver.org/), set once in the root `pom.xml`. Development builds are `X.Y.Z-SNAPSHOT`; pre-releases use a hyphen, such as `1.2.0-rc.1`.
 - Bump MAJOR when a supported server software or version is dropped or a node changes meaning, MINOR for new nodes and features, PATCH for fixes.
+- The tag is `v` + the version, such as `v1.1.0`. Pushing it is what publishes a release.
+- One jar covers every supported server, so its name has no Minecraft version: `VanillaPermissionsPlugin-1.1.0.jar`. The adapter is chosen at startup (see [Architecture](architecture.md#release-artifacts)).
+- The supported range is stated in `plugin.yml` (`api-version`), `SupportedVersions`, [Compatibility](../compatibility.md) and the changelog whenever it changes.
 
 ## Cutting a release
 
-1. Open a release PR: move the entries under `## [Unreleased]` in `CHANGELOG.md` to a new `## [X.Y.Z] - YYYY-MM-DD` section, and update the compare links at the bottom of the file.
-2. In that PR, run `mvn versions:set -DnewVersion=X.Y.Z -DgenerateBackupPoms=false`; it updates the root version and every module's parent reference. Also set `project.build.outputTimestamp` in the root `pom.xml` (used for reproducible jars) to the release date, in the same PR.
-3. Merge the release PR, then wait for **Build** (including its boot matrix and the `compat` check) on that merge commit on `main` to pass.
-4. Tag that merge commit: `git tag -a vX.Y.Z <merge-sha> -m "VanillaPermissionsPlugin X.Y.Z"`, then `git push origin vX.Y.Z`.
-5. Run the same command with the next development version (`1.2.0-SNAPSHOT` after `1.1.0`; development builds are `1.1.0-SNAPSHOT` until then).
+The version is changed by a commit, not by the workflow, so the tagged source is exactly what the release jar is built from. The steps below use `1.1.0`, released on 2026-11-01, after `1.0.0`.
 
-This release-then-SNAPSHOT sequence follows [ViaVersion](https://github.com/ViaVersion/ViaVersion/blob/master/gradle.properties) (`projectVersion`) and [EssentialsX](https://github.com/EssentialsX/Essentials/blob/2.x/build.gradle) (`version`). The tag/pom check rejects a release tag on a SNAPSHOT commit.
+1. On a branch from `main`, set the version and the timestamp written into the jar:
 
-The **Release** workflow (`.github/workflows/release.yml`) then:
+   ```bash
+   mvn versions:set -DnewVersion=1.1.0 -DgenerateBackupPoms=false
+   mvn versions:set-property -Dproperty=project.build.outputTimestamp \
+     -DnewVersion=2026-11-01T00:00:00Z -DgenerateBackupPoms=false
+   ```
 
-- fails if the tag does not equal `v` + the pom version;
-- runs `mvn verify`;
-- writes `VanillaPermissionsPlugin-X.Y.Z.jar.sha256`;
-- takes the matching `CHANGELOG.md` section as the release notes (it falls back to GitHub's generated notes if the section is missing), as DrexHD/VanillaPermissions does (`fetchChangelog()` in `build.gradle.kts`);
-- creates a GitHub Release with the jar and checksum, marked pre-release when the version contains a hyphen.
+2. In `CHANGELOG.md`, rename `## [Unreleased]` to `## [1.1.0] - 2026-11-01`, add a new empty `## [Unreleased]` above it, and update the links at the bottom:
 
-Running the workflow by hand (`workflow_dispatch`) only builds and checks; it never publishes.
+   ```markdown
+   [Unreleased]: https://github.com/Soul4723/VanillaPermissionsPlugin/compare/v1.1.0...HEAD
+   [1.1.0]: https://github.com/Soul4723/VanillaPermissionsPlugin/compare/v1.0.0...v1.1.0
+   ```
+
+3. Optional dry run: in **Actions → Release → Run workflow**, pick the branch. It builds the jar, writes the checksum and extracts the release notes into the `release-files` artifact without publishing anything.
+4. Open a pull request, merge it, and wait for the **Build** run on the merge commit on `main` to succeed.
+5. Tag that commit and push the tag:
+
+   ```bash
+   git tag -a v1.1.0 <merge-commit> -m "VanillaPermissionsPlugin 1.1.0"
+   git push origin v1.1.0
+   ```
+
+6. Set the next development version and merge it through a pull request:
+
+   ```bash
+   mvn versions:set -DnewVersion=1.2.0-SNAPSHOT -DgenerateBackupPoms=false
+   ```
+
+### What the Release workflow does
+
+On a `v*` tag, `.github/workflows/release.yml`:
+
+1. runs `mvn verify` and fails if the tag is not `v` + the pom version;
+2. fails unless **Build** succeeded on `main` for the tagged commit. If the tag was pushed too early, re-run the workflow once Build has passed;
+3. writes `VanillaPermissionsPlugin-1.1.0.jar.sha256`;
+4. takes the `## [1.1.0]` section of `CHANGELOG.md` as the release notes, with relative links made absolute. A missing section fails the release; only pre-releases fall back to GitHub's generated notes;
+5. creates the GitHub Release with the jar and the checksum file, marked as a pre-release when the version contains a hyphen.
+
+Anyone can check a download with `sha256sum -c VanillaPermissionsPlugin-1.1.0.jar.sha256`. Building the same tag again with the same JDK gives the same jar, unless Paper's API snapshot, which the build compiles against, has changed since.
 
 ## CI
 
-- **Build** (`build.yml`): runs on pushes to `main`, pull requests and manual dispatch; superseded PR runs are cancelled; the jar is uploaded as the `VanillaPermissionsPlugin` artifact. It uses one JDK, 21, which compiles both the Java 8 modules (`--release 8`) and the Java 21 `paper` module; see [Architecture](architecture.md#java-targets).
-- **Boot matrix** (also in `build.yml`): after the build job, a job builds the Spigot jars, one `smoke` matrix job boots every software and version with the plugin and LuckPerms, and an aggregate `compat` job gates the result. The matrix runs on main pushes, every PR, manual dispatch and twice-weekly scheduled runs. Spigot jars are built with pinned BuildTools and cached, never uploaded. The `compat` aggregate check follows [setuptools’ `check` job](https://github.com/pypa/setuptools/blob/main/.github/workflows/main.yml) using alls-green. PRs restore download caches; non-PR runs save them (Spigot jar builds also save on PR misses for downstream jobs).
-- If you make a check "required" in branch protection, do not add `paths` or `paths-ignore` to Build (`build` and `compat` required checks); a skipped required check blocks merging.
-- Dependabot (`.github/dependabot.yml`) updates Maven dependencies, GitHub Actions and the live-test npm packages weekly, grouped, with a seven-day cooldown. Paper API, Spigot API and Brigadier are ignored on purpose: they define compatibility floors. Name-only ignores also suppress security-update PRs for those dependencies ([Dependabot docs](https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference#ignore)); these are compile-time APIs, not shaded dependencies. Paper’s API SNAPSHOT can change, so rebuilding an old tag is not fully reproducible.
+- **Build** (`.github/workflows/build.yml`) runs on every pull request, on pushes to `main` that change more than Markdown files, issue templates or the live-test harness, by hand, and twice a week so its caches stay warm.
+  - The `build` job runs `mvn verify` with JDK 21, which compiles the Java 8 modules with `--release 8` and the Java 21 `paper` module (see [Architecture](architecture.md#java-targets)). The jar is uploaded as an artifact.
+  - The `smoke` matrix boots every supported server with that jar and LuckPerms through `scripts/compat-smoke.sh`. Its rows must match `SupportedVersions`; `SupportedVersionsTest` fails otherwise. Server builds are pinned; Spigot rows build their server with a pinned BuildTools and keep it in the Actions cache, never as an artifact.
+  - The `compat` job fails if the build or any matrix row failed. Make `compat` the required check in branch protection.
+- **Dependabot** proposes Maven and GitHub Actions updates monthly, grouped, after a seven-day cooldown. Paper API, Spigot API and Brigadier are ignored because they set the supported floors; ignoring them by name also suppresses security updates for them, which is acceptable for compile-only APIs.
 
-### Compatibility boot tests
+## Branching and support
 
-The boot matrix in `.github/workflows/build.yml` and `scripts/compat-smoke.sh` boot real servers. The setup follows other projects that do the same:
+All work goes to `main`, and releases are tags on `main`. If an older major ever needs a fix, branch `N.x` from its last tag, fix and tag there, and cherry-pick the fix forward.
 
-- [josemmo/yamipa `tests.yml`](https://github.com/josemmo/yamipa/blob/master/.github/workflows/tests.yml): a matrix of `spigot`, `paper`, `purpur` and `folia`, a Java version chosen per Minecraft version, assertions on the plugin's own log lines, `fail-fast: false`. The checks grep only the plugin's lines, because Purpur and Spigot log exceptions of their own.
-- [ez-plugins/EzShops `smoke-tests.yml`](https://github.com/ez-plugins/EzShops/blob/main/.github/workflows/smoke-tests.yml): a `User-Agent` on Fill requests, the newest STABLE build with a fallback to any channel, and the server log uploaded with `if: always()`.
-- [PaperMC docs: downloads service](https://github.com/PaperMC/docs/blob/main/src/content/docs/misc/downloads-service.mdx): Fill asks for a non-generic `User-Agent` with a contact URL; `compat-smoke.sh` sends one on every request.
-- [jpenilla/run-task](https://github.com/jpenilla/run-task) (`DownloadsAPIServiceImpl.kt`): verify the SHA-256 from the API, download to a temp file, move it into place, cache jars per version and build (`fetch_verified`, the `actions/cache` key).
-- [itzg/docker-minecraft-server](https://github.com/itzg/docker-minecraft-server) (`scripts/start-deployPufferfish`, `start-deployPurpur`): the Pufferfish Jenkins job and the Purpur API as download sources. Builds are pinned with SHA-256 here because Pufferfish publishes no checksums.
-
-## Branching
-
-Trunk only: all work goes to `main`, and releases are tags on `main`, as in LuckPerms, spark, ViaVersion and EssentialsX. If a fix for an older major is ever needed, branch `N.x` from the last `vN.x.y` tag, fix there, tag `vN.x.(y+1)` from that branch and cherry-pick forward (EssentialsX does this with `2.x`).
-
-**Support policy.** `docs/compatibility.md` says which versions are tested and which are only expected to work. Old versions are dropped by a MAJOR bump.
+Only the latest release receives fixes. [Compatibility](../compatibility.md) lists which versions are tested and which are only expected to work; dropping a version is a MAJOR change.
