@@ -51,10 +51,10 @@ jobs:
           fi
           # The boot matrix only runs in Build, so publish only a commit it passed on main.
           commit=$(git rev-parse HEAD)
-          passed=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow build.yml --event push --branch main \
+          passed=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow build.yml --branch main \
             --commit "$commit" --status success --json databaseId --jq length)
           if [[ $passed == 0 ]]; then
-            echo "::error::Build has not passed on main for $commit. Tag the release commit once its Build run succeeds, then re-run this workflow."
+            echo "::error::Build has not passed on main for $commit. Tag a commit whose Build run on main succeeded (run Build by hand if it was skipped), then re-run this workflow."
             exit 1
           fi
 
@@ -73,7 +73,7 @@ jobs:
             /^\[[^]]+\]: / { if (found) exit }
             found { print }
           ' CHANGELOG.md | sed -E "s#\]\(([^):\#][^):]*)\)#](${BLOB_URL}\1)#g" > release-notes.md
-          if [ -s release-notes.md ]; then
+          if grep -q '[^[:space:]]' release-notes.md; then
             echo "has-notes=true" >> "$GITHUB_OUTPUT"
           elif [[ $VERSION != *-* ]]; then
             echo "::error::CHANGELOG.md has no '## [$VERSION]' section"

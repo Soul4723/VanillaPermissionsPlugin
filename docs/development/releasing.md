@@ -49,7 +49,7 @@ The version is changed by a commit, not by the workflow, so the tagged source is
 On a `v*` tag, `.github/workflows/release.yml`:
 
 1. runs `mvn verify` and fails if the tag is not `v` + the pom version;
-2. fails unless **Build** succeeded on `main` for the tagged commit. If the tag was pushed too early, re-run the workflow once Build has passed;
+2. fails unless **Build** succeeded on `main` for the tagged commit. If the tag was pushed too early, re-run the workflow once Build has passed. The version-bump commit always gets a Build run because it changes `pom.xml`; for a commit Build skipped, run Build by hand on `main` first;
 3. writes `VanillaPermissionsPlugin-1.1.0.jar.sha256`;
 4. takes the `## [1.1.0]` section of `CHANGELOG.md` as the release notes, with relative links made absolute. A missing section fails the release; only pre-releases fall back to GitHub's generated notes;
 5. creates the GitHub Release with the jar and the checksum file, marked as a pre-release when the version contains a hyphen.
