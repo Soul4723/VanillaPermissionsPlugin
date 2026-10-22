@@ -9,7 +9,6 @@ import org.bukkit.entity.Player;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.UUID;
@@ -50,14 +49,7 @@ public final class SelectorRules {
         private final UUID id;
         private final CommandSender metadataSubject;
 
-        public Target(Kind kind, UUID id, CommandSender metadataSubject) {
-            if (kind == null) throw new IllegalArgumentException("kind is required");
-            if ((kind == Kind.PLAYER || kind == Kind.ENTITY) && id == null) {
-                throw new IllegalArgumentException("target id is required");
-            }
-            if (metadataSubject != null && !(metadataSubject instanceof Player)) {
-                throw new IllegalArgumentException("target metadata subject must be a player");
-            }
+        private Target(Kind kind, UUID id, CommandSender metadataSubject) {
             this.kind = kind;
             this.id = id;
             this.metadataSubject = metadataSubject;
@@ -102,25 +94,6 @@ public final class SelectorRules {
         public CommandSender metadataSubject() {
             return metadataSubject;
         }
-
-        @Override
-        public boolean equals(Object other) {
-            if (this == other) return true;
-            if (!(other instanceof Target)) return false;
-            Target target = (Target) other;
-            return kind == target.kind && Objects.equals(id, target.id)
-                    && Objects.equals(metadataSubject, target.metadataSubject);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(kind, id, metadataSubject);
-        }
-
-        @Override
-        public String toString() {
-            return "Target[kind=" + kind + ", id=" + id + ", metadataSubject=" + metadataSubject + "]";
-        }
     }
 
     /** Permission lookup seam; keeps target resolution and permission providers outside these rules. */
@@ -136,24 +109,13 @@ public final class SelectorRules {
     }
 
     /**
-     * Checks {@code selected} against the selector nodes under {@link #selectorPath}. Non-player senders are
-     * never restricted. Limit and weight meta fall back to shorter keys, see {@link #fallbackKeys}.
+     * Checks {@code selected} against the selector nodes under {@link #selectorPath}. Non-player senders are never
+     * restricted. Limit and weight meta fall back to shorter keys, see {@link #fallbackKeys}. {@code candidates} is
+     * {@code selected} unless the server resolves the selector again when the command runs and may then pick other
+     * targets ({@link RandomSelectors}): the limit applies to {@code selected}, the scope and weight rules to every
+     * target in {@code selected} and in {@code candidates}.
      *
      * @return the first rule the selection breaks, or empty when it is allowed
-     */
-    public static Optional<SelectorDenial> check(
-            CommandSender sender,
-            List<String> parsedNodePath,
-            String argumentName,
-            Collection<Target> selected,
-            Permissions permissions) {
-        return check(sender, parsedNodePath, argumentName, selected, selected, permissions);
-    }
-
-    /**
-     * {@link #check} for a selector the server resolves again when the command runs and may then pick other targets
-     * ({@link RandomSelectors}): the limit applies to {@code selected}, the scope and weight rules to every target in
-     * {@code selected} and in {@code candidates}, all the targets it could pick.
      */
     public static Optional<SelectorDenial> check(
             CommandSender sender,
@@ -163,9 +125,6 @@ public final class SelectorRules {
             Collection<Target> candidates,
             Permissions permissions) {
         if (!(sender instanceof Player)) return Optional.empty();
-        if (selected == null || candidates == null || permissions == null) {
-            throw new IllegalArgumentException("selection and permissions are required");
-        }
         Player player = (Player) sender;
 
         String path = selectorPath(parsedNodePath, argumentName);
@@ -232,13 +191,6 @@ public final class SelectorRules {
 
     /** {@code <command>.<argument>.<rest of the parsed path>}, matching upstream's selector node layout. */
     public static String selectorPath(List<String> parsedNodePath, String argumentName) {
-        if (parsedNodePath == null || parsedNodePath.isEmpty()) {
-            throw new IllegalArgumentException("parsed command path is required");
-        }
-        if (argumentName == null || isBlank(argumentName)) {
-            throw new IllegalArgumentException("argument name is required");
-        }
-
         StringBuilder path = new StringBuilder(parsedNodePath.get(0)).append('.').append(argumentName);
         for (int i = 1; i < parsedNodePath.size(); i++) path.append('.').append(parsedNodePath.get(i));
         return path.toString();
@@ -246,15 +198,5 @@ public final class SelectorRules {
 
     private static Optional<SelectorDenial> denial(SelectorDenial.Reason reason) {
         return Optional.of(SelectorDenial.of(reason));
-    }
-
-    /** {@code String#isBlank} (Java 11) for Java 8. */
-    private static boolean isBlank(String value) {
-        for (int i = 0; i < value.length(); ) {
-            int codePoint = value.codePointAt(i);
-            if (!Character.isWhitespace(codePoint)) return false;
-            i += Character.charCount(codePoint);
-        }
-        return true;
     }
 }

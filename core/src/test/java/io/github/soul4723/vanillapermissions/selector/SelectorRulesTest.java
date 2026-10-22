@@ -15,7 +15,6 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** The platform-free selector rules; the Brigadier wrapper is covered by SelectorTargetsTest. */
@@ -38,15 +37,11 @@ class SelectorRulesTest {
         assertEquals(SelectorRules.Target.Kind.ENTITY, SelectorRules.Target.entity(entity(OTHER_ID)).kind());
         assertEquals(SelectorRules.Target.Kind.SCORE_HOLDER, SelectorRules.Target.scoreHolder().kind());
         assertEquals(SelectorRules.Target.Kind.UNSUPPORTED, SelectorRules.Target.unsupported().kind());
-        assertThrows(IllegalArgumentException.class, () -> new SelectorRules.Target(SelectorRules.Target.Kind.PLAYER, null, null));
-        assertThrows(IllegalArgumentException.class, () -> new SelectorRules.Target(SelectorRules.Target.Kind.ENTITY, null, null));
     }
 
     @Test
     void permissionPathPutsArgumentAfterCommand() {
         assertEquals(PERMISSION_PATH, SelectorRules.selectorPath(COMMAND_PATH, "targets"));
-        assertThrows(IllegalArgumentException.class, () -> SelectorRules.selectorPath(List.of(), "targets"));
-        assertThrows(IllegalArgumentException.class, () -> SelectorRules.selectorPath(COMMAND_PATH, " "));
     }
 
     @Test
@@ -64,8 +59,8 @@ class SelectorRulesTest {
         CommandSender console = (CommandSender) Proxy.newProxyInstance(CommandSender.class.getClassLoader(),
                 new Class<?>[]{CommandSender.class}, (proxy, method, args) -> null);
         permissions.nodes.put("minecraft.selector.player." + PERMISSION_PATH, false);
-        assertEquals(Optional.empty(), SelectorRules.check(console, COMMAND_PATH, "targets",
-                List.of(SelectorRules.Target.unsupported()), permissions));
+        List<SelectorRules.Target> unsupported = List.of(SelectorRules.Target.unsupported());
+        assertEquals(Optional.empty(), SelectorRules.check(console, COMMAND_PATH, "targets", unsupported, unsupported, permissions));
     }
 
     @Test
@@ -178,13 +173,6 @@ class SelectorRulesTest {
         assertEquals(SelectorDenial.Reason.PLAYER, denial.orElseThrow().reason());
     }
 
-    @Test
-    void tooManyNeedsALimit() {
-        assertThrows(IllegalArgumentException.class, () -> SelectorDenial.of(SelectorDenial.Reason.TOO_MANY));
-        assertEquals("You can select at most 3 targets here", SelectorDenial.tooMany(3).message());
-        assertEquals(SelectorDenial.Reason.TOO_MANY, SelectorDenial.tooMany(3).reason());
-    }
-
     private void assertAllowed(List<SelectorRules.Target> targets) {
         assertEquals(Optional.empty(), check(targets));
     }
@@ -202,11 +190,11 @@ class SelectorRulesTest {
     }
 
     private Optional<SelectorDenial> check(List<SelectorRules.Target> targets) {
-        return SelectorRules.check(source, COMMAND_PATH, "targets", targets, permissions);
+        return SelectorRules.check(source, COMMAND_PATH, "targets", targets, targets, permissions);
     }
 
-    private static SelectorRules.Target targetPlayer(UUID id, CommandSender metadataSubject) {
-        return new SelectorRules.Target(SelectorRules.Target.Kind.PLAYER, id, metadataSubject);
+    private static SelectorRules.Target targetPlayer(UUID id, Player online) {
+        return SelectorRules.Target.player(id, online);
     }
 
     private static Player player(UUID id) {

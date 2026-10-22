@@ -1,7 +1,5 @@
 package io.github.soul4723.vanillapermissions.selector;
 
-import java.util.Objects;
-
 /**
  * Why {@link SelectorRules#check} refused a selection. Adapters turn it into their own error type
  * (a Brigadier {@code CommandSyntaxException}, a chat message on pre-1.13 servers) using {@link #message()}.
@@ -36,14 +34,13 @@ public final class SelectorDenial {
     }
 
     /** Denial for a selection larger than {@code limit}. */
-    public static SelectorDenial tooMany(int limit) {
+    static SelectorDenial tooMany(int limit) {
         return new SelectorDenial(Reason.TOO_MANY, limit);
     }
 
     /** Denial for any reason except {@link Reason#TOO_MANY}, which needs a limit. */
-    public static SelectorDenial of(Reason reason) {
-        if (reason == Reason.TOO_MANY) throw new IllegalArgumentException("use tooMany(limit) for " + reason);
-        return new SelectorDenial(Objects.requireNonNull(reason), 0);
+    static SelectorDenial of(Reason reason) {
+        return new SelectorDenial(reason, 0);
     }
 
     public Reason reason() {
@@ -66,23 +63,5 @@ public final class SelectorDenial {
             case UNSUPPORTED: return "This target cannot be checked against selector permissions, so it is not allowed";
             default: throw new IllegalStateException("unknown reason " + reason);
         }
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        if (this == other) return true;
-        if (!(other instanceof SelectorDenial)) return false;
-        SelectorDenial denial = (SelectorDenial) other;
-        return reason == denial.reason && limit == denial.limit;
-    }
-
-    @Override
-    public int hashCode() {
-        return 31 * reason.hashCode() + limit;
-    }
-
-    @Override
-    public String toString() {
-        return "SelectorDenial[" + reason + (reason == Reason.TOO_MANY ? ", limit=" + limit : "") + "]";
     }
 }
