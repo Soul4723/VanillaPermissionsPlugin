@@ -222,10 +222,6 @@ final class SpigotNames {
         ENTITY_ARGUMENT_GET_ENTITY(Kind.STATIC_METHOD, NativeClass.ENTITY_ARGUMENT, NativeClass.ENTITY, params(CommandContext.class, String.class),
                 "getEntity",
                 since("v1_13_R1", "a")),
-        /** {@code EntityArgument.getEntities(CommandContext, String)}; fails when nothing matches. */
-        ENTITY_ARGUMENT_GET_ENTITIES(Kind.STATIC_METHOD, NativeClass.ENTITY_ARGUMENT, Collection.class, params(CommandContext.class, String.class),
-                "getEntities",
-                since("v1_13_R1", "b")),
         /** {@code EntityArgument.getOptionalEntities(CommandContext, String)}. */
         ENTITY_ARGUMENT_GET_OPTIONAL_ENTITIES(Kind.STATIC_METHOD, NativeClass.ENTITY_ARGUMENT, Collection.class,
                 params(CommandContext.class, String.class), "getOptionalEntities",
@@ -234,10 +230,6 @@ final class SpigotNames {
         GAME_PROFILE_ARGUMENT_GET(Kind.STATIC_METHOD, NativeClass.GAME_PROFILE_ARGUMENT, Collection.class,
                 params(CommandContext.class, String.class), "getGameProfiles",
                 since("v1_13_R1", "a")),
-        /** {@code ScoreHolderArgument.getNames(CommandContext, String)}. */
-        SCORE_HOLDER_ARGUMENT_GET(Kind.STATIC_METHOD, NativeClass.SCORE_HOLDER_ARGUMENT, Collection.class,
-                params(CommandContext.class, String.class), "getNames",
-                since("v1_13_R1", "b")),
         /** {@code ScoreHolderArgument.getNamesWithDefaultWildcard(CommandContext, String)}. */
         SCORE_HOLDER_ARGUMENT_GET_WITH_WILDCARD(Kind.STATIC_METHOD, NativeClass.SCORE_HOLDER_ARGUMENT, Collection.class,
                 params(CommandContext.class, String.class), "getNamesWithDefaultWildcard",

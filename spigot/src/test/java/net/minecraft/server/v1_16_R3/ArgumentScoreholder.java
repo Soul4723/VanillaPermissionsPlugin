@@ -29,12 +29,8 @@ public class ArgumentScoreholder implements ArgumentType<ArgumentScoreholder.Res
         }
     }
 
-    public static Collection<String> b(CommandContext<?> context, String name) {
-        return Collections.emptyList();
-    }
-
     public static Collection<String> c(CommandContext<?> context, String name) {
-        return context.getInput().contains("*") ? java.util.Arrays.asList("Steve", "Alex", "FakeHolder") : b(context, name);
+        return context.getInput().contains("*") ? java.util.Arrays.asList("Steve", "Alex", "FakeHolder") : Collections.emptyList();
     }
 
     @Override
