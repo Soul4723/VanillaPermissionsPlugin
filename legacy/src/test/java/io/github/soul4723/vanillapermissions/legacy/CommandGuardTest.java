@@ -285,13 +285,26 @@ class CommandGuardTest {
     @Test
     void wildcardScoreHoldersCountEveryTrackedEntryForTheLimit() {
         nodes.put("minecraft.command.scoreboard", true);
-        server.holders = 3;
+        server.holders = List.of("Alice", "Bob", "#fake");
         meta.put("minecraft.selector.limit.scoreboard.targets.players.set.targets.objective.score", 2);
         assertEquals("You can select at most 2 targets here", guard.check(alice, "scoreboard players set * obj 0"));
-        server.holders = 2;
+        server.holders = List.of("Alice", "Bob");
         assertNull(guard.check(alice, "scoreboard players set * obj 0"));
-        server.holders = 0;
+        server.holders = List.of();
         assertNull(guard.check(alice, "scoreboard players set * obj 0"));
+    }
+
+    @Test
+    void wildcardTagTargetsEveryTrackedEntity() {
+        nodes.put("minecraft.command.scoreboard", true);
+        nodes.put("minecraft.selector.player.tag.targets.targets.add.name", false);
+        server.holders = List.of("Alice");
+        assertNull(guard.check(alice, "scoreboard players tag * add vip"));
+        server.holders = List.of("Alice", "Bob");
+        assertEquals("You do not have permission to target other players here",
+            guard.check(alice, "scoreboard players tag * add vip"));
+        server.targets.put("*", List.of()); // a plain name elsewhere, which matches nobody
+        assertNull(guard.check(alice, "kill *"), "only /scoreboard has the wildcard");
     }
 
     @Test
@@ -421,7 +434,7 @@ class CommandGuardTest {
 
     private final class FakeServer implements CommandGuard.Server {
         boolean override;
-        int holders;
+        List<String> holders = List.of();
         final Map<String, Command> commands = new HashMap<>();
         final List<Command> vanilla = new ArrayList<>();
         final Map<Command, List<String>> aliases = new HashMap<>();
@@ -448,7 +461,7 @@ class CommandGuardTest {
 
         @Override public boolean commandBlockOverride(String token) { return override; }
 
-        @Override public int scoreHolderCount() { return holders; }
+        @Override public List<String> scoreHolders() { return holders; }
 
         @Override
         public boolean isVanilla(Command command) {

@@ -36,7 +36,7 @@ class CommandListenerTest {
         CommandGuard.Server broken = new CommandGuard.Server() {
             @Override public Command command(String label) { throw new IllegalStateException("command map changed"); }
             @Override public boolean commandBlockOverride(String token) { return false; }
-            @Override public int scoreHolderCount() { return 0; }
+            @Override public List<String> scoreHolders() { return List.of(); }
             @Override public boolean isVanilla(Command command) { return true; }
             @Override public List<String> expandAlias(Command command, CommandSender sender, String[] args) { return null; }
             @Override public List<Entity> resolve(Entity origin, String token, boolean playersOnly) { return null; }

@@ -43,7 +43,8 @@ final class CommandGuard {
 
         boolean commandBlockOverride(String token);
 
-        int scoreHolderCount();
+        /** The names the main scoreboard tracks, which {@code *} stands for in {@code /scoreboard}. */
+        List<String> scoreHolders();
 
         /** Whether {@code command} is CraftBukkit's {@code VanillaCommandWrapper}. */
         boolean isVanilla(Command command);
@@ -127,7 +128,7 @@ final class CommandGuard {
             for (Parse.Step step : segment.steps()) {
                 if (!step.kind().isEntity()) continue;
                 List<Entity> entities = new ArrayList<>();
-                String denial = checkTargets(player, origin, segment, step, args, entities);
+                String denial = checkTargets(player, origin, segment, step, args, name.equals("scoreboard"), entities);
                 if (denial != null) return denial;
                 if (executeTargets == null && parse.innerCommandStart() >= 0) executeTargets = entities;
             }
@@ -154,7 +155,7 @@ final class CommandGuard {
 
     /** Applies the selector syntax node and the selector rules to one entity argument. */
     private String checkTargets(Player player, Entity origin, Parse.Segment segment, Parse.Step step, String[] args,
-                                List<Entity> entities) {
+                                boolean wildcard, List<Entity> entities) {
         List<SelectorRules.Target> targets = new ArrayList<>();
         List<SelectorRules.Target> candidates = new ArrayList<>();
         int end = Math.min(args.length, step.token() + step.width());
@@ -163,8 +164,17 @@ final class CommandGuard {
             boolean selector = token.startsWith("@");
             if (step.kind() == Parse.Kind.SCORE_HOLDERS && !selector) {
                 // Scoreboard names are not entities, so scope and weight rules skip them.
-                int count = token.equals("*") ? server.scoreHolderCount() : 1;
+                int count = token.equals("*") ? server.scoreHolders().size() : 1;
                 for (int holder = 0; holder < count; holder++) targets.add(SelectorRules.Target.scoreHolder());
+                continue;
+            }
+            if (wildcard && token.equals("*")) {
+                // Vanilla runs the command once per tracked name and looks each up as an entity (players tag).
+                for (String holder : server.scoreHolders()) {
+                    List<Entity> resolved = server.resolve(origin, holder, step.kind() == Parse.Kind.PLAYERS);
+                    if (resolved == null) return UNRESOLVED;
+                    for (Entity entity : resolved) targets.add(SelectorRules.Target.entity(entity));
+                }
                 continue;
             }
             List<Entity> resolved = server.resolve(origin, token, step.kind() == Parse.Kind.PLAYERS);
