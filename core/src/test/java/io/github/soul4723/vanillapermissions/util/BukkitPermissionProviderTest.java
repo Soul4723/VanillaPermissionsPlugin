@@ -93,6 +93,15 @@ class BukkitPermissionProviderTest {
         assertEquals(PermissionValue.UNDEFINED, PermissionManager.queryPermission(console, NODE));
     }
 
+    /** {@code /execute if permission} asks non-player entities through Bukkit; a failing lookup must not grant. */
+    @Test
+    void nonPlayerLookupFailureDenies() {
+        CommandSender entity = proxy(CommandSender.class, (p, m, a) -> {
+            throw new IllegalStateException("Permission provider unavailable");
+        });
+        assertFalse(PermissionManager.hasPermission(entity, NODE), "Provider failure allowed");
+    }
+
     @Test
     void metaIsEmptyWithoutASource() {
         assertEquals(OptionalInt.empty(), provider.getIntegerMeta(id, player, "key"));

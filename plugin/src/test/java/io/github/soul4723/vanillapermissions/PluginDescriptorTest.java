@@ -1,9 +1,12 @@
 package io.github.soul4723.vanillapermissions;
 
-import org.bukkit.permissions.Permission;
-import org.bukkit.permissions.PermissionDefault;
+import io.github.soul4723.vanillapermissions.listener.WhitelistBypassListener;
+import io.github.soul4723.vanillapermissions.paper.listener.ForceGamemodeBypassListener;
+import io.github.soul4723.vanillapermissions.paper.listener.MoveSpeedBypassListener;
 import io.github.soul4723.vanillapermissions.platform.Adapters;
 import io.github.soul4723.vanillapermissions.platform.VersionAdapter;
+import org.bukkit.permissions.Permission;
+import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -59,8 +62,10 @@ class PluginDescriptorTest {
 
     @Test
     void onlyTheBypassAndSelectorNodesAreDeclaredUnderMinecraft() {
-        Set<String> expected = Set.of("minecraft.selector", "minecraft.bypass.whitelist", "minecraft.bypass.player-limit",
-            "minecraft.bypass.force-gamemode", "minecraft.bypass.move-speed.player");
+        // The bypass listeners' nodes, which must be declared so Bukkit knows their false default.
+        Set<String> expected = Set.of("minecraft.selector", WhitelistBypassListener.WHITELIST_PERMISSION,
+            WhitelistBypassListener.PLAYER_LIMIT_PERMISSION, ForceGamemodeBypassListener.BYPASS_PERMISSION,
+            MoveSpeedBypassListener.PLAYER_SPEED_PERMISSION);
         Set<String> declared = new HashSet<>();
         for (Permission permission : descriptor.getPermissions()) {
             if (!permission.getName().startsWith("minecraft.")) continue;
