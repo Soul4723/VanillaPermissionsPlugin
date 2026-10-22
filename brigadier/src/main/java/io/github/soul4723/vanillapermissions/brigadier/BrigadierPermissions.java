@@ -260,7 +260,7 @@ public final class BrigadierPermissions {
             if (!(sender instanceof Player)) return fallback.run(context);
             boolean hasSelectors = hasSelectorArguments(context, null);
             if (!hasSelectors) {
-                validateSelectors(context);
+                validateSelectors(context, sender);
                 return fallback.run(context);
             }
 
@@ -269,7 +269,7 @@ public final class BrigadierPermissions {
                 SelectorTargets.validateSelectorSyntax(sender, vanillaAllowed);
                 SelectorOverride override = bridge.bypassSelectorCheck(context, null);
                 try {
-                    validateSelectors(context);
+                    validateSelectors(context, sender);
                     return fallback.run(context);
                 } finally {
                     override.restore();
@@ -309,9 +309,8 @@ public final class BrigadierPermissions {
         return new IllegalStateException("Native selector permission check failed", cause);
     }
 
-    private void validateSelectors(CommandContext<?> context) throws CommandSyntaxException {
-        CommandSender sender = commandSender(context.getSource());
-        if (!(sender instanceof Player)) return;
+    /** Applies the selector rules to every selector argument; {@code sender} is the player running the command. */
+    private void validateSelectors(CommandContext<?> context, CommandSender sender) throws CommandSyntaxException {
         List<String> path = VanillaTree.parsedPath(context);
         for (VanillaTree.ParsedNode parsed : VanillaTree.parsedNodes(context)) {
             if (!(parsed.node() instanceof ArgumentCommandNode<?, ?>)) continue;

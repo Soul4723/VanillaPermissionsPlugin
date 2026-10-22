@@ -71,6 +71,32 @@ class SelectorCommandTest {
         }
     }
 
+    /** Vanilla's own selector check is off while the rules run, so a failed second sender lookup must not skip them. */
+    @Test
+    void rulesUseTheSenderLookedUpBeforeVanillasCheckWasBypassed() throws Exception {
+        Player self = player(UUID.randomUUID());
+        Player other = player(UUID.randomUUID());
+        int[] lookups = {0};
+        BrigadierPermissions permissions = new BrigadierPermissions(null, new TestBridge() {
+            @Override public CommandSender sender(Object source) {
+                if (lookups[0]++ > 0) throw new IllegalStateException("sender lookup failed");
+                return self;
+            }
+            @Override public boolean selectorCheckBypassed(Object source) { return true; }
+            @Override public SelectorOverride bypassSelectorCheck(CommandContext<?> context, String name) { return () -> {}; }
+            @Override public ArgumentResolver selectorResolver(ArgumentType<?> type) {
+                return type instanceof PickArgument ? (context, name) -> context.getArgument(name, Pick.class).resolve(self, other) : null;
+            }
+        }, null);
+        CommandDispatcher<Object> dispatcher = new CommandDispatcher<>();
+        dispatcher.register(literal("kill").then(argument("targets", new PickArgument()).executes(c -> 1)));
+        try (TestLuckPerms luckPerms = new TestLuckPerms()) {
+            luckPerms.nodes.put("minecraft.selector.player.kill.targets.targets", Tristate.FALSE);
+            assertThrows(CommandSyntaxException.class,
+                    () -> permissions.new SelectorCommand(c -> 1).run(context(dispatcher, "kill @a")));
+        }
+    }
+
     private static CommandContext<Object> context(CommandDispatcher<Object> dispatcher, String input) {
         return dispatcher.parse(input, new Object()).getContext().build(input);
     }
