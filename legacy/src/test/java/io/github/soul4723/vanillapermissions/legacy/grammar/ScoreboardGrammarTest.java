@@ -20,187 +20,163 @@ class ScoreboardGrammarTest {
     private static final LegacyVersion V9 = LegacyVersion.V1_9_4;
     private static final LegacyVersion V10 = LegacyVersion.V1_10_2;
     private static final LegacyVersion V12 = LegacyVersion.V1_12_2;
-    private static final LegacyVersion[] ALL = GrammarAssertions.ALL_VERSIONS;
 
     private final ScoreboardGrammar grammar = new ScoreboardGrammar();
 
-    private Parse sb(LegacyVersion version, String line, String expected) {
-        return assertPath(grammar, version, line, expected);
+    private Parse sb(String line, String expected) {
+        return assertPath(grammar, line, expected);
     }
 
     @Test
     void emptyAndUnknownGroupsStopAtTheRoot() {
-        for (LegacyVersion v : ALL) {
-            sb(v, "", "scoreboard");
-            sb(v, "bogus", "scoreboard");
-            sb(v, "objectives", "scoreboard.objectives");
-            sb(v, "objectives bogus x", "scoreboard.objectives");
-            sb(v, "players", "scoreboard.players");
-            sb(v, "players bogus Bob", "scoreboard.players");
-            sb(v, "teams", "team");
-            sb(v, "teams bogus", "team");
-        }
+        sb("", "scoreboard");
+        sb("bogus", "scoreboard");
+        sb("objectives", "scoreboard.objectives");
+        sb("objectives bogus x", "scoreboard.objectives");
+        sb("players", "scoreboard.players");
+        sb("players bogus Bob", "scoreboard.players");
+        sb("teams", "team");
+        sb("teams bogus", "team");
     }
 
     @Test
     void objectives() {
-        for (LegacyVersion v : ALL) {
-            sb(v, "objectives list", "scoreboard.objectives.list");
-            sb(v, "OBJECTIVES LIST", "scoreboard.objectives.list");
-            sb(v, "objectives add", "scoreboard.objectives.add");
-            sb(v, "objectives add kills", "scoreboard.objectives.add.objective");
-            sb(v, "objectives add kills dummy", "scoreboard.objectives.add.objective.criteria");
-            sb(v, "objectives add kills dummy Kill Count", "scoreboard.objectives.add.objective.criteria.displayName");
-            sb(v, "Objectives Add kills dummy A", "scoreboard.objectives.add.objective.criteria.displayName");
-            sb(v, "objectives remove", "scoreboard.objectives.remove");
-            sb(v, "objectives remove kills", "scoreboard.objectives.remove.objective");
-            sb(v, "objectives setdisplay", "scoreboard.objectives.setdisplay");
-            sb(v, "objectives setdisplay sidebar", "scoreboard.objectives.setdisplay.slot");
-            sb(v, "objectives setdisplay sidebar kills", "scoreboard.objectives.setdisplay.slot.objective");
-            assertEquals(List.of(), entities(sb(v, "objectives add @a dummy", "scoreboard.objectives.add.objective.criteria")));
-        }
+        sb("objectives list", "scoreboard.objectives.list");
+        sb("OBJECTIVES LIST", "scoreboard.objectives.list");
+        sb("objectives add", "scoreboard.objectives.add");
+        sb("objectives add kills", "scoreboard.objectives.add.objective");
+        sb("objectives add kills dummy", "scoreboard.objectives.add.objective.criteria");
+        sb("objectives add kills dummy Kill Count", "scoreboard.objectives.add.objective.criteria.displayName");
+        sb("Objectives Add kills dummy A", "scoreboard.objectives.add.objective.criteria.displayName");
+        sb("objectives remove", "scoreboard.objectives.remove");
+        sb("objectives remove kills", "scoreboard.objectives.remove.objective");
+        sb("objectives setdisplay", "scoreboard.objectives.setdisplay");
+        sb("objectives setdisplay sidebar", "scoreboard.objectives.setdisplay.slot");
+        sb("objectives setdisplay sidebar kills", "scoreboard.objectives.setdisplay.slot.objective");
+        assertEquals(List.of(), entities(sb("objectives add @a dummy", "scoreboard.objectives.add.objective.criteria")));
     }
 
     @Test
     void playersList() {
-        for (LegacyVersion v : ALL) {
-            sb(v, "players list", "scoreboard.players.list");
-            Parse parse = sb(v, "players list @a", "scoreboard.players.list.target");
-            assertEquals(List.of("target@2:SCORE_HOLDERS"), entities(parse));
-            assertEquals(List.of("scoreboard.players", "scoreboard.players.list", "scoreboard.players.list.target"),
-                parse.checkedNodes());
-            sb(v, "players list Bob", "scoreboard.players.list.target");
-            sb(v, "players list *", "scoreboard.players.list.target");
-        }
+        sb("players list", "scoreboard.players.list");
+        Parse parse = sb("players list @a", "scoreboard.players.list.target");
+        assertEquals(List.of("target@2:SCORE_HOLDERS"), entities(parse));
+        assertEquals(List.of("scoreboard.players", "scoreboard.players.list", "scoreboard.players.list.target"),
+            parse.checkedNodes());
+        sb("players list Bob", "scoreboard.players.list.target");
+        sb("players list *", "scoreboard.players.list.target");
     }
 
     @ParameterizedTest
     @CsvSource({"set", "add", "remove", "SET", "Add"})
     void playersSetAddRemove(String op) {
         String node = "scoreboard.players." + op.toLowerCase();
-        for (LegacyVersion v : ALL) {
-            sb(v, "players " + op, node);
-            sb(v, "players " + op + " Bob", node + ".targets");
-            sb(v, "players " + op + " Bob kills", node + ".targets.objective");
-            Parse parse = sb(v, "players " + op + " @a kills 5", node + ".targets.objective.score");
-            assertEquals(List.of("targets@2:SCORE_HOLDERS"), entities(parse));
-            // the legacy dataTag has no node and ends the path
-            sb(v, "players " + op + " @a kills 5 {Tag:1b}", node + ".targets.objective.score");
-            sb(v, "players " + op + " * kills -5", node + ".targets.objective.score");
-        }
+        sb("players " + op, node);
+        sb("players " + op + " Bob", node + ".targets");
+        sb("players " + op + " Bob kills", node + ".targets.objective");
+        Parse parse = sb("players " + op + " @a kills 5", node + ".targets.objective.score");
+        assertEquals(List.of("targets@2:SCORE_HOLDERS"), entities(parse));
+        // the legacy dataTag has no node and ends the path
+        sb("players " + op + " @a kills 5 {Tag:1b}", node + ".targets.objective.score");
+        sb("players " + op + " * kills -5", node + ".targets.objective.score");
     }
 
     @Test
     void nodeNamesAreTheModernSpellingNotTheTypedOne() {
         // Vanilla's equalsIgnoreCase matches a long s (U+017F) to s and a dotless i (U+0131) to i; lower-casing does not.
-        sb(V12, "players \u017Fet Bob kills 5", "scoreboard.players.set.targets.objective.score");
-        sb(V12, "players re\u017Fet Bob", "scoreboard.players.reset.targets");
-        sb(V12, "teams l\u0131st", "team.list");
-        sb(V12, "players tag Bob ADD vip", "tag.targets.add.name");
+        sb("players \u017Fet Bob kills 5", "scoreboard.players.set.targets.objective.score");
+        sb("players re\u017Fet Bob", "scoreboard.players.reset.targets");
+        sb("teams l\u0131st", "team.list");
+        sb("players tag Bob ADD vip", "tag.targets.add.name");
     }
 
     @Test
     void playersResetAndEnable() {
-        for (LegacyVersion v : ALL) {
-            sb(v, "players reset", "scoreboard.players.reset");
-            sb(v, "players reset Bob", "scoreboard.players.reset.targets");
-            sb(v, "players reset Bob kills", "scoreboard.players.reset.targets.objective");
-            assertEquals(List.of("targets@2:SCORE_HOLDERS"), entities(sb(v, "players reset @e", "scoreboard.players.reset.targets")));
-            sb(v, "players enable", "scoreboard.players.enable");
-            sb(v, "players enable Bob", "scoreboard.players.enable.targets");
-            sb(v, "players enable Bob trig", "scoreboard.players.enable.targets.objective");
-        }
+        sb("players reset", "scoreboard.players.reset");
+        sb("players reset Bob", "scoreboard.players.reset.targets");
+        sb("players reset Bob kills", "scoreboard.players.reset.targets.objective");
+        assertEquals(List.of("targets@2:SCORE_HOLDERS"), entities(sb("players reset @e", "scoreboard.players.reset.targets")));
+        sb("players enable", "scoreboard.players.enable");
+        sb("players enable Bob", "scoreboard.players.enable.targets");
+        sb("players enable Bob trig", "scoreboard.players.enable.targets.objective");
     }
 
     @Test
     void playersOperationHasTwoScoreHolders() {
-        for (LegacyVersion v : ALL) {
-            sb(v, "players operation", "scoreboard.players.operation");
-            sb(v, "players operation Bob", "scoreboard.players.operation.targets");
-            sb(v, "players operation Bob a", "scoreboard.players.operation.targets.targetObjective");
-            sb(v, "players operation Bob a +=", "scoreboard.players.operation.targets.targetObjective.operation");
-            sb(v, "players operation Bob a += @p", "scoreboard.players.operation.targets.targetObjective.operation.source");
-            Parse parse = sb(v, "players operation @a a >< @p b",
-                "scoreboard.players.operation.targets.targetObjective.operation.source.sourceObjective");
-            assertEquals(List.of("targets@2:SCORE_HOLDERS", "source@5:SCORE_HOLDERS"), entities(parse));
-        }
+        sb("players operation", "scoreboard.players.operation");
+        sb("players operation Bob", "scoreboard.players.operation.targets");
+        sb("players operation Bob a", "scoreboard.players.operation.targets.targetObjective");
+        sb("players operation Bob a +=", "scoreboard.players.operation.targets.targetObjective.operation");
+        sb("players operation Bob a += @p", "scoreboard.players.operation.targets.targetObjective.operation.source");
+        Parse parse = sb("players operation @a a >< @p b",
+            "scoreboard.players.operation.targets.targetObjective.operation.source.sourceObjective");
+        assertEquals(List.of("targets@2:SCORE_HOLDERS", "source@5:SCORE_HOLDERS"), entities(parse));
     }
 
     @Test
     void playersTestHasNoModernNode() {
-        for (LegacyVersion v : ALL) {
-            sb(v, "players test Bob kills 1", "scoreboard.players");
-            sb(v, "players test Bob kills * 5", "scoreboard.players");
-            Parse parse = sb(v, "players test @a kills 1", "scoreboard.players");
-            assertEquals(List.of(2), parse.selectorTokens());
-            assertEquals(List.of("scoreboard.players"), parse.checkedNodes());
-        }
+        sb("players test Bob kills 1", "scoreboard.players");
+        sb("players test Bob kills * 5", "scoreboard.players");
+        Parse parse = sb("players test @a kills 1", "scoreboard.players");
+        assertEquals(List.of(2), parse.selectorTokens());
+        assertEquals(List.of("scoreboard.players"), parse.checkedNodes());
     }
 
     @Test
     void playersTagIsTheModernTagCommandFromOnePointNine() {
-        for (LegacyVersion v : GrammarAssertions.SINCE_1_9) {
-            Parse add = sb(v, "players tag Bob add vip", "tag.targets.add.name");
-            assertEquals(List.of("targets@2:ENTITIES"), entities(add));
-            assertEquals(List.of("tag", "tag.targets", "tag.targets.add", "tag.targets.add.name"), add.checkedNodes());
-            sb(v, "players tag Bob add vip {Foo:1b}", "tag.targets.add.name");
-            sb(v, "players tag Bob remove vip", "tag.targets.remove.name");
-            sb(v, "players tag @e[type=Pig] remove vip", "tag.targets.remove.name");
-            Parse list = sb(v, "players tag Bob list", "tag.targets.list");
-            assertEquals(List.of("targets@2:ENTITIES"), entities(list));
-            sb(v, "players tag Bob add", "tag.targets.add");
-            sb(v, "players tag Bob bogus x", "tag.targets");
-            sb(v, "players tag Bob", "tag.targets");
-            sb(v, "players tag", "tag");
-            sb(v, "PLAYERS TAG Bob ADD vip", "tag.targets.add.name");
-        }
+        Parse add = sb("players tag Bob add vip", "tag.targets.add.name");
+        assertEquals(List.of("targets@2:ENTITIES"), entities(add));
+        assertEquals(List.of("tag", "tag.targets", "tag.targets.add", "tag.targets.add.name"), add.checkedNodes());
+        sb("players tag Bob add vip {Foo:1b}", "tag.targets.add.name");
+        sb("players tag Bob remove vip", "tag.targets.remove.name");
+        sb("players tag @e[type=Pig] remove vip", "tag.targets.remove.name");
+        Parse list = sb("players tag Bob list", "tag.targets.list");
+        assertEquals(List.of("targets@2:ENTITIES"), entities(list));
+        sb("players tag Bob add", "tag.targets.add");
+        sb("players tag Bob bogus x", "tag.targets");
+        sb("players tag Bob", "tag.targets");
+        sb("players tag", "tag");
+        sb("PLAYERS TAG Bob ADD vip", "tag.targets.add.name");
     }
 
     @Test
     void playersTagIsParsedButNotListedOnOnePointEight() {
-        assertEquals("tag.targets.add.name", grammar.parse("scoreboard",
-            new String[] {"players", "tag", "Bob", "add", "vip"}).describe());
-        assertEquals("tag", grammar.parse("scoreboard", new String[] {"players", "tag"}).describe());
         assertFalse(grammar.nodePaths(V8).contains("tag"));
     }
 
     @Test
     void teamsListAddRemoveEmpty() {
-        for (LegacyVersion v : ALL) {
-            Parse list = sb(v, "teams list", "team.list");
-            assertEquals(List.of("team", "team.list"), list.checkedNodes());
-            sb(v, "teams list red", "team.list.team");
-            sb(v, "teams add", "team.add");
-            sb(v, "teams add red", "team.add.team");
-            sb(v, "teams add red The Red Team", "team.add.team.displayName");
-            sb(v, "TEAMS ADD red", "team.add.team");
-            sb(v, "teams remove", "team.remove");
-            sb(v, "teams remove red", "team.remove.team");
-            sb(v, "teams empty", "team.empty");
-            sb(v, "teams empty red", "team.empty.team");
-            assertEquals(List.of(), entities(sb(v, "teams remove @a", "team.remove.team")));
-        }
+        Parse list = sb("teams list", "team.list");
+        assertEquals(List.of("team", "team.list"), list.checkedNodes());
+        sb("teams list red", "team.list.team");
+        sb("teams add", "team.add");
+        sb("teams add red", "team.add.team");
+        sb("teams add red The Red Team", "team.add.team.displayName");
+        sb("TEAMS ADD red", "team.add.team");
+        sb("teams remove", "team.remove");
+        sb("teams remove red", "team.remove.team");
+        sb("teams empty", "team.empty");
+        sb("teams empty red", "team.empty.team");
+        assertEquals(List.of(), entities(sb("teams remove @a", "team.remove.team")));
     }
 
     @Test
     void teamsJoinAndLeave() {
-        for (LegacyVersion v : ALL) {
-            sb(v, "teams join", "team.join");
-            // a player sender joins itself
-            Parse self = sb(v, "teams join red", "team.join.team");
-            assertEquals(List.of(), entities(self));
-            Parse one = sb(v, "teams join red Bob", "team.join.team.members");
-            assertEquals(List.of("members@3:SCORE_HOLDERS"), entities(one));
-            Parse many = sb(v, "teams join red Bob @a[r=3] Carol", "team.join.team.members");
-            assertEquals(List.of("members@3+3:SCORE_HOLDERS"), entities(many));
-            assertEquals(List.of("team", "team.join", "team.join.team", "team.join.team.members"), many.checkedNodes());
+        sb("teams join", "team.join");
+        // a player sender joins itself
+        Parse self = sb("teams join red", "team.join.team");
+        assertEquals(List.of(), entities(self));
+        Parse one = sb("teams join red Bob", "team.join.team.members");
+        assertEquals(List.of("members@3:SCORE_HOLDERS"), entities(one));
+        Parse many = sb("teams join red Bob @a[r=3] Carol", "team.join.team.members");
+        assertEquals(List.of("members@3+3:SCORE_HOLDERS"), entities(many));
+        assertEquals(List.of("team", "team.join", "team.join.team", "team.join.team.members"), many.checkedNodes());
 
-            sb(v, "teams leave", "team.leave");
-            Parse leaveOne = sb(v, "teams leave Bob", "team.leave.members");
-            assertEquals(List.of("members@2:SCORE_HOLDERS"), entities(leaveOne));
-            Parse leaveMany = sb(v, "teams leave Bob @e Carol Dan", "team.leave.members");
-            assertEquals(List.of("members@2+4:SCORE_HOLDERS"), entities(leaveMany));
-        }
+        sb("teams leave", "team.leave");
+        Parse leaveOne = sb("teams leave Bob", "team.leave.members");
+        assertEquals(List.of("members@2:SCORE_HOLDERS"), entities(leaveOne));
+        Parse leaveMany = sb("teams leave Bob @e Carol Dan", "team.leave.members");
+        assertEquals(List.of("members@2+4:SCORE_HOLDERS"), entities(leaveMany));
     }
 
     @ParameterizedTest
@@ -214,10 +190,8 @@ class ScoreboardGrammarTest {
     })
     void teamsOptionWithArgumentValues(String legacy, String modern, String value) {
         String option = modern.substring(0, modern.indexOf('.'));
-        for (LegacyVersion v : ALL) {
-            sb(v, "teams option red " + legacy, "team.modify.team." + option);
-            sb(v, "teams option red " + legacy + " " + value, "team.modify.team." + modern);
-        }
+        sb("teams option red " + legacy, "team.modify.team." + option);
+        sb("teams option red " + legacy + " " + value, "team.modify.team." + modern);
     }
 
     @ParameterizedTest
@@ -229,34 +203,26 @@ class ScoreboardGrammarTest {
         "deathmessagevisibility, deathMessageVisibility, never, never",
     })
     void teamsOptionWithLiteralValues(String legacy, String modern, String value, String literal) {
-        for (LegacyVersion v : ALL) {
-            sb(v, "teams option red " + legacy, "team.modify.team." + modern);
-            sb(v, "teams option red " + legacy + " " + value, "team.modify.team." + modern + "." + literal);
-            // an invalid value stops at the option
-            sb(v, "teams option red " + legacy + " sometimes", "team.modify.team." + modern);
-        }
+        sb("teams option red " + legacy, "team.modify.team." + modern);
+        sb("teams option red " + legacy + " " + value, "team.modify.team." + modern + "." + literal);
+        // an invalid value stops at the option
+        sb("teams option red " + legacy + " sometimes", "team.modify.team." + modern);
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"always", "never", "pushOtherTeams", "pushOwnTeam"})
     void teamsOptionCollisionRuleIsParsedButNotListedOnOnePointEight(String value) {
-        for (LegacyVersion v : GrammarAssertions.SINCE_1_9) {
-            sb(v, "teams option red collisionRule", "team.modify.team.collisionRule");
-            sb(v, "teams option red collisionRule " + value, "team.modify.team.collisionRule." + value);
-        }
-        assertEquals("team.modify.team.collisionRule." + value,
-            grammar.parse("scoreboard", new String[] {"teams", "option", "red", "collisionRule", value}).describe());
+        sb("teams option red collisionRule", "team.modify.team.collisionRule");
+        sb("teams option red collisionRule " + value, "team.modify.team.collisionRule." + value);
         assertFalse(grammar.nodePaths(V8).contains("team.modify.team.collisionRule"));
     }
 
     @Test
     void teamsOptionStopsWhereTheTokensStop() {
-        for (LegacyVersion v : ALL) {
-            sb(v, "teams option", "team.modify");
-            sb(v, "teams option red", "team.modify.team");
-            sb(v, "teams option red glowing true", "team.modify.team");
-            sb(v, "teams option red color red extra", "team.modify.team.color.value");
-        }
+        sb("teams option", "team.modify");
+        sb("teams option red", "team.modify.team");
+        sb("teams option red glowing true", "team.modify.team");
+        sb("teams option red color red extra", "team.modify.team.color.value");
     }
 
     @Test
