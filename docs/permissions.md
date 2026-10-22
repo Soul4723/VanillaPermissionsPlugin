@@ -133,7 +133,7 @@ Deny-only: `false` takes access away; `true` and unset leave vanilla/Paper in ch
 
 Structure blocks and jigsaws are operator and creative only, with no Paper node.
 
-Paper's own `minecraft.admin.command_feedback` (operators have it by default) controls who sees the "[Name: did X]" broadcast of other players' commands, while the `sendCommandFeedback` game rule is true. Checked on Paper 1.21.11 with LuckPerms: a non-operator without the node saw nothing when an operator ran `/time set day`, and with the node set to `true` received the broadcast. It replaces upstream's `minecraft.adminbroadcast.receive`, which this plugin does not add.
+Paper's own `minecraft.admin.command_feedback` (operators have it by default) controls who sees the "[Name: did X]" broadcast of other players' commands while the `sendCommandFeedback` game rule is true. It replaces upstream's `minecraft.adminbroadcast.receive`, which this plugin does not add.
 
 ### This plugin's own nodes
 
