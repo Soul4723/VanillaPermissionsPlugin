@@ -59,11 +59,11 @@ public final class SpigotAdapter implements VersionAdapter {
             if (late) {
                 craft.syncCommands();
                 plugin.getLogger().info("Re-synced the server's commands because VanillaPermissionsPlugin was enabled after startup");
-                applyAliasPermissions(plugin, craft);
+                applyAliasPermissions();
             } else {
                 // The wrappers do not exist yet; the first tick runs after startup (or /reload) has created them, the
                 // same point CommandAPI picks for its permission fix (CommandAPISpigot#onEnable, scheduleSyncDelayedTask).
-                aliasTask = server.getScheduler().runTask(plugin, () -> applyAliasPermissions(plugin, craft));
+                aliasTask = server.getScheduler().runTask(plugin, this::applyAliasPermissions);
             }
         } catch (ReflectiveOperationException | RuntimeException | LinkageError error) {
             ServerSoftware software = ServerSoftware.detect();
@@ -101,9 +101,8 @@ public final class SpigotAdapter implements VersionAdapter {
     }
 
     /** Fail-safe: on any problem, one warning and CraftBukkit's alias permissions stay as they are. */
-    private void applyAliasPermissions(JavaPlugin plugin, CraftServerAccess craft) {
+    private void applyAliasPermissions() {
         aliasTask = null;
-        if (permissions == null) return;
         try {
             List<String> changed = aliases.apply(craft.knownCommands(), craft.vanillaCommandWrapperType(),
                     craft.vanillaDispatcher().getRoot(), plugin.getServer().getClass().getClassLoader(),

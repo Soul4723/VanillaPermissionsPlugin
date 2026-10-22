@@ -218,11 +218,15 @@ final class SpigotBridge implements BrigadierBridge {
 
     /**
      * Also treats non-entity score holders as score holders on 1.20.3+, where {@code ScoreHolderArgument} returns
-     * {@code ScoreHolder} objects whose {@code getScoreboardName()} is obfuscated on Spigot.
+     * {@code ScoreHolder} objects whose {@code getScoreboardName()} is obfuscated on Spigot. Entities are score holders
+     * too from 1.20.3, so one CraftBukkit could not wrap is unsupported rather than a name the selector rules skip.
      */
     @Override
     public SelectorRules.Target selectorTarget(Object resolved) {
         SelectorRules.Target target = SelectorTargets.target(resolved);
+        if (access.type(NativeClass.ENTITY).isInstance(resolved)) {
+            return target.kind() == SelectorRules.Target.Kind.SCORE_HOLDER ? SelectorRules.Target.unsupported() : target;
+        }
         if (target.kind() == SelectorRules.Target.Kind.UNSUPPORTED && resolved != null && isScoreHolder(resolved.getClass())) {
             return SelectorRules.Target.scoreHolder();
         }

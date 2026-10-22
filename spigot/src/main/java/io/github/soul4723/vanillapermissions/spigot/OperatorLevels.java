@@ -88,7 +88,6 @@ abstract class OperatorLevels {
                     access.method(NativeMember.SET_HAS_PERMISSION));
             // On 1.21.11 the selector permission is the obfuscated Permissions.e, so check that it behaves like the
             // entity selector permission (granted from level 2), as NativeAccess checks the selector flag by behaviour.
-            // The paper adapter only finds it by its Mojang name, so it does not check.
             if (!table.grants(table.setFor(GAMEMASTER), selectorPermission)
                     || table.grants(table.setFor(GAMEMASTER - 1), selectorPermission)) {
                 throw new IllegalStateException(NativeMember.SELECTORS_PERMISSION

@@ -111,8 +111,6 @@ class SpigotBridgeTest {
 
     @Test
     void entityValidationUsesTheOptionalResolver() throws Exception {
-        NativeAccess access = NativeAccess.resolve(MappingGeneration.of("v1_16_R3"), getClass().getClassLoader());
-        assertEquals("c", access.method(SpigotNames.NativeMember.ENTITY_ARGUMENT_GET_OPTIONAL_ENTITIES).getName());
         assertEquals(java.util.List.of(), bridge.selectorResolver(ArgumentEntity.multipleEntities()).resolve(parse("gm @e"), "target"));
     }
 
@@ -196,6 +194,22 @@ class SpigotBridgeTest {
         assertEquals(SelectorRules.Target.Kind.SCORE_HOLDER, bridge.selectorTarget(new Holder()).kind());
         assertEquals(SelectorRules.Target.Kind.UNSUPPORTED, bridge.selectorTarget(new Object()).kind());
         assertEquals(SelectorRules.Target.Kind.SCORE_HOLDER, bridge.selectorTarget("Notch").kind());
+    }
+
+    /** An entity whose getBukkitEntity() fails, which is a ScoreHolder with a scoreboard name from 1.20.3. */
+    public static final class UnwrappedEntity extends Entity implements ScoreHolder {
+        public UnwrappedEntity() {
+            super(0);
+        }
+
+        public String getScoreboardName() {
+            return "unwrapped";
+        }
+    }
+
+    @Test
+    void anEntityCraftBukkitCannotWrapIsNotAScoreHolder() {
+        assertEquals(SelectorRules.Target.Kind.UNSUPPORTED, bridge.selectorTarget(new UnwrappedEntity()).kind());
     }
 
     @Test

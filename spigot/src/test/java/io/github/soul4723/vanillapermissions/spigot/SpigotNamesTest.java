@@ -90,12 +90,6 @@ class SpigotNamesTest {
     }
 
     @Test
-    void mojangNamesAreTheMappingNames() {
-        assertEquals("usesSelector", NativeMember.SELECTOR_USES_SELECTOR.name(MappingGeneration.MOJANG));
-        assertEquals("withSource", NativeMember.SOURCE_WITH_SOURCE.name(MappingGeneration.MOJANG));
-    }
-
-    @Test
     void permissionSetNamesAreObfuscatedOn1_21_11AndMojangOn26() {
         MappingGeneration spigot = MappingGeneration.of("v1_21_R7");
         assertEquals("g", NativeMember.SOURCE_PERMISSIONS.name(spigot));

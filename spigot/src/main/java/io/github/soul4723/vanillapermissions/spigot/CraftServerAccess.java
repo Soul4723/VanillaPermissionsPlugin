@@ -73,10 +73,8 @@ final class CraftServerAccess {
      * start, plugins enable before CraftBukkit's {@code setVanillaCommands}, which registers {@code minecraft:<name>}.
      */
     boolean vanillaCommandsRegistered() throws ReflectiveOperationException {
-        Object commandMap = server.getClass().getMethod("getCommandMap").invoke(server);
-        Method getCommand = commandMap.getClass().getMethod("getCommand", String.class);
-        Command command = (Command) getCommand.invoke(commandMap, "minecraft:gamemode");
-        return command != null;
+        Object commandMap = commandMap();
+        return commandMap.getClass().getMethod("getCommand", String.class).invoke(commandMap, "minecraft:gamemode") != null;
     }
 
     /**
@@ -98,8 +96,7 @@ final class CraftServerAccess {
      */
     @SuppressWarnings("unchecked")
     Collection<Command> knownCommands() throws ReflectiveOperationException {
-        Object commandMap = server.getClass().getMethod("getCommandMap").invoke(server);
-        if (commandMap == null) throw new IllegalStateException("CraftServer#getCommandMap() returned null");
+        Object commandMap = commandMap();
         Object known;
         try {
             known = commandMap.getClass().getMethod("getKnownCommands").invoke(commandMap);
@@ -108,6 +105,12 @@ final class CraftServerAccess {
         }
         if (!(known instanceof Map<?, ?>)) throw new IllegalStateException("The command map has no known commands map");
         return new ArrayList<>(((Map<String, Command>) known).values());
+    }
+
+    private Object commandMap() throws ReflectiveOperationException {
+        Object commandMap = server.getClass().getMethod("getCommandMap").invoke(server);
+        if (commandMap == null) throw new IllegalStateException("CraftServer#getCommandMap() returned null");
+        return commandMap;
     }
 
     /**

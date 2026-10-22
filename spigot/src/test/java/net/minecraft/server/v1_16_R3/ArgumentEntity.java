@@ -34,10 +34,6 @@ public class ArgumentEntity implements ArgumentType<EntitySelector> {
         return null;
     }
 
-    public static Collection<Entity> b(CommandContext<?> context, String name) {
-        throw new IllegalStateException("No entities matched");
-    }
-
     public static Collection<Entity> c(CommandContext<?> context, String name) {
         return Collections.emptyList();
     }
