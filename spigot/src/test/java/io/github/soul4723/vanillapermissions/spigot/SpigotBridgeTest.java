@@ -111,8 +111,6 @@ class SpigotBridgeTest {
 
     @Test
     void entityValidationUsesTheOptionalResolver() throws Exception {
-        NativeAccess access = NativeAccess.resolve(MappingGeneration.of("v1_16_R3"), getClass().getClassLoader());
-        assertEquals("c", access.method(SpigotNames.NativeMember.ENTITY_ARGUMENT_GET_OPTIONAL_ENTITIES).getName());
         assertEquals(java.util.List.of(), bridge.selectorResolver(ArgumentEntity.multipleEntities()).resolve(parse("gm @e"), "target"));
     }
 

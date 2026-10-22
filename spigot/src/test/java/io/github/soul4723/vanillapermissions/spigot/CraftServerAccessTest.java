@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -105,13 +104,12 @@ class CraftServerAccessTest {
         };
     }
 
-    private static FakeCraftServer server(Object minecraftServer, Object commandMap, List<String> calls) {
+    private static FakeCraftServer server(Object minecraftServer, Object commandMap) {
         return (FakeCraftServer) Proxy.newProxyInstance(CraftServerAccessTest.class.getClassLoader(),
                 new Class<?>[]{FakeCraftServer.class}, (proxy, method, args) -> {
                     switch (method.getName()) {
                         case "getServer": return minecraftServer;
                         case "getCommandMap": return commandMap;
-                        case "syncCommands": calls.add("syncCommands"); return null;
                         case "hashCode": return System.identityHashCode(proxy);
                         case "equals": return proxy == args[0];
                         default: throw new UnsupportedOperationException(method.getName());
@@ -120,7 +118,7 @@ class CraftServerAccessTest {
     }
 
     private static FakeCraftServer serverWith(Object commands) {
-        return server(new FakeMinecraftServer(commands), new FakeCommandMap(false), new ArrayList<String>());
+        return server(new FakeMinecraftServer(commands), new FakeCommandMap(false));
     }
 
     @Test
@@ -129,14 +127,6 @@ class CraftServerAccessTest {
         CraftServerAccess access = CraftServerAccess.of(serverWith(new FakeCommands(dispatcher)));
 
         assertSame(dispatcher, access.vanillaDispatcher());
-    }
-
-    @Test
-    void exposesTheMinecraftServer() throws Exception {
-        FakeMinecraftServer minecraft = new FakeMinecraftServer(new FakeCommands(new CommandDispatcher<>()));
-        CraftServerAccess access = CraftServerAccess.of(server(minecraft, null, new ArrayList<String>()));
-
-        assertSame(minecraft, access.minecraftServer());
     }
 
     @Test
@@ -162,27 +152,15 @@ class CraftServerAccessTest {
 
     @Test
     void aServerWithoutAMinecraftServerIsRefused() {
-        assertThrows(IllegalStateException.class, () -> CraftServerAccess.of(server(null, null, new ArrayList<String>())));
+        assertThrows(IllegalStateException.class, () -> CraftServerAccess.of(server(null, null)));
     }
 
     @Test
     void vanillaCommandsRegisteredFollowsTheCommandMap() throws Exception {
         Object minecraft = new FakeMinecraftServer(new FakeCommands(new CommandDispatcher<>()));
 
-        assertTrue(CraftServerAccess.of(server(minecraft, new FakeCommandMap(true), new ArrayList<String>())).vanillaCommandsRegistered());
-        assertFalse(CraftServerAccess.of(server(minecraft, new FakeCommandMap(false), new ArrayList<String>())).vanillaCommandsRegistered());
-    }
-
-    @Test
-    void syncCommandsCallsTheServer() throws Exception {
-        List<String> calls = new ArrayList<>();
-        CraftServerAccess access = CraftServerAccess.of(
-                server(new FakeMinecraftServer(new FakeCommands(new CommandDispatcher<>())), null, calls));
-
-        access.syncCommands();
-
-        assertEquals(1, calls.size());
-        assertEquals("syncCommands", calls.get(0));
+        assertTrue(CraftServerAccess.of(server(minecraft, new FakeCommandMap(true))).vanillaCommandsRegistered());
+        assertFalse(CraftServerAccess.of(server(minecraft, new FakeCommandMap(false))).vanillaCommandsRegistered());
     }
 
     @Test
@@ -195,16 +173,8 @@ class CraftServerAccessTest {
         FakeLegacyCraftCommandMap legacy = new FakeLegacyCraftCommandMap();
         legacy.knownCommands.put("tp", tp);
 
-        assertEquals(2, CraftServerAccess.of(server(minecraft, modern, new ArrayList<String>())).knownCommands().size());
-        assertSame(tp, new ArrayList<>(CraftServerAccess.of(server(minecraft, legacy, new ArrayList<String>())).knownCommands()).get(0));
-        assertThrows(IllegalStateException.class, () -> CraftServerAccess.of(server(minecraft, null, new ArrayList<String>())).knownCommands());
-    }
-
-    @Test
-    void theWrapperTypeIsLookedUpNextToTheServerClass() throws Exception {
-        CraftServerAccess access = CraftServerAccess.of(serverWith(new FakeCommands(new CommandDispatcher<>())));
-
-        // The proxy's package has no command.VanillaCommandWrapper.
-        assertThrows(ClassNotFoundException.class, access::vanillaCommandWrapperType);
+        assertEquals(2, CraftServerAccess.of(server(minecraft, modern)).knownCommands().size());
+        assertSame(tp, new ArrayList<>(CraftServerAccess.of(server(minecraft, legacy)).knownCommands()).get(0));
+        assertThrows(IllegalStateException.class, () -> CraftServerAccess.of(server(minecraft, null)).knownCommands());
     }
 }

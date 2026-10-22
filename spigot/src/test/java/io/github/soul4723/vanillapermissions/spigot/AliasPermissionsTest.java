@@ -1,7 +1,6 @@
 package io.github.soul4723.vanillapermissions.spigot;
 
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import org.bukkit.command.Command;
@@ -52,14 +51,6 @@ class AliasPermissionsTest {
         @Override
         public boolean execute(CommandSender sender, String label, String[] args) {
             return true;
-        }
-    }
-
-    /** Stands in for CraftBukkit's executor of plugin commands; only the simple name matters. */
-    static final class BukkitCommandWrapper implements com.mojang.brigadier.Command<Object> {
-        @Override
-        public int run(CommandContext<Object> context) {
-            return 1;
         }
     }
 
@@ -144,7 +135,7 @@ class AliasPermissionsTest {
     @Test
     void pluginCommandsInTheVanillaDispatcherAreLeftAlone() throws Exception {
         // lucko/commodore's /lp alias for LuckPerms' tree, whose executors are CraftBukkit's BukkitCommandWrapper.
-        LiteralCommandNode<Object> luckperms = vanilla.register(literal("luckperms").executes(new BukkitCommandWrapper()));
+        LiteralCommandNode<Object> luckperms = vanilla.register(literal("luckperms").executes(new PluginNodesTest.BukkitCommandWrapper()));
         FakeVanillaCommandWrapper lp = wrapper(literal("lp").redirect(luckperms));
 
         assertTrue(apply(new AliasPermissions(), lp).isEmpty());
