@@ -1,7 +1,9 @@
 package io.github.soul4723.vanillapermissions.brigadier;
 
+import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.soul4723.vanillapermissions.selector.SelectorRules;
+import net.minecraft.server.players.NameAndId;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -15,6 +17,7 @@ import java.util.OptionalInt;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -37,6 +40,14 @@ class SelectorPolicyTest {
         SelectorRules.Target nativePlayer = SelectorTargets.target(new NativeEntityLike(player(SOURCE_ID)));
         assertEquals(SelectorRules.Target.Kind.PLAYER, nativePlayer.kind(), "Native entity classified as score holder");
         assertEquals(SOURCE_ID, nativePlayer.id());
+    }
+
+    /** /op, /ban, /whitelist and /pardon resolve game profiles; from 1.21.9 as NameAndId records. */
+    @Test
+    void classifiesGameProfilesByTheirId() {
+        assertEquals(OTHER_ID, SelectorTargets.profileId(new GameProfile(OTHER_ID, "Steve")));
+        assertEquals(OTHER_ID, SelectorTargets.profileId(new NameAndId(OTHER_ID, "Steve")));
+        assertNull(SelectorTargets.profileId(new TestScoreHolder()));
     }
 
     @Test
