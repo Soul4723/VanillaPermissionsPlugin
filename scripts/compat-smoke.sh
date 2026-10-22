@@ -63,14 +63,10 @@ fetch_verified() { # url algo(sha256|md5) checksum(empty = unverified) dest [fal
   mv "$4.part" "$4"
 }
 
-# Pufferfish publishes no API or checksums, only Jenkins jobs, so the newest build per version is pinned here.
+# Pufferfish publishes no API or checksums, only Jenkins jobs, so the builds the CI matrix boots are pinned here.
 # Format: <mc-version> <jenkins-build> <artifact-path> <sha256>
 PUFFERFISH_BUILDS='
-1.21 8 build/libs 15c5b98af903b54fb3ee1a4c93e630f8a0cab26f6eb6cde3a8cb15f5621ef976
 1.21.1 21 build/libs c5db4e8d12bdedfee3bd7a1bd2530af989dd32d4c39026da5875f7cf88dcdec9
-1.21.3 27 build/libs 7cb6662883690ffa97dff1d4ea179e32e4f821d0818a5101d9142f29dab0bb73
-1.21.7 30 pufferfish-server/build/libs 61485966598cd21ce3dbd5996d90db6a8c7a148168b86d1c38b86314b2e49323
-1.21.8 33 pufferfish-server/build/libs 4dd5cc297217cc91aa85ee52a240f6df5a7b78eebc1f91d64652cabea3141f47
 1.21.10 39 pufferfish-server/build/libs 2e5d8a27f62086948590dd8d7e36761f0c80a0dfb85820e34714d795ca3f99aa
 '
 
@@ -143,8 +139,8 @@ EOF
 LOG=$WORK_DIR/logs/latest.log
 mkfifo "$WORK_DIR/stdin"
 exec 3<>"$WORK_DIR/stdin"
-SERVER_ARGS=(nogui)
-(cd "$WORK_DIR" && exec "$JAVA_BIN" -Xmx1G ${JAVA_OPTS:-} -jar server.jar "${SERVER_ARGS[@]}" <&3 >"$WORK_DIR/console.out" 2>&1) &
+read -ra JVM_ARGS <<<"${JAVA_OPTS:-}"
+(cd "$WORK_DIR" && exec "$JAVA_BIN" -Xmx1G "${JVM_ARGS[@]}" -jar server.jar nogui <&3 >"$WORK_DIR/console.out" 2>&1) &
 SERVER_PID=$!
 
 booted=0

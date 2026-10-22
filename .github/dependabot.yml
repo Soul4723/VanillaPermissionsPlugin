@@ -1,10 +1,12 @@
 version: 2
+# Monthly and grouped: every update pull request runs the whole boot matrix. The live-test harness under
+# scripts/live-test is not listed: it is run by hand and its client library is bumped together with the
+# Minecraft versions it must speak; Dependabot security updates (a repository setting) cover it.
 updates:
   - package-ecosystem: maven
     directory: /
     schedule:
-      interval: weekly
-    # Wait a week before proposing a brand-new release (ViaVersion/ViaVersion dependabot.yml).
+      interval: monthly
     cooldown:
       default-days: 7
     groups:
@@ -24,21 +26,9 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
-    # Wait a week before proposing a brand-new release (ViaVersion/ViaVersion dependabot.yml).
+      interval: monthly
     cooldown:
       default-days: 7
     groups:
       actions-minor-patch:
-        update-types: [minor, patch]
-
-  - package-ecosystem: npm
-    directory: /scripts/live-test
-    schedule:
-      interval: weekly
-    # Wait a week before proposing a brand-new release (ViaVersion/ViaVersion dependabot.yml).
-    cooldown:
-      default-days: 7
-    groups:
-      npm-minor-patch:
         update-types: [minor, patch]

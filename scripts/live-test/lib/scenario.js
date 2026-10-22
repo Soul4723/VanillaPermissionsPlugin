@@ -239,7 +239,7 @@ class ScenarioRunner {
     this.bots.clear()
     for (const u of users) {
       await this.op(u, false)
-        if (this.ctx.backend === 'luckperms') await this.console(`lp user ${offlineUuid(u)} clear`, '\\[LP\\].*clear') // untranslated key on LuckPerms' first command
+      if (this.ctx.backend === 'luckperms') await this.console(`lp user ${offlineUuid(u)} clear`, '\\[LP\\].*clear') // untranslated key on LuckPerms' first command
     }
   }
 

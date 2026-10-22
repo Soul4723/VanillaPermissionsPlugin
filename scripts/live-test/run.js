@@ -238,17 +238,6 @@ function printTable (rows) {
   for (const r of rows) process.stdout.write(line(r) + '\n')
 }
 
-function stepSummary (o, rows, counts) {
-  const file = process.env.GITHUB_STEP_SUMMARY
-  if (!file) return
-  const esc = s => String(s).replace(/\|/g, '\\|').replace(/\s*\n\s*/g, ' / ')
-  const md = [`### Live test: ${path.basename(o.serverJar)} (${o.backend}${o.plugin ? ', plugin' : ''})`, '',
-    `${counts.PASS} passed, ${counts.FAIL} failed, ${counts.SKIP} skipped`, '',
-    '| Scenario | Check | Status | Detail |', '| --- | --- | --- | --- |',
-    ...rows.map(r => `| ${esc(r.scenario)} | ${esc(r.check)} | ${r.status} | ${esc(r.detail)} |`), '']
-  fs.appendFileSync(file, md.join('\n'))
-}
-
 async function main () {
   const o = parseArgs(process.argv.slice(2))
   const rows = []
@@ -267,7 +256,6 @@ async function main () {
   const ok = counts.FAIL === 0 && rows.some(r => r.status === 'PASS' && r.scenario !== '(server)')
   process.stdout.write(`\nRESULT ${ok ? 'PASS' : 'FAIL'} passed=${counts.PASS} failed=${counts.FAIL} skipped=${counts.SKIP}\n`)
   if (o.report) fs.writeFileSync(o.report, JSON.stringify({ serverJar: path.basename(o.serverJar), backend: o.backend, plugin: Boolean(o.plugin), rows, ok }, null, 2))
-  stepSummary(o, rows, counts)
   process.exit(ok ? 0 : 1)
 }
 
