@@ -19,7 +19,7 @@ Start with the [project README](../README.md) for what the plugin does and how t
 | --- | --- |
 | [Contributing](../CONTRIBUTING.md) | Issues, building, pull requests |
 | [Architecture](development/architecture.md) | Modules, adapters per server version, Java targets, CI |
-| [Live tests](development/testing.md) | Boot smoke test and the live-test harness |
+| [Testing](development/testing.md) | Unit tests, boot smoke test and the live-test harness |
 | [Releasing](development/releasing.md) | Versioning, release process, CI |
 
 See also the [Changelog](../CHANGELOG.md) and the [security policy](../SECURITY.md).

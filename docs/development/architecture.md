@@ -42,7 +42,7 @@ The adapters:
 | `spigot` | Spigot 1.13+, Paper 1.13 - 1.20.5 | `CraftServer#getServer()`, then CraftBukkit's `vanillaCommandDispatcher` field and the Brigadier `CommandDispatcher` inside it (found by type), patched in `onEnable`. Uses the name table `SpigotNames` for Spigot's obfuscated members. |
 | `legacy` | Spigot and Paper 1.8.8 - 1.12.2 | No dispatcher: `CommandListener` handles `PlayerCommandPreprocessEvent` for labels that resolve to CraftBukkit's `VanillaCommandWrapper`, with hand-written grammars (`legacy/.../grammar`) that produce the modern node names. |
 
-`brigadier` holds the Brigadier-generic half of the checks: `BrigadierPermissions` (install and rollback), `VanillaTree`, requirement and executor wrappers, `GameModeLiterals`, `ExecuteExtensions` and `SelectorPolicy`. `paper` and `spigot` supply the server-specific half by implementing `BrigadierBridge` (`PaperBridge`, `SpigotBridge`). Listeners shared by 1.13+ adapters (`DebugStickListener`, `OperatorBlockListener`, `ProviderReselectListener`) live in `brigadier/.../listener`.
+`brigadier` holds the Brigadier-generic half of the checks: `BrigadierPermissions` (install and rollback), `VanillaTree`, requirement and executor wrappers, `GameModeLiterals`, `ExecuteExtensions` and `SelectorTargets` (resolved selector arguments checked against `core`'s `SelectorRules`). `paper` and `spigot` supply the server-specific half by implementing `BrigadierBridge` (`PaperBridge`, `SpigotBridge`). Listeners shared by 1.13+ adapters (`DebugStickListener`, `OperatorBlockListener`, `ProviderReselectListener`) live in `brigadier/.../listener`.
 
 ## Choosing the adapter at runtime
 
@@ -98,7 +98,7 @@ To add an adapter: create the module (depending on `core`, and `brigadier` for a
 ### `legacy`
 
 - **Interception, not patching.** The wrappers in CraftBukkit's `knownCommands` must not be replaced: command-block and `/execute` dispatch test `instanceof VanillaCommandWrapper`, and a swapped `kill` made a command block's `kill @e[type=pig]` do nothing on 1.12.2.
-- **Ten grammars** (`gamemode`, `time`, `weather`, `kill`, `effect`, `give`, `clear`, `tp`/`teleport`, `execute`, `scoreboard`) parse the typed arguments and yield the modern node names; `LegacyVersion` switches 1.8 - 1.12 differences inside a grammar. The node lists are in [Permissions](../permissions.md#188---1122-legacy-servers).
+- **Ten grammars** (`gamemode`, `time`, `weather`, `kill`, `effect`, `give`, `clear`, `tp`/`teleport`, `execute`, `scoreboard`) parse the typed arguments and yield the modern node names; `LegacyVersion` only changes which node paths a grammar lists for 1.8 - 1.12 (for example `time.query.day` from 1.12); parsing is the same on every version. The node lists are in [Permissions](../permissions.md#188---1122-legacy-servers).
 - **Selectors** are resolved with NMS `PlayerSelector` after `MinecraftServer.worldServer` is filled (`LegacyServer`), then checked by `core`'s `SelectorRules`. Anything it cannot resolve or parse is denied.
 - **Tab completion** is filtered by `TabCompleteFilter` through `TabCompleteEvent` (1.9+; 1.8.8 has none).
 - **Other features** live in `legacy/.../feature`: force-gamemode (restores the saved game mode at join), operator blocks and a Netty move-speed hook.
@@ -121,7 +121,7 @@ To add an adapter: create the module (depending on `core`, and `brigadier` for a
 | --- | --- | --- |
 | Unit | each module, JDK 21 | Permission model and providers (`core`); tree patching against a fake Brigadier dispatcher (`paper`, `brigadier`); name-table validation against fake servers of several generations (`spigot`); grammars and selectors (`legacy`) |
 | Shared helpers | `core` test-jar | `TestLuckPerms` and proxy helpers reused by adapter modules |
-| Packaging | `plugin` | `plugin.yml` filtering and declared nodes (`PluginDescriptorTest`, `BypassNodesDeclaredTest`) |
+| Packaging | `plugin` | `plugin.yml` filtering and declared nodes and adapter candidates (`PluginDescriptorTest`) |
 | Boot | boot matrix in `build.yml`, via `scripts/compat-smoke.sh` | Each row boots a real server with the jar and LuckPerms and checks the success line and a minimum node count |
 | Behaviour | [live tests](testing.md) | Commands, selectors and bypasses on a live server with a bot player |
 
