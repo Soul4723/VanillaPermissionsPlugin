@@ -1,7 +1,7 @@
 {
   "name": "bukkit-permissions-yml",
-  "description": "No permissions plugin: a permissions.yml group node with default true hands everyone the gamemode root and creative, and closes spectator.",
-  "when": { "plugin": true, "backend": "bukkit" },
+  "description": "No permissions plugin: a permissions.yml group node with default true hands everyone the gamemode root and creative, and closes spectator. Skipped on Folia, which does not apply default: true nodes from permissions.yml.",
+  "when": { "plugin": true, "backend": "bukkit", "not": { "software": "folia" } },
   "server": {
     "files": {
       "permissions.yml": "vpp.test.everyone:\n  default: true\n  children:\n    minecraft.command.gamemode: true\n    minecraft.command.gamemode.creative: true\n    minecraft.command.gamemode.spectator: false\n"
