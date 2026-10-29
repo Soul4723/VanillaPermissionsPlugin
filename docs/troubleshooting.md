@@ -90,6 +90,8 @@ Limits such as unsupported versions and features missing on some servers are lis
 
 ## Reporting a problem
 
+Not sure it is a bug, or stuck on a setup? Ask in [Discussions](https://github.com/Soul4723/VanillaPermissionsPlugin/discussions/categories/q-a).
+
 Open an issue from the [issue templates](https://github.com/Soul4723/VanillaPermissionsPlugin/issues/new/choose). Include:
 
 - the output of `/vanillapermissions debug`
