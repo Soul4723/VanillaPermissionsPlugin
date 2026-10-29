@@ -7,7 +7,7 @@
 
     <groupId>io.github.soul4723</groupId>
     <artifactId>vanillapermissions-parent</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>VanillaPermissionsPlugin</name>
@@ -33,7 +33,7 @@
         <java.version>8</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- Fixed so rebuilding a tag gives the same jar. -->
-        <project.build.outputTimestamp>2026-10-29T00:00:00Z</project.build.outputTimestamp>
+        <project.build.outputTimestamp>2026-10-29T23:10:51Z</project.build.outputTimestamp>
         <paper.api.version>1.20.6-R0.1-SNAPSHOT</paper.api.version>
         <!-- The oldest API core compiles against; newer API belongs in a version adapter. -->
         <spigot.api.version>1.8.8-R0.1-SNAPSHOT</spigot.api.version>
