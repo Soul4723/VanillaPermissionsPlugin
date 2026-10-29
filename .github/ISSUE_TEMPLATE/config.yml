@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Ask a question
+    url: https://github.com/Soul4723/VanillaPermissionsPlugin/discussions/categories/q-a
+    about: Help with setting up permissions, or not sure whether something is a bug.
   - name: Report a security vulnerability
     url: https://github.com/Soul4723/VanillaPermissionsPlugin/blob/main/SECURITY.md
     about: Report security problems privately, not as a public issue.

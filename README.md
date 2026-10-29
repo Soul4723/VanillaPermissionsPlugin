@@ -62,7 +62,7 @@ The first line grants `/gamemode`. The second closes every mode and target below
 
 ## Getting help
 
-Ask questions and report bugs on [GitHub Issues](https://github.com/Soul4723/VanillaPermissionsPlugin/issues/new/choose). Please include the output of `/vanillapermissions debug`. Report security problems privately, as described in [SECURITY.md](SECURITY.md).
+Ask questions, such as how to set something up, in [Discussions](https://github.com/Soul4723/VanillaPermissionsPlugin/discussions/categories/q-a). Report bugs on [GitHub Issues](https://github.com/Soul4723/VanillaPermissionsPlugin/issues/new/choose) and include the output of `/vanillapermissions debug`. Report security problems privately, as described in [SECURITY.md](SECURITY.md).
 
 ## Building from source
 
