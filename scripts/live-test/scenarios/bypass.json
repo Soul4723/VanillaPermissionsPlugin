@@ -1,7 +1,7 @@
 {
   "name": "bypass",
-  "description": "Bypass nodes: player limit, whitelist and forced game mode. Needs max-players=1 and force-gamemode.",
-  "when": { "plugin": true, "backend": "luckperms" },
+  "description": "Bypass nodes: player limit, whitelist and forced game mode. Needs max-players=1 and force-gamemode. Skipped on Folia, which refuses even the first player at max-players=1 and ignores the player-limit bypass.",
+  "when": { "plugin": true, "backend": "luckperms", "not": { "software": "folia" } },
   "server": { "properties": { "max-players": 1, "force-gamemode": true, "gamemode": "survival" } },
   "players": ["Bot", "Bot2"],
   "steps": [
