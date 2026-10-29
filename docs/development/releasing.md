@@ -52,16 +52,18 @@ On a `v*` tag, `.github/workflows/release.yml`:
 2. fails unless **Build** succeeded on `main` for the tagged commit. If the tag was pushed too early, re-run the workflow once Build has passed. The version-bump commit always gets a Build run because it changes `pom.xml`; for a commit Build skipped, run Build by hand on `main` first;
 3. writes `VanillaPermissionsPlugin-1.1.0.jar.sha256`;
 4. takes the `## [1.1.0]` section of `CHANGELOG.md` as the release notes, with relative links made absolute. A missing section fails the release; only pre-releases fall back to GitHub's generated notes;
-5. creates the GitHub Release with the jar and the checksum file, marked as a pre-release when the version contains a hyphen.
+5. creates the GitHub Release with the jar and the checksum file and publishes it. A version with a hyphen becomes a pre-release and is left as a draft: publish it by hand on the Releases page.
 
-Anyone can check a download with `sha256sum -c VanillaPermissionsPlugin-1.1.0.jar.sha256`. Building the same tag again with the same JDK gives the same jar, unless Paper's API snapshot, which the build compiles against, has changed since.
+Releases are immutable (the repository's **Settings → General → Releases** option): once published, the tag cannot move and the assets cannot be changed or deleted. GitHub only accepts assets before a release is published, which is why the workflow attaches them to a draft first and why pre-releases stay drafts. A release that went out wrong is fixed by a new PATCH release, not by editing it.
+
+Anyone can check a download with `sha256sum -c VanillaPermissionsPlugin-1.1.0.jar.sha256`, or against GitHub's signed release attestation with `gh release verify-asset v1.1.0 VanillaPermissionsPlugin-1.1.0.jar -R Soul4723/VanillaPermissionsPlugin`. Building the same tag again with the same JDK gives the same jar, unless Paper's API snapshot, which the build compiles against, has changed since.
 
 ## CI
 
 - **Build** (`.github/workflows/build.yml`) runs on every pull request, on pushes to `main` that change more than Markdown files, issue templates or the live-test harness, by hand, and twice a week so its caches stay warm.
   - The `build` job runs `mvn verify` with JDK 21, which compiles the Java 8 modules with `--release 8` and the Java 21 `paper` module (see [Architecture](architecture.md#java-targets)). The jar is uploaded as an artifact.
   - The `smoke` matrix boots every supported server with that jar and LuckPerms through `scripts/compat-smoke.sh`. Its rows must match `SupportedVersions`; `SupportedVersionsTest` fails otherwise. Server builds are pinned; Spigot rows build their server with a pinned BuildTools and keep it in the Actions cache, never as an artifact.
-  - The `compat` job fails if the build or any matrix row failed. Make `compat` the required check in branch protection.
+  - The `compat` job fails if the build or any matrix row failed. It is the status check the `main` ruleset requires.
 - **Dependabot** proposes Maven and GitHub Actions updates monthly, grouped, after a seven-day cooldown. Paper API, Spigot API and Brigadier are ignored because they set the supported floors; ignoring them by name also suppresses security updates for them, which is acceptable for compile-only APIs.
 
 ## Branching and support

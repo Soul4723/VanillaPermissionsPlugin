@@ -101,6 +101,8 @@ jobs:
         with:
           name: release-files
       # Pre-releases (a hyphen in the version) may have no changelog section; GitHub then writes the notes.
+      # Releases are immutable, so assets must be attached before publishing. The action does that for releases, but
+      # publishes a pre-release first, so pre-releases stay drafts and are published by hand.
       - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           fail_on_unmatched_files: true
@@ -110,3 +112,4 @@ jobs:
           body_path: ${{ needs.build.outputs.has-notes == 'true' && 'release-notes.md' || '' }}
           generate_release_notes: ${{ needs.build.outputs.has-notes != 'true' }}
           prerelease: ${{ contains(github.ref_name, '-') }}
+          draft: ${{ contains(github.ref_name, '-') }}
