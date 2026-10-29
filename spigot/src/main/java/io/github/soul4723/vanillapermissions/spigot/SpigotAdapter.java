@@ -58,7 +58,7 @@ public final class SpigotAdapter implements VersionAdapter {
             logSkipped(plugin.getLogger(), bridge.skippedPluginCommands());
             if (late) {
                 craft.syncCommands();
-                plugin.getLogger().info("Re-synced the server's commands because VanillaPermissionsPlugin was enabled after startup");
+                plugin.getLogger().info("Refreshed the server's commands because this plugin was enabled after startup.");
                 applyAliasPermissions();
             } else {
                 // The wrappers do not exist yet; the first tick runs after startup (or /reload) has created them, the
@@ -91,11 +91,10 @@ public final class SpigotAdapter implements VersionAdapter {
             (PluginNodes.VANILLA_COMMANDS.contains(bare) ? vanilla : added).add(name);
         }
         if (!vanilla.isEmpty()) {
-            logger.warning("Another plugin changed these vanilla commands, so they have no permission checks from "
-                    + "VanillaPermissionsPlugin: " + String.join(", ", vanilla));
+            logger.warning("Another plugin changed these vanilla commands, so this plugin does not check them: " + String.join(", ", vanilla));
         }
         if (!added.isEmpty()) {
-            logger.info("Left " + added.size() + " commands that other plugins added to the vanilla command dispatcher unchecked");
+            logger.info(added.size() + (added.size() == 1 ? " command" : " commands") + " from other plugins " + (added.size() == 1 ? "is" : "are") + " not checked by this plugin.");
             logger.fine("Commands other plugins added: " + String.join(", ", added));
         }
     }
@@ -108,14 +107,14 @@ public final class SpigotAdapter implements VersionAdapter {
                     craft.vanillaDispatcher().getRoot(), plugin.getServer().getClass().getClassLoader(),
                     SpigotAdapter.class.getClassLoader());
             if (!changed.isEmpty()) {
-                plugin.getLogger().info("Gave " + changed.size() + " vanilla alias commands their own Bukkit permission node "
-                        + "(minecraft.command.<alias>, e.g. minecraft.command.tp)");
+                plugin.getLogger().info("Gave " + changed.size() + " vanilla alias commands their own permission node "
+                        + "(minecraft.command.<alias>, such as minecraft.command.tp).");
                 plugin.getLogger().fine("Alias commands with their own node: " + String.join(", ", changed));
             }
         } catch (ReflectiveOperationException | RuntimeException | LinkageError error) {
             aliases.restore();
-            plugin.getLogger().warning("Could not give the vanilla alias commands (/tp, /tell, /w, /xp, /tm) their own "
-                    + "Bukkit permission node, so CraftBukkit still requires the target command's node for them "
+            plugin.getLogger().warning("Could not give the alias commands (/tp, /tell, /w, /xp, /tm) their own "
+                    + "permission nodes, so they still need the node of the command they point to "
                     + "(minecraft.command.teleport for /tp): " + error);
         }
     }
@@ -134,7 +133,7 @@ public final class SpigotAdapter implements VersionAdapter {
                     craft.syncCommands();
                 }
             } catch (ReflectiveOperationException | RuntimeException | LinkageError error) {
-                plugin.getLogger().log(Level.WARNING, "Could not re-sync commands after uninstalling permission checks", error);
+                plugin.getLogger().log(Level.WARNING, "Could not refresh commands after removing the permission checks", error);
             }
         }
     }

@@ -58,7 +58,7 @@ class SelectorTargetsTest {
             luckPerms.nodes.put("minecraft.selector.entity." + PATH, Tristate.FALSE);
             CommandSyntaxException error = assertThrows(CommandSyntaxException.class, () -> SelectorTargets.validate(
                     player(SOURCE_ID), COMMAND_PATH, "targets", zombies, zombies, SelectorTargets::target));
-            assertEquals("You do not have permission to target non-player entities here", error.getMessage());
+            assertEquals("You can't target non-player entities here.", error.getMessage());
         }
     }
 

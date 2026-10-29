@@ -7,11 +7,11 @@ const { Bot } = require('./bot')
 const DENIED = new RegExp([
   'Unknown or incomplete command',
   'Unknown command', // Spigot/CraftBukkit before 1.13 and Bukkit's own message
-  'do(?: not|n.t) have permission', // Bukkit default message, our selector messages, Paper
+  'do(?: not|n.t) have permission', // Bukkit default message, vanilla's text on 1.8.8 - 1.12.2, Paper
   'Incorrect argument for command',
   'Selector not allowed', // Paper 1.21.3+ parse-time selector check
-  'You can select at most \\d+ targets?', // this plugin's selector limit
-  'could not be checked against selector permissions|cannot be checked against selector permissions',
+  'You can.t (?:use|target|open|place|break) ', // this plugin's own refusals: selectors, operator blocks, debug stick, /vanillapermissions
+  'You can target at most \\d+ players? or entit', // this plugin's selector limit
   'permissions\\.requires'
 ].join('|'), 'i')
 

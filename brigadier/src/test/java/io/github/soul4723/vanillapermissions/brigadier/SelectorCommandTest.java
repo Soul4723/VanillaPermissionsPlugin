@@ -64,7 +64,7 @@ class SelectorCommandTest {
             // The first pick is the sender, which is allowed, but the next resolution may pick the other player.
             CommandSyntaxException error = assertThrows(CommandSyntaxException.class,
                     () -> command.run(context(dispatcher, "kill @r")));
-            assertEquals("You do not have permission to target other players here", error.getMessage());
+            assertEquals("You can't target other players here.", error.getMessage());
             assertThrows(CommandSyntaxException.class, () -> command.run(context(dispatcher, "kill @e[sort=random,limit=1]")));
             // A deterministic selector is checked against its own result only; the swapped argument was put back.
             assertEquals(2, command.run(context(dispatcher, "kill @s")));

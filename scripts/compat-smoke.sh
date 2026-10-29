@@ -167,12 +167,12 @@ notes=()
 (( NODES > 0 )) || notes+=("no-success-line")
 (( NODES == 0 || NODES >= MIN_NODES )) || notes+=("too-few-nodes")
 # Plugin failures: its WARN/ERROR lines (except the known version warning), explicit failure text, stack traces, self-disable.
-FAILS=$(grep -E '(WARN|ERROR).*VanillaPermissionsPlugin|Could not add permission checks|io\.github\.soul4723|Error occurred while enabling VanillaPermissionsPlugin' "$LOG" | grep -v 'has not been tested on' || true)
+FAILS=$(grep -E '(WARN|ERROR).*VanillaPermissionsPlugin|Could not add permission checks|io\.github\.soul4723|Error occurred while enabling VanillaPermissionsPlugin' "$LOG" | grep -v 'has not been tested with this plugin' || true)
 # Disabling is normal on shutdown, so only count it if it happens before the server finished booting.
 EARLY=$(awk '/Done \(/ {exit} /Disabling VanillaPermissionsPlugin/' "$LOG")
 FAILS+=$EARLY
 [[ -z $FAILS ]] || notes+=("plugin-errors")
-grep -q 'has not been tested on' "$LOG" && notes+=("version-warning")
+grep -q 'has not been tested with this plugin' "$LOG" && notes+=("version-warning")
 
 STATUS=PASS
 [[ $booted == 1 && $NODES -ge $MIN_NODES && -z $FAILS ]] || STATUS=FAIL

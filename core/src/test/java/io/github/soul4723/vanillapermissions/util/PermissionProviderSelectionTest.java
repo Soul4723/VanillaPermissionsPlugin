@@ -148,7 +148,7 @@ class PermissionProviderSelectionTest {
             assertInstanceOf(BukkitPermissionProvider.class, PermissionManager.selectProvider(owner));
         assertEquals("PermissionsEx", provider.getPermissionsPlugin());
         assertFalse(provider.hasMeta(), "Meta without Vault");
-        assertTrue(logged("Using Bukkit permissions from PermissionsEx"), "Source not logged");
+        assertTrue(logged("Using PermissionsEx for permissions"), "Source not logged");
         assertTrue(logged("limits and weights are off"), "Missing meta notice");
     }
 
@@ -174,7 +174,7 @@ class PermissionProviderSelectionTest {
         assertEquals(1, warnings.size(), "Expected exactly one warning");
         assertTrue(warnings.get(0).getMessage().contains("No permissions plugin found"));
         assertSame(provider, PermissionManager.getProvider(), "Unchanged selection swapped the provider");
-        assertTrue(at(Level.INFO).stream().noneMatch(r -> r.getMessage().startsWith("Selected after")), "Logged a swap");
+        assertTrue(at(Level.INFO).stream().noneMatch(r -> r.getMessage().startsWith("Now using")), "Logged a swap");
     }
 
     @Test

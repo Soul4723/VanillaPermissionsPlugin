@@ -130,13 +130,13 @@ class CommandGuardTest {
         server.targets.put("@a", List.of(alice, bob));
         server.targets.put("@p", List.of(alice));
         nodes.put("minecraft.selector.player.gamemode.target.creative.target", false);
-        assertEquals("You do not have permission to target other players here", guard.check(alice, "gamemode c @a"));
-        assertEquals("You do not have permission to target other players here", guard.check(alice, "gamemode creative Bob"));
+        assertEquals("You can't target other players here.", guard.check(alice, "gamemode c @a"));
+        assertEquals("You can't target other players here.", guard.check(alice, "gamemode creative Bob"));
         assertNull(guard.check(alice, "gamemode c @p"));
         assertNull(guard.check(alice, "gamemode adventure @a"), "another path");
         nodes.put("minecraft.selector.entity.kill.targets.targets", false);
         server.targets.put("@e[type=Pig]", List.of(pig));
-        assertEquals("You do not have permission to target non-player entities here", guard.check(alice, "kill @e[type=Pig]"));
+        assertEquals("You can't target non-player entities here.", guard.check(alice, "kill @e[type=Pig]"));
     }
 
     @Test
@@ -147,7 +147,7 @@ class CommandGuardTest {
         assertNull(guard.check(alice, "kill @r"));
         nodes.put("minecraft.selector.player.kill.targets.targets", false);
         // This resolution picked Alice herself, but vanilla resolves @r again and may pick Bob.
-        assertEquals("You do not have permission to target other players here", guard.check(alice, "kill @r"));
+        assertEquals("You can't target other players here.", guard.check(alice, "kill @r"));
         assertEquals(List.of("@r players=false from Alice", "@a players=false from Alice"),
             server.resolved.subList(server.resolved.size() - 2, server.resolved.size()));
 
@@ -193,7 +193,7 @@ class CommandGuardTest {
             "nested selectors resolve from each /execute target");
 
         nodes.put("minecraft.selector.player.execute.targets.as.targets", false);
-        assertEquals("You do not have permission to target other players here", guard.check(alice, "execute Bob ~ ~ ~ say hi"));
+        assertEquals("You can't target other players here.", guard.check(alice, "execute Bob ~ ~ ~ say hi"));
         nodes.put("minecraft.command.execute.run", false);
         assertEquals(CommandGuard.NO_PERMISSION, guard.check(alice, "execute @p ~ ~ ~ say hi"));
     }
@@ -272,7 +272,7 @@ class CommandGuardTest {
         server.commands.put("nearby", alias);
         server.aliases.put(alias, List.of("kill @e[type=pig,r=5]"));
         server.targets.put("@e[type=pig,r=5]", List.of(pig));
-        assertEquals("You do not have permission to target non-player entities here", guard.check(alice, "nearby"));
+        assertEquals("You can't target non-player entities here.", guard.check(alice, "nearby"));
 
         server.targets.put("@e[type=pig,r=5]", List.of());
         assertNull(guard.check(alice, "execute Alice ~ ~ ~ nearby"));
@@ -286,7 +286,7 @@ class CommandGuardTest {
         nodes.put("minecraft.command.scoreboard", true);
         server.holders = List.of("Alice", "Bob", "#fake");
         meta.put("minecraft.selector.limit.scoreboard.targets.players.set.targets.objective.score", 2);
-        assertEquals("You can select at most 2 targets here", guard.check(alice, "scoreboard players set * obj 0"));
+        assertEquals("You can target at most 2 players or entities here.", guard.check(alice, "scoreboard players set * obj 0"));
         server.holders = List.of("Alice", "Bob");
         assertNull(guard.check(alice, "scoreboard players set * obj 0"));
         server.holders = List.of();
@@ -300,7 +300,7 @@ class CommandGuardTest {
         server.holders = List.of("Alice");
         assertNull(guard.check(alice, "scoreboard players tag * add vip"));
         server.holders = List.of("Alice", "Bob");
-        assertEquals("You do not have permission to target other players here",
+        assertEquals("You can't target other players here.",
             guard.check(alice, "scoreboard players tag * add vip"));
         server.targets.put("*", List.of()); // a plain name elsewhere, which matches nobody
         assertNull(guard.check(alice, "kill *"), "only /scoreboard has the wildcard");

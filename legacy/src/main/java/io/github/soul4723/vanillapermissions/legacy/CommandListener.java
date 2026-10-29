@@ -38,7 +38,7 @@ final class CommandListener implements Listener {
             denial = guard.check(event.getPlayer(), message.substring(1));
         } catch (RuntimeException | LinkageError error) {
             if (failureLogged.compareAndSet(false, true)) {
-                logger.log(Level.WARNING, "Could not check " + message + ", so it was refused; later failures are logged at FINE", error);
+                logger.log(Level.WARNING, "Could not check " + message + ", so it was refused. Further failures are not logged.", error);
             } else {
                 logger.log(Level.FINE, "Could not check " + message + ", so it was refused", error);
             }

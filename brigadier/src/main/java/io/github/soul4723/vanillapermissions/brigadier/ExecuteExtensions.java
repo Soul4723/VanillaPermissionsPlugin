@@ -76,7 +76,7 @@ final class ExecuteExtensions {
                     if (root.getChild(name) == null) addChild(root, executeRoot.getChild(name));
                 }
             }
-            owner.getLogger().info("Installed vanilla /execute permission, feedback, and oplevel extensions");
+            owner.getLogger().info("Added /execute if permission, feedback and oplevel.");
         } catch (ReflectiveOperationException | RuntimeException error) {
             throw new IllegalStateException("Could not install native /execute extensions", error);
         }

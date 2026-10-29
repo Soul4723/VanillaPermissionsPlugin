@@ -53,7 +53,7 @@ public final class LegacyAdapter implements VersionAdapter {
         try {
             PermissionManager.reselectProvider(plugin);
         } catch (RuntimeException | LinkageError error) {
-            plugin.getLogger().log(Level.WARNING, "Could not pick the permission provider again after start-up", error);
+            plugin.getLogger().log(Level.WARNING, "Could not recheck which permissions plugin to use after startup", error);
         }
         try {
             install(plugin, version);
@@ -81,8 +81,8 @@ public final class LegacyAdapter implements VersionAdapter {
         checkedPaths = Collections.unmodifiableSet(Grammars.nodePaths(vanilla, version));
         plugin.getLogger().info(AdapterLog.added(checkedPaths.size()));
         if (completions == null) {
-            plugin.getLogger().info("Tab completion is not filtered on Minecraft " + version
-                + " (no TabCompleteEvent before 1.9); denied sub-commands are still refused when run");
+            plugin.getLogger().info("Tab completion on Minecraft " + version
+                + " still shows denied sub-commands; they are refused when run.");
         }
     }
 

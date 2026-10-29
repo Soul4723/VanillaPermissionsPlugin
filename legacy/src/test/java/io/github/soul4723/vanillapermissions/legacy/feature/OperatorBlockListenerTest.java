@@ -96,7 +96,7 @@ class OperatorBlockListenerTest {
         BlockPlaceEvent event = place(Material.COMMAND);
         listener.onBlockPlace(event);
         assertTrue(event.isCancelled());
-        assertEquals(List.of("§cYou do not have permission to place command blocks."), messages);
+        assertEquals(List.of("§cYou can't place command blocks."), messages);
     }
 
     @Test
@@ -122,7 +122,7 @@ class OperatorBlockListenerTest {
         BlockBreakEvent event = new BlockBreakEvent(block(Material.COMMAND), player);
         listener.onBlockBreak(event);
         assertTrue(event.isCancelled());
-        assertEquals(List.of("§cYou do not have permission to break command blocks."), messages);
+        assertEquals(List.of("§cYou can't break command blocks."), messages);
     }
 
     @Test
@@ -144,7 +144,7 @@ class OperatorBlockListenerTest {
         PlayerInteractEvent event = click(Action.RIGHT_CLICK_BLOCK, null, Material.COMMAND);
         listener.onPlayerInteract(event);
         assertTrue(event.isCancelled());
-        assertEquals(List.of("§cYou do not have permission to open command blocks."), messages);
+        assertEquals(List.of("§cYou can't open command blocks."), messages);
     }
 
     @Test

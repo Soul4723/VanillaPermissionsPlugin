@@ -78,8 +78,8 @@ public final class VanillaPermissionsPluginCommand implements TabExecutor {
             return true;
         }
         if (!sender.hasPermission(ADMIN_PERMISSION)) {
-            sender.sendMessage("§cYou do not have permission to use /" + label + " " + subcommand
-                + " (requires " + ADMIN_PERMISSION + ").");
+            sender.sendMessage("§cYou can't use /" + label + " " + subcommand
+                + ". It needs " + ADMIN_PERMISSION + ".");
             return true;
         }
         if (subcommand.equals("debug")) {
@@ -96,14 +96,14 @@ public final class VanillaPermissionsPluginCommand implements TabExecutor {
     private void sendHelp(CommandSender sender, String label) {
         sender.sendMessage("§6VanillaPermissionsPlugin " + plugin.getDescription().getVersion());
         String requires = sender.hasPermission(ADMIN_PERMISSION) ? "" : " §7(requires " + ADMIN_PERMISSION + ")";
-        sender.sendMessage("§e/" + label + " check <player> [node] §7- show how a node resolves for an online player" + requires);
+        sender.sendMessage("§e/" + label + " check <player> [node] §7- show whether an online player has a node" + requires);
         sender.sendMessage("§e/" + label + " debug §7- show plugin, server and permissions plugin status" + requires);
     }
 
     private void check(CommandSender sender, String playerName, String node) {
         Player target = Bukkit.getPlayerExact(playerName);
         if (target == null) {
-            sender.sendMessage("§cPlayer " + playerName + " is not online. Only online players can be checked, in their current context.");
+            sender.sendMessage("§c" + playerName + " is not online. You can only check online players.");
             return;
         }
         if (node != null) {
@@ -177,7 +177,7 @@ public final class VanillaPermissionsPluginCommand implements TabExecutor {
         sender.sendMessage("§7Permissions: " + provider.describePermissions());
         sender.sendMessage("§7Selector limits and weights: " + provider.describeMeta());
         int nodes = adapter == null ? 0 : adapter.checkedNodeCount();
-        sender.sendMessage("§7Vanilla command nodes with permission checks: "
+        sender.sendMessage("§7Permission checks added: "
             + (nodes > 0 ? "§f" + nodes : "§c0 (see the startup log)"));
     }
 

@@ -26,9 +26,9 @@ public class VanillaPermissionsPlugin extends JavaPlugin {
         String minecraftVersion = ServerVersion.minecraft();
         ServerSoftware software = ServerSoftware.detect();
         if (!SupportedVersions.isVerified(software, minecraftVersion)) {
-            getLogger().warning("This server runs Minecraft " + minecraftVersion + ", which VanillaPermissionsPlugin has not been tested on "
-                + "(tested: " + SupportedVersions.describe(software) + "). If the vanilla command checks cannot be added, "
-                + "it disables itself and leaves vanilla commands unchanged");
+            getLogger().warning("Minecraft " + minecraftVersion + " has not been tested with this plugin "
+                + "(tested: " + SupportedVersions.describe(software) + "). If it can't add its checks, "
+                + "it turns itself off and vanilla commands stay as they were.");
         }
 
         adapter = Adapters.select(getClassLoader(), getLogger());
