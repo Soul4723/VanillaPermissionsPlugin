@@ -97,6 +97,15 @@ class Bot {
     else this.client.write('chat', { message: line })
   }
 
+  /** Right-click the block at `pos` with the main hand, on face `face` (1 = top), as the vanilla client does. */
+  useBlock (pos, face = 1) {
+    this.sequence = (this.sequence || 0) + 1
+    const values = { hand: 0, location: pos, direction: face, cursorX: 0.5, cursorY: 0.5, cursorZ: 0.5, insideBlock: false, worldBorderHit: false, sequence: this.sequence }
+    const fields = this.mcData.protocol.play.toServer.types.packet_block_place[1].map(f => f.name)
+    this.log(`${this.username} -> right-click ${pos.x} ${pos.y} ${pos.z}`)
+    this.client.write('block_place', Object.fromEntries(fields.map(f => [f, values[f] ?? 0])))
+  }
+
   /** Ask the server for completions of `text` (a /command prefix). Resolves with match strings. */
   tabComplete (text, timeoutMs = 3000) {
     return new Promise((resolve, reject) => {

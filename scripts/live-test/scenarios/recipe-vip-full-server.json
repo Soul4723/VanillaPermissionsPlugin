@@ -1,0 +1,17 @@
+{
+  "name": "recipe-vip-full-server",
+  "description": "Recipe: VIPs join when the server is full (max-players=1). Folia ignores this bypass.",
+  "when": {"plugin": true, "backend": "luckperms", "not": {"software": "folia"}},
+  "server": {"properties": {"max-players": 1}},
+  "players": ["Bot", "Bot2"],
+  "steps": [
+    {"connect": "Bot"},
+    {"name": "full server: Bot2 refused", "connect": "Bot2", "expect": {"refused": "full"}},
+    {"console": "lp deletegroup vip", "expect": "\\[LP\\]"},
+    {"console": "lp creategroup vip", "expect": "\\[LP\\].*(created|already exists)"},
+    {"console": "lp user 16beaa94-ff1b-37a7-8afb-c22dcb8c16d1 parent add vip", "expect": "\\[LP\\].*(now inherits|already)"},
+    {"console": "lp group vip permission set minecraft.bypass.player-limit true", "expect": "\\[LP\\].*(Set|already)"},
+    {"wait": 1000},
+    {"name": "can: VIP Bot2 joins the full server", "connect": "Bot2"}
+  ]
+}

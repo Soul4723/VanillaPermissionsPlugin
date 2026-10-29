@@ -1,0 +1,22 @@
+{
+  "name": "recipe-builders-one-world",
+  "description": "Recipe variant: the builders' /gamemode only in one world, via a LuckPerms world context (tested with world_nether).",
+  "when": {"plugin": true, "backend": "luckperms"},
+  "players": ["Bot"],
+  "steps": [
+    {"connect": "Bot"},
+    {"console": "lp deletegroup builder", "expect": "\\[LP\\]"},
+    {"console": "lp creategroup builder", "expect": "\\[LP\\].*(created|already exists)"},
+    {"console": "lp user Bot parent add builder", "expect": "\\[LP\\].*(now inherits|already)"},
+    {"console": "lp group builder permission set minecraft.command.gamemode true world=world_nether", "expect": "\\[LP\\].*(Set|already)"},
+    {"console": "lp group builder permission set minecraft.command.gamemode.* false", "expect": "\\[LP\\].*(Set|already)"},
+    {"console": "lp group builder permission set minecraft.command.gamemode.creative true", "expect": "\\[LP\\].*(Set|already)"},
+    {"console": "lp group builder permission set minecraft.command.gamemode.survival true", "expect": "\\[LP\\].*(Set|already)"},
+    {"wait": 1000},
+    {"name": "can't: /gamemode creative in the overworld", "as": "Bot", "command": "/gamemode creative", "expect": {"outcome": "denied", "gamemode": "survival"}},
+    {"console": "execute in minecraft:the_nether run tp Bot 0.5 128 0.5", "expect": "Teleported"},
+    {"name": "can: /gamemode creative in world_nether", "as": "Bot", "command": "/gamemode creative", "expect": {"outcome": "allowed", "gamemode": "creative"}},
+    {"name": "can: /gamemode survival in world_nether", "as": "Bot", "command": "/gamemode survival", "expect": {"outcome": "allowed", "gamemode": "survival"}},
+    {"console": "execute in minecraft:overworld run tp Bot 0.5 100 0.5", "expect": "Teleported"}
+  ]
+}

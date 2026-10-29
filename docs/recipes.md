@@ -1,126 +1,216 @@
 # Recipes
 
-Copy-paste setups, written for LuckPerms. They assume a non-operator group called `member` unless noted. Node meanings are in [Permissions](permissions.md).
+Ready-made LuckPerms setups for the things server owners ask for most. Run the commands in the console, or in game as an operator. If a node or the `.*` line is new to you, read [How permissions work](how-it-works.md) first.
 
-## Self-only survival mode
+Each recipe sets nodes on a group. The examples use groups such as `staff` and a player called `Steve`; use your own names. Create the group and add players to it before you run a recipe:
 
 ```text
-/lp group member permission set minecraft.command.gamemode true
-/lp group member permission set minecraft.command.gamemode.creative false
-/lp group member permission set minecraft.command.gamemode.adventure false
-/lp group member permission set minecraft.command.gamemode.spectator false
-/lp group member permission set minecraft.selector true
-/lp group member permission set minecraft.selector.player.gamemode.target.survival.target false
+/lp creategroup staff
+/lp user Steve parent add staff
 ```
 
-`/gamemode survival` and `/gamemode survival @s` work; `/gamemode survival Steve` is refused, and `@a` is refused while anyone else is online (the check only refuses targets other than the caller), so it works when the caller is the only player online.
+These recipes cover the vanilla commands. If EssentialsX or another plugin replaces a command such as `/gamemode`, the recipe applies to `/minecraft:gamemode`. See [A command ignores my nodes](troubleshooting.md#a-command-ignores-my-nodes).
 
-The selector node (`…gamemode.target.survival.target`) is shaped differently from the command node (`minecraft.command.gamemode.survival.target`) because the selector path starts with the command and the argument being checked (`gamemode.target`) and then lists the rest of what was typed (`survival.target`), the layout upstream uses, while the command node follows the command tree (mode first, then target).
+Recipes on this page:
 
-## `/tp` to coordinates only
+- [Staff mode: survival and spectator](#staff-mode-survival-and-spectator)
+- [Builders: creative, time, weather and the debug stick](#builders-creative-time-weather-and-the-debug-stick)
+- [Moderators: kick, ban and teleport](#moderators-kick-ban-and-teleport)
+- [Helpers: teleport to players only](#helpers-teleport-to-players-only)
+- [VIPs: join a full server](#vips-join-a-full-server)
+- [Staff: join during whitelist maintenance](#staff-join-during-whitelist-maintenance)
+- [Event hosts: effects and items for up to 10 players](#event-hosts-effects-and-items-for-up-to-10-players)
+- [Operators: no command blocks](#no-command-blocks), [no /op, /deop or /stop](#no-op-deop-or-stop), [no mobs or other entities as targets](#no-mobs-or-other-entities-as-targets)
 
-Not to or of other players:
+## Staff mode: survival and spectator
+
+For staff who switch to spectator to watch players, usually together with a vanish plugin.
 
 ```text
-/lp group member permission set minecraft.command.tp true
-/lp group member permission set minecraft.command.teleport.destination false
-/lp group member permission set minecraft.command.teleport.targets false
+/lp group staff permission set minecraft.command.gamemode true
+/lp group staff permission set minecraft.command.gamemode.* false
+/lp group staff permission set minecraft.command.gamemode.survival true
+/lp group staff permission set minecraft.command.gamemode.spectator true
 ```
 
-As a non-operator:
+The `.*` line closes every mode and every target. The next two lines open survival and spectator for the player themselves.
 
-- `/tp 100 64 100` works. Its node is `minecraft.command.teleport.location`, which the recipe leaves unset (allowed).
-- `/tp <player>`, `/tp @s <player>`, `/tp Bob 1 64 1` and `/tp @a 1 64 1` are refused.
-- `/teleport` is not available at all: only the `tp` root is granted, and `minecraft.command.teleport` stays unset (operators only).
+Players in `staff` can:
 
-## Limit `/effect` on other players
+- switch themselves to spectator with `/gamemode spectator`, and back with `/gamemode survival`.
 
-Moderators can apply `/effect` to other players, at most five at a time:
+They can't:
 
-```text
-/lp group moderator permission set minecraft.command.effect true
-/lp group moderator permission set minecraft.selector true
-/lp group moderator meta set minecraft.selector.limit.effect.targets 5
-```
+- use creative or adventure mode;
+- change another player's game mode.
 
-Limit and weight meta have no wildcards, but the plugin looks for the most specific key first and then drops the last part of the path until it finds one that is set. `minecraft.selector.limit.effect.targets` is the shortest key, so it caps every way of typing `/effect` (give and clear, with or without `<seconds>`, `<amplifier>` and `<hideParticles>`). To cap only `/effect give`, set `minecraft.selector.limit.effect.targets.give` instead. A longer key set on the same group overrides a shorter one for its own form, so you can allow more targets for one form. Weights work the same way: each player's weight is the most specific `minecraft.selector.weight…` key set for them along the same path. Keys written in upstream's full form still work.
+## Builders: creative, time, weather and the debug stick
 
-To find the key for a form you want to limit, run `/lp verbose on <player> & minecraft.selector`, have the player type that form with a selector, then `/lp verbose off`: the output has a line such as `meta: minecraft.selector.limit.effect.targets.give.targets.effect.seconds.amplifier - null`, and you can set that key or any shorter one that starts the same way.
-
-## Debug stick for builders
-
-Builders can use the debug stick in creative mode, except on oak trapdoors:
+For a build team that needs creative mode and control over daylight and weather.
 
 ```text
+/lp group builder permission set minecraft.command.gamemode true
+/lp group builder permission set minecraft.command.gamemode.* false
+/lp group builder permission set minecraft.command.gamemode.creative true
+/lp group builder permission set minecraft.command.gamemode.survival true
+/lp group builder permission set minecraft.command.time true
+/lp group builder permission set minecraft.command.weather true
 /lp group builder permission set minecraft.debugstick true
-/lp group builder permission set minecraft.debug_stick.use.minecraft.oak_trapdoor false
 ```
 
-## Take operator blocks away from operators
+Players in `builder` can:
+
+- switch themselves between creative and survival;
+- use `/time` and `/weather`;
+- use the debug stick in creative mode. This needs Paper or a Paper fork.
+
+They can't:
+
+- use spectator or adventure mode, or change another player's game mode;
+- place or use command blocks. Those stay for operators.
+
+To allow `/gamemode` only in one world, add the world context to the first line: `/lp group builder permission set minecraft.command.gamemode true world=creative`. Replace `creative` with your world's folder name.
+
+## Moderators: kick, ban and teleport
+
+For moderators who deal with problem players.
 
 ```text
-/lp group admin permission set minecraft.operator_block.* false
+/lp group moderator permission set minecraft.command.kick true
+/lp group moderator permission set minecraft.command.ban true
+/lp group moderator permission set minecraft.command.pardon true
+/lp group moderator permission set minecraft.command.teleport true
 ```
 
-## Take every vanilla command away from staff
+Players in `moderator` can:
 
-Operators have every vanilla command. To take them all away from a group of operators (plugin commands are not affected), deny the wildcard and grant back only what the group needs, here `/time`:
+- `/kick`, `/ban` and `/pardon` players;
+- teleport to a player with `/tp Alex`, and bring one player to another with `/tp Alex Steve`.
+
+They can't:
+
+- use `/op`, `/deop`, `/stop` or any other operator command you did not grant.
+
+On 1.8.8 - 1.12.2, grant `minecraft.command.tp` instead of `minecraft.command.teleport`.
+
+## Helpers: teleport to players only
+
+For helpers who need to reach a player quickly, without teleporting anyone else.
 
 ```text
-/lp group admin permission set minecraft.command.* false
-/lp group admin permission set minecraft.command.time true
-/lp group admin permission set minecraft.command.time.* true
+/lp group helper permission set minecraft.command.teleport true
+/lp group helper permission set minecraft.command.teleport.targets false
+/lp group helper permission set minecraft.command.teleport.location false
 ```
 
-`minecraft.command.time.*` does not match the root `minecraft.command.time`, so grant the root separately. The `.*` grant is needed here only because `minecraft.command.* false` also covers every sub-command of `/time`. See [Wildcards](permissions.md#wildcards).
+Players in `helper` can:
 
-You do not need this for ordinary players. A non-operator has no vanilla operator command until you grant one, and `minecraft.command.time true` alone is enough for `/time`.
+- teleport themselves to a player with `/tp Alex`.
 
-### What `minecraft.command.* false` also turns off
+They can't:
 
-A non-operator in a group with `minecraft.command.* false` loses `/me`, `/msg`, `/tell`, `/w`, `/teammsg`, `/tm`, `/trigger` and `/minecraft:help` (they answer "Unknown or incomplete command"), because Paper gives these to everyone through nodes that the wildcard also matches. The wildcard also matches Paper's `minecraft.command.selector`, so `@` selectors stop working. Bukkit's own `/help` is not affected. To keep them, add these lines:
+- teleport to coordinates;
+- teleport other players.
+
+On 1.8.8 - 1.12.2, grant `minecraft.command.tp` instead of `minecraft.command.teleport` in the first line.
+
+## VIPs: join a full server
+
+For ranks that may join when the server has reached its player limit.
 
 ```text
-/lp group admin permission set minecraft.command.{me,msg,tell,w,teammsg,tm,trigger,help} true
-/lp group admin permission set minecraft.command.{me,msg,teammsg,trigger}.* true
-/lp group admin permission set minecraft.selector true
+/lp group vip permission set minecraft.bypass.player-limit true
 ```
 
-The `{a,b}` groups are LuckPerms shorthand, which works while its `apply-shorthand` option is on (the default). With another permissions plugin, or if you turned it off, write one line per node: the first line is `me`, `msg`, `tell`, `w`, `teammsg`, `tm`, `trigger` and `help` as `minecraft.command.<name> true`, and the second is `minecraft.command.<name>.* true` for `me`, `msg`, `teammsg` and `trigger`.
+Players in `vip` can join when the server is full. Being an operator does not count, so add operators to `vip` too if they need this. Folia ignores this node and always refuses players over the limit.
 
-`/tell`, `/w` and `/tm` are redirects with their own root node but use `/msg`'s and `/teammsg`'s argument nodes, so they need no `.*` line of their own. Leave out `minecraft.selector true` if the group should not use `@` selectors.
+## Staff: join during whitelist maintenance
 
-## With another permissions plugin
+For staff who must get in while the whitelist keeps everyone else out.
 
-Every recipe is just a list of `node value` pairs, so translate each line to your plugin's syntax. Limits and weights (`minecraft.selector.limit.…`) need Vault chat info instead of a node; see [Permissions plugins](providers.md). Wildcards depend on the plugin; see the GroupManager notes below.
-
-### GroupManager
-
-GroupManager 3.2 with Vault 1.7.3. Its `groups.yml` has a top-level `groups:` key, then one entry per group with `default`, a `permissions` list, `inheritance` and `info` (the structure of the `groups.yml` that GroupManager generates on first start). In `permissions`, `node` grants, `-node` negates (the node is `false`) and `+node` is an exception to a broader negation.
-
-The file is per world: `plugins/GroupManager/worlds/<world>/groups.yml` (`worlds/world/groups.yml` for the default world). The self-only survival recipe becomes a new group:
-
-```yaml
-groups:
-  Member:
-    default: false
-    permissions:
-    - minecraft.command.gamemode
-    - -minecraft.command.gamemode.creative
-    - -minecraft.command.gamemode.adventure
-    - -minecraft.command.gamemode.spectator
-    - minecraft.selector
-    - -minecraft.selector.player.gamemode.target.survival.target
-    inheritance: []
-    info:
-      build: true
+```text
+/lp group staff permission set minecraft.bypass.whitelist true
 ```
 
-Add the group to the existing `groups:` list, save the file, run `manload` (console, or `/manload` in game) to reload it, then put a player in it with `manuadd <player> Member`. A non-operator in `Member` can use `/gamemode survival` and `/gamemode survival @s`, is refused the other game modes and other players, and cannot use `/time` (not granted).
+Players in `staff` can join while the whitelist is on, without being on it. Operators can join anyway.
 
-How GroupManager's nodes behave with this plugin:
+## Event hosts: effects and items for up to 10 players
 
-- `-node` shows as `false` and only affects its own node, not the broader one: with `minecraft.command.time`, `minecraft.command.time.query` and `-minecraft.command.time.set` in one group, `/time query daytime` works, `/time set day` is refused, and `/time add 1` (unset) follows vanilla.
-- `+minecraft.command.time.query` shows as `true`.
-- **Wildcards do nothing here.** `minecraft.command.*` and `minecraft.command.time.*` show their sub-nodes as unset, so list nodes explicitly. A `-minecraft.command.*` in the group also makes an explicit `minecraft.command.time` in the same group show as unset. The "Take every vanilla command away from staff" recipe above therefore does not translate; non-operators already lack vanilla commands whose nodes are unset, so grant only what the group needs.
-- Selector limits and weights depend on Vault chat info and were not tested with GroupManager.
+For players who run events and hand out effects and items, but should not hit the whole server at once.
+
+```text
+/lp group host permission set minecraft.command.effect true
+/lp group host permission set minecraft.command.give true
+/lp group host permission set minecraft.selector true
+/lp group host meta set minecraft.selector.limit.effect.targets 10
+/lp group host meta set minecraft.selector.limit.give.targets 10
+```
+
+Players in `host` can:
+
+- use `/effect` and `/give` on themselves and on other players;
+- use selectors such as `@a` and `@p`, for up to 10 targets per command.
+
+They can't:
+
+- affect more than 10 players or mobs with one `/effect` or `/give`. They get `You can select at most 10 targets here`.
+
+The two `meta` lines are limits, not permissions, so they use `meta set`. More about limits is in [Selector limits and weights](permissions.md#selector-limits-and-weights).
+
+## Operators
+
+Operators have every vanilla command, so these recipes take things away. Put your operators in an `admin` group, then deny what they should not do. A `false` node wins over operator status.
+
+```text
+/lp creategroup admin
+/lp user Steve parent add admin
+```
+
+### No command blocks
+
+```text
+/lp group admin permission set minecraft.operator_block.command_block.* false
+```
+
+Operators in `admin` can't:
+
+- place, open or break command blocks, including repeating and chain command blocks.
+
+They can still:
+
+- use every other command;
+- create a command block with `/setblock`, `/fill` or `/clone`. Command blocks already in the world keep running.
+
+The line above is enough for most servers. If operators must not create command blocks with commands either, also deny these three commands:
+
+```text
+/lp group admin permission set minecraft.command.setblock false
+/lp group admin permission set minecraft.command.fill false
+/lp group admin permission set minecraft.command.clone false
+```
+
+To take away structure blocks and jigsaws too, deny `minecraft.operator_block.*` instead of `minecraft.operator_block.command_block.*`.
+
+### No /op, /deop or /stop
+
+```text
+/lp group admin permission set minecraft.command.op false
+/lp group admin permission set minecraft.command.deop false
+/lp group admin permission set minecraft.command.stop false
+```
+
+Operators in `admin` keep every other command, but can't op or de-op anyone and can't stop the server. The console still can.
+
+### No mobs or other entities as targets
+
+For operators who should not run `/kill @e` by accident.
+
+```text
+/lp group admin permission set minecraft.selector.entity.* false
+```
+
+Operators in `admin` can still target players, for example with `@a` or a name. Any command that would target a mob, an item or another non-player entity is refused, and nothing happens.
+
+## Tested on
+
+Every recipe on this page is tested on Paper 1.21.11 and Spigot 1.21.11 with LuckPerms. The staff, helper, moderator, VIP, whitelist and `/op` recipes are also tested on Paper 1.12.2. Older servers have fewer nodes; see [1.8.8 - 1.12.2](compatibility.md#188---1122).

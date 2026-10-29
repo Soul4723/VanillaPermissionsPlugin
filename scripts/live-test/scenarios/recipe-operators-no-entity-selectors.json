@@ -1,0 +1,30 @@
+{
+  "name": "recipe-operators-no-entity-selectors",
+  "description": "Recipe: operators in the admin group cannot target mobs or other non-player entities (no /kill @e accidents), and still target players.",
+  "when": {"plugin": true, "backend": "luckperms", "minVersion": "1.14"},
+  "server": {"properties": {"spawn-protection": 0}},
+  "players": ["Bot", "Bot2"],
+  "steps": [
+    {"connect": "Bot"},
+    {"connect": "Bot2"},
+    {"op": "Bot"},
+    {"console": "forceload add 0 0", "expect": "chunk|forced|loaded"},
+    {"console": "fill -3 199 -3 3 199 3 minecraft:stone", "expect": "filled|No blocks"},
+    {"console": "fill -3 200 -3 3 202 3 minecraft:air", "expect": "filled|No blocks"},
+    {"console": "tp Bot 0.5 200 0.5", "expect": "Teleported"},
+    {"console": "kill @e[tag=vpp]"},
+    {"console": "summon minecraft:chicken -2 201 -2 {NoAI:1b,PersistenceRequired:1b,Tags:[\"vpp\"]}", "expect": "Summoned"},
+    {"console": "summon minecraft:chicken -1 201 -2 {NoAI:1b,PersistenceRequired:1b,Tags:[\"vpp\"]}", "expect": "Summoned"},
+    {"console": "lp deletegroup admin", "expect": "\\[LP\\]"},
+    {"console": "lp creategroup admin", "expect": "\\[LP\\].*(created|already exists)"},
+    {"console": "lp user Bot parent add admin", "expect": "\\[LP\\].*(now inherits|already)"},
+    {"console": "lp group admin permission set minecraft.selector.entity.* false", "expect": "\\[LP\\].*(Set|already)"},
+    {"wait": 1000},
+    {"name": "can't: /kill @e", "as": "Bot", "command": "/kill @e", "expect": {"outcome": "denied", "chat": "non-player entities"}},
+    {"name": "can't: /kill @e[type=chicken]", "as": "Bot", "command": "/kill @e[type=chicken]", "expect": {"outcome": "denied", "chat": "non-player entities"}},
+    {"console": "execute if entity @e[tag=vpp]", "expect": "Test passed"},
+    {"name": "can: /effect give @a speed", "as": "Bot", "command": "/effect give @a minecraft:speed 5", "expect": {"outcome": "allowed"}},
+    {"name": "can: /tp Bot2", "as": "Bot", "command": "/tp Bot2", "expect": {"outcome": "allowed", "teleported": true}},
+    {"console": "kill @e[tag=vpp]"}
+  ]
+}

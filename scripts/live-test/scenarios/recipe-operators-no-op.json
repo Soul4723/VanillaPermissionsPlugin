@@ -1,0 +1,24 @@
+{
+  "name": "recipe-operators-no-op",
+  "description": "Recipe: operators in the admin group cannot use /op, /deop or /stop, and keep every other command.",
+  "when": {"plugin": true, "backend": "luckperms"},
+  "players": ["Bot", "Bot2"],
+  "steps": [
+    {"connect": "Bot"},
+    {"connect": "Bot2"},
+    {"op": "Bot"},
+    {"console": "lp deletegroup admin", "expect": "\\[LP\\]"},
+    {"console": "lp creategroup admin", "expect": "\\[LP\\].*(created|already exists)"},
+    {"console": "lp user Bot parent add admin", "expect": "\\[LP\\].*(now inherits|already)"},
+    {"console": "lp group admin permission set minecraft.command.op false", "expect": "\\[LP\\].*(Set|already)"},
+    {"console": "lp group admin permission set minecraft.command.deop false", "expect": "\\[LP\\].*(Set|already)"},
+    {"console": "lp group admin permission set minecraft.command.stop false", "expect": "\\[LP\\].*(Set|already)"},
+    {"wait": 1000},
+    {"name": "can't: /op Bot2", "as": "Bot", "command": "/op Bot2", "expect": {"outcome": "denied"}},
+    {"name": "can't: /deop Bot", "as": "Bot", "command": "/deop Bot", "expect": {"outcome": "denied"}},
+    {"name": "can't: /stop", "as": "Bot", "command": "/stop", "expect": {"outcome": "denied"}},
+    {"name": "can: /time set day", "as": "Bot", "command": "/time set day", "expect": {"outcome": "allowed", "chat": "Set the time"}},
+    {"name": "can: /gamemode creative Bot2", "as": "Bot", "command": "/gamemode creative Bot2", "expect": {"outcome": "allowed"}},
+    {"name": "Bot2 now creative", "as": "Bot2", "command": "/gamemode", "expect": {"gamemode": "creative", "settleMs": 300}}
+  ]
+}

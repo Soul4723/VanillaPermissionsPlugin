@@ -1,0 +1,20 @@
+{
+  "name": "recipe-helpers-legacy",
+  "description": "Recipe variant for 1.8.8 - 1.12.2: helpers teleport themselves to players; /tp needs minecraft.command.tp there.",
+  "when": {"plugin": true, "backend": "luckperms", "maxVersion": "1.12.2"},
+  "players": ["Bot", "Bot2"],
+  "steps": [
+    {"connect": "Bot"},
+    {"connect": "Bot2"},
+    {"console": "lp deletegroup helper", "expect": "\\[LP\\]"},
+    {"console": "lp creategroup helper", "expect": "\\[LP\\].*(created|already exists)"},
+    {"console": "lp user Bot parent add helper", "expect": "\\[LP\\].*(now inherits|already)"},
+    {"console": "lp group helper permission set minecraft.command.tp true", "expect": "\\[LP\\].*(Set|already)"},
+    {"console": "lp group helper permission set minecraft.command.teleport.targets false", "expect": "\\[LP\\].*(Set|already)"},
+    {"console": "lp group helper permission set minecraft.command.teleport.location false", "expect": "\\[LP\\].*(Set|already)"},
+    {"wait": 1000},
+    {"name": "can: /tp Bot2", "as": "Bot", "command": "/tp Bot2", "expect": {"outcome": "allowed", "teleported": true}},
+    {"name": "can't: /tp Bot2 Bot", "as": "Bot", "command": "/tp Bot2 Bot", "expect": {"outcome": "denied"}},
+    {"name": "can't: /tp 0 100 0", "as": "Bot", "command": "/tp 0 100 0", "expect": {"outcome": "denied", "teleported": false}}
+  ]
+}

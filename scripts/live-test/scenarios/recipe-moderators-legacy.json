@@ -1,0 +1,19 @@
+{
+  "name": "recipe-moderators-legacy",
+  "description": "Recipe variant for 1.8.8 - 1.12.2: moderators teleport with minecraft.command.tp.",
+  "when": {"plugin": true, "backend": "luckperms", "maxVersion": "1.12.2"},
+  "players": ["Bot", "Bot2"],
+  "steps": [
+    {"connect": "Bot"},
+    {"connect": "Bot2"},
+    {"console": "lp deletegroup moderator", "expect": "\\[LP\\]"},
+    {"console": "lp creategroup moderator", "expect": "\\[LP\\].*(created|already exists)"},
+    {"console": "lp user Bot parent add moderator", "expect": "\\[LP\\].*(now inherits|already)"},
+    {"console": "lp group moderator permission set minecraft.command.kick true", "expect": "\\[LP\\].*(Set|already)"},
+    {"console": "lp group moderator permission set minecraft.command.tp true", "expect": "\\[LP\\].*(Set|already)"},
+    {"wait": 1000},
+    {"name": "can: /tp Bot2", "as": "Bot", "command": "/tp Bot2", "expect": {"outcome": "allowed", "teleported": true}},
+    {"name": "can: /tp Bot2 Bot", "as": "Bot", "command": "/tp Bot2 Bot", "expect": {"outcome": "allowed"}},
+    {"name": "can't: /op Bot", "as": "Bot", "command": "/op Bot", "expect": {"outcome": "denied"}}
+  ]
+}
