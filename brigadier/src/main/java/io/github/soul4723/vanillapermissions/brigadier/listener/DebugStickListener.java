@@ -22,7 +22,7 @@ public class DebugStickListener implements Listener {
 
         if (!PermissionManager.hasPermissionOrFallback(event.getPlayer(), permission(event.getClickedBlock().getType()), true)) {
             event.setCancelled(true);
-            event.getPlayer().sendMessage("§cYou do not have permission to use the debug stick on this block.");
+            event.getPlayer().sendMessage("§cYou can't use the debug stick on this block.");
         }
     }
 

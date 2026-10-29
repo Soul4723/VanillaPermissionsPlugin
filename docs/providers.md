@@ -1,39 +1,74 @@
 # Permissions plugins
 
-LuckPerms is optional. The plugin reads nodes through Bukkit's permission API, and uses LuckPerms' API directly when LuckPerms is installed. [Vault](https://github.com/MilkBowl/Vault) is optional and supplies selector limit and weight meta for plugins other than LuckPerms.
+LuckPerms is recommended and gives you everything. Any other Bukkit permissions plugin works for nodes. With one of those, [Vault](https://github.com/MilkBowl/Vault) adds selector limits and weights, and lets the whitelist and full-server bypasses work at login.
 
 ## Support matrix
 
-CI and the live tests cover LuckPerms. GroupManager 3.2 with Vault 1.7.3 was also checked by hand; the other rows follow from how the plugin reads permissions.
+CI and the live tests cover LuckPerms. GroupManager 3.2 with Vault 1.7.3 was also checked by hand. The other rows follow from how the plugin reads permissions.
 
-| Provider | Nodes (true/false/unset) | Selector limit/weight meta | Live command-list refresh | Whitelist / player-limit bypass |
+| Provider | Nodes | Limits and weights | Command list refresh | Whitelist and player-limit bypass |
 | --- | --- | --- | --- | --- |
-| LuckPerms | Yes, with contexts and wildcards | LuckPerms meta | Yes | Yes |
-| GroupManager + Vault (tested) | Yes, without wildcards | Vault chat info (not tested) | Yes (GroupManager resends) | Yes, via Vault |
-| Other Bukkit permissions plugin + Vault (untested) | Yes | If it provides Vault chat | Only if the plugin resends commands | If it attaches permissions by login or backs Vault |
-| Bukkit permissions plugin without Vault | Yes | Off | Plugin-dependent | Only if it attaches by login |
-| None | Bukkit defaults and operator status | Off | On operator change or relog | Bukkit defaults only |
+| LuckPerms | Contexts and wildcards | LuckPerms meta | Live | Yes |
+| GroupManager with Vault (tested) | No wildcards | Vault chat info, not tested | Live, GroupManager resends | Yes, through Vault |
+| Other permissions plugin with Vault (untested) | Yes | If Vault has chat info | If the plugin resends | If it attaches at login or backs Vault |
+| Other permissions plugin without Vault | Yes | Off | Plugin-dependent | If it attaches at login |
+| None | Bukkit defaults and operators | Off | On operator change or rejoin | Bukkit defaults only |
 
 ## LuckPerms
 
-LuckPerms 5.5 or newer is recommended and gives everything: contexts, wildcards, meta for limits and weights, and the bypass checks at login.
+LuckPerms 5.5 or newer is recommended. Use 5.4.x on Java 8. It gives you contexts, wildcards, meta for limits and weights, and the bypass checks at login.
 
-- LuckPerms re-sends a player's command list itself after a change (its `update-client-command-list` option, on by default), so tab completion follows permission changes live. If you turned that option off, it updates when the player rejoins.
+- Tab completion updates live, because LuckPerms resends a player's command list after a change. This is its `update-client-command-list` option, on by default. If you turned it off, the list updates when the player rejoins.
 - If LuckPerms is installed but failed to start, the plugin logs that and falls back to Bukkit permissions.
-- Wildcards need LuckPerms `apply-wildcards` (default on); see [Wildcards](permissions.md#wildcards).
+- Wildcards need the LuckPerms option `apply-wildcards`, on by default. See [Wildcards](permissions.md#wildcards).
 
 ## Other permissions plugins
 
-Any plugin that works through Bukkit's permission API (GroupManager, PermissionsEx and others) answers true, false or unset for nodes, but has no contexts. Wildcard behaviour depends on the plugin: with GroupManager 3.2, `minecraft.command.*` and similar wildcards were not seen by this plugin (sub-nodes showed as unset), so list nodes explicitly. A GroupManager recipe is in [Recipes](recipes.md#groupmanager).
+Any plugin that works through Bukkit's permission API answers true, false or unset for a node. PermissionsEx and GroupManager are examples. These plugins have no contexts, and wildcard behaviour depends on the plugin. GroupManager has its own [section](#groupmanager) below.
 
-- **Command list refresh:** the list is refreshed when the player rejoins, when their operator status changes, or when the permissions plugin resends it (GroupManager does).
-- **Selector limit and weight:** read from Vault chat info if Vault and a chat provider are installed; otherwise limits and weights are off. Vault values are read as text first, then as an integer; a value of the wrong type counts as unset.
-- **Whitelist and player-limit bypass:** checked while the player logs in. Plugins that attach permissions only after join (GroupManager does) are queried through Vault's permission service, which reads the stored data. Without Vault, these two bypasses need a plugin that attaches permissions at login.
-- **Load order:** it does not matter. The plugin picks its permissions source in `onEnable`, then picks again once the server has finished starting and every plugin has enabled, and switches if a permissions plugin or Vault service showed up in between. The startup log then has one extra line, `Selected after all plugins enabled: …`, naming the final source. The "No permissions plugin found" warning is logged once, after that final pick. A `/reload` does not pick again.
-- VaultUnlocked and Vault 2 are untested.
+- **Command list refresh:** the list refreshes when the player rejoins, when their operator status changes, or when the permissions plugin resends it. GroupManager resends it.
+- **Selector limits and weights:** they are read from Vault chat info when Vault and a chat provider are installed. Without them, limits and weights are off. Vault values are read as text first, then as an integer. A value of the wrong type counts as unset.
+- **Whitelist and player-limit bypass:** these are checked while the player logs in. Some plugins attach permissions only after the player joins, and GroupManager is one. For those the plugin asks Vault's permission service, which reads the stored data. Without Vault, these two bypasses need a plugin that attaches permissions at login.
+- **Load order:** it does not matter. The plugin picks its permissions source when it enables, and again after all plugins have enabled. The second pick adds the log line `Now using <source> for permissions (it loaded after this plugin).`, naming the final source. A `/reload` does not pick again.
+- **Untested:** VaultUnlocked and Vault 2.
+
+## GroupManager
+
+GroupManager 3.2 with Vault 1.7.3 was tested by hand. GroupManager has no wildcards, so you list every node.
+
+Groups live in `plugins/GroupManager/worlds/<world>/groups.yml`, for example `worlds/world/groups.yml` for the default world. The file has a top-level `groups:` key and one entry per group. In `permissions`, `node` grants, `-node` sets the node to `false`, and `+node` makes an exception to a broader denial.
+
+This group is the explicit-node version of the [staff mode recipe](recipes.md#staff-mode-survival-and-spectator). Add it under `groups:`:
+
+```yaml
+groups:
+  Staff:
+    default: false
+    permissions:
+    - minecraft.command.gamemode
+    - -minecraft.command.gamemode.creative
+    - -minecraft.command.gamemode.adventure
+    - -minecraft.command.gamemode.survival.target
+    - -minecraft.command.gamemode.spectator.target
+    inheritance: []
+    info:
+      build: true
+```
+
+Save the file and run `manload`, in the console or as `/manload` in game. Then add a player with `manuadd Steve Staff`.
+
+A player in `Staff` can switch themselves between survival and spectator. They cannot use other game modes or change other players.
+
+How GroupManager nodes behave here:
+
+- `-node` shows as `false` and only affects its own node. With `minecraft.command.time`, `minecraft.command.time.query` and `-minecraft.command.time.set` in one group, `/time query daytime` works and `/time set day` is refused. `/time add 1` is unset, so it follows vanilla.
+- `+node` shows as `true`.
+- Wildcards do nothing. `minecraft.command.*` and `minecraft.command.time.*` leave their sub-nodes unset, so list each node.
+- A `-minecraft.command.*` in a group also hides an explicit grant in the same group, such as `minecraft.command.time`.
+- Limits and weights depend on Vault chat info and were not tested with GroupManager.
 
 ## No permissions plugin
 
-The plugin still runs, logs a warning, and every node follows Bukkit defaults and operator status: command nodes follow the defaults Paper registers, bypass nodes are `false`, and `minecraft.selector` is operator-only. Selector limits and weights are off.
+The plugin still runs and logs a warning. Every node follows Bukkit defaults and operator status. Command nodes follow the defaults Paper registers, bypass nodes are `false`, and `minecraft.selector` is for operators only. Selector limits and weights are off.
 
-`/vanillapermissions debug` shows which source the plugin is using for nodes and for selector meta.
+`/vanillapermissions debug` shows which source the plugin uses. See [the command page](commands.md#vanillapermissions-debug).

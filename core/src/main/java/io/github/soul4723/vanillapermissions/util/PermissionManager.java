@@ -48,16 +48,16 @@ public class PermissionManager {
             PermissionProvider connected = LuckPermsPermissionProvider.connect(plugin, luckPerms);
             if (connected != null) {
                 log.info("Using LuckPerms " + luckPerms.getDescription().getVersion()
-                    + " for permission checks, contexts, and selector limits and weights");
+                    + " for permissions and for selector limits and weights.");
                 return connected;
             }
-            log.severe("Falling back to Bukkit permissions without LuckPerms; fix LuckPerms to restore its nodes");
+            log.severe("LuckPerms is not working, so permissions come from Bukkit for now. Fix the LuckPerms errors above and restart.");
         }
 
         BukkitSelection selection = selectBukkitProvider(plugin, true);
         if (selection.provider.getPermissionsPlugin() != null) {
-            log.info("Using Bukkit permissions from " + selection.provider.getPermissionsPlugin()
-                + "; whether command lists refresh after a permission change depends on that plugin");
+            log.info("Using " + selection.provider.getPermissionsPlugin() + " for permissions. "
+                + "Whether command lists refresh after a permission change depends on that plugin.");
         }
         log.info(selection.metaLine);
         return selection.provider;
@@ -80,15 +80,15 @@ public class PermissionManager {
                 provider = selection.provider;
                 current.close();
                 String permissionsPlugin = selection.provider.getPermissionsPlugin();
-                plugin.getLogger().info("Selected after all plugins enabled: "
-                    + (permissionsPlugin == null ? "Bukkit defaults only" : "Bukkit permissions from " + permissionsPlugin)
-                    + "; " + selection.metaLine.substring(0, 1).toLowerCase(Locale.ROOT) + selection.metaLine.substring(1));
+                plugin.getLogger().info((permissionsPlugin == null
+                    ? "Now using Bukkit defaults for permissions (no permissions plugin loaded)."
+                    : "Now using " + permissionsPlugin + " for permissions (it loaded after this plugin).")
+                    + " " + selection.metaLine);
             }
         }
         PermissionProvider selected = provider;
         if (selected instanceof BukkitPermissionProvider && ((BukkitPermissionProvider) selected).getPermissionsPlugin() == null) {
-            plugin.getLogger().warning("No permissions plugin found, so every node follows Bukkit defaults and operator status; "
-                + "install a permissions plugin such as LuckPerms for granular control");
+            plugin.getLogger().warning("No permissions plugin found. Operators keep vanilla commands; install LuckPerms to set nodes.");
         }
     }
 
@@ -119,14 +119,14 @@ public class PermissionManager {
                 permissionsPlugin = VaultHook.permissionsPlugin(server);
                 loginPermissions = VaultHook.loginPermissions(server);
             } catch (RuntimeException | LinkageError e) {
-                if (log) logger.warning("Could not use the Vault API: " + e);
+                if (log) logger.warning("Could not use Vault: " + e);
             }
         }
         if (permissionsPlugin == null) permissionsPlugin = detectPermissionsPlugin(plugins);
 
         String metaLine = vault != null
-            ? "Selector limits and weights come from Vault chat meta (" + vault.getChatName() + ")"
-            : "Selector limits and weights are off: they need LuckPerms, or Vault with a chat meta provider";
+            ? "Selector limits and weights come from Vault chat meta (" + vault.getChatName() + ")."
+            : "Selector limits and weights are off. They need LuckPerms, or Vault with a chat meta provider.";
         return new BukkitSelection(new BukkitPermissionProvider(permissionsPlugin, vault, loginPermissions, logger), metaLine);
     }
 

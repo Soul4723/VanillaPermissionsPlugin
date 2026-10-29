@@ -7,9 +7,11 @@ const { Bot } = require('./bot')
 const DENIED = new RegExp([
   'Unknown or incomplete command',
   'Unknown command', // Spigot/CraftBukkit before 1.13 and Bukkit's own message
-  'do(?: not|n.t) have permission', // Bukkit default message, our selector messages, Paper
+  'do(?: not|n.t) have permission', // Bukkit default message, vanilla's text on 1.8.8 - 1.12.2, Paper
   'Incorrect argument for command',
   'Selector not allowed', // Paper 1.21.3+ parse-time selector check
+  'You can.t (?:use|target|open|place|break) ', // this plugin's own refusals: selectors, operator blocks, debug stick, /vanillapermissions
+  'You can target at most \\d+ players? or entit', // this plugin's selector limit
   'permissions\\.requires'
 ].join('|'), 'i')
 
@@ -134,11 +136,23 @@ class ScenarioRunner {
   /** Run /command (or chat) as a bot and check the outcome. */
   async command (step) {
     const b = this.bot(step.as)
-    const e = step.expect || {}
+    return this.observe(b, step.expect || {}, () => b.say(step.command))
+  }
+
+  /** Right-click a block with the main hand, then check the outcome like a command. */
+  async use (step) {
+    const b = this.bot(step.as)
+    if (!b.has('block_place')) return { skip: 'no block_place packet in this protocol' }
+    const { x, y, z, face = 1 } = step.use
+    return this.observe(b, step.expect || {}, () => b.useBlock({ x, y, z }, face))
+  }
+
+  /** Do `act`, then watch the bot's messages, game mode and teleports against `e`. */
+  async observe (b, e, act) {
     const timeout = this.ms(3000)
     const from = b.messages.length
     const teleportsBefore = b.teleports
-    b.say(step.command)
+    act()
     const deadline = Date.now() + timeout
     const failures = []
     const newMessages = () => b.messages.slice(from).map(m => m.text)
@@ -210,6 +224,7 @@ class ScenarioRunner {
   label (step) {
     if (step.name) return step.name
     if (step.command) return `${step.as || 'bot'}: ${step.command}`
+    if (step.use) return `${step.as || 'bot'}: right-click ${step.use.x} ${step.use.y} ${step.use.z}`
     const k = Object.keys(step).find(x => !['as', 'when', 'expect', 'name'].includes(x))
     return `${k} ${JSON.stringify(step[k])}`
   }
@@ -222,7 +237,9 @@ class ScenarioRunner {
     if (step.meta) { await this.meta(step.meta.user || this.bot().username, step.meta.key, step.meta.value); return null }
     if (step.connect) return this.connect(step.connect, step.expect && step.expect.refused)
     if (step.disconnect) { await this.disconnect(step.disconnect); return null }
+    if (step.wait) { await delay(this.ms(step.wait)); return null }
     if (step.command) return this.command(step)
+    if (step.use) return this.use(step)
     if (step.tree) return this.tree(step)
     if (step.tab) return this.tab(step)
     if (step.log) {
@@ -259,7 +276,7 @@ class ScenarioRunner {
       n++
       const label = this.label(step)
       const skip = unmet(step.when, this.ctx)
-      if (skip) { if (step.command || step.tree || step.tab || step.log || step.connect) this.rows.push({ scenario: prefix, check: label, status: 'SKIP', detail: skip }); continue }
+      if (skip) { if (step.command || step.use || step.tree || step.tab || step.log || step.connect) this.rows.push({ scenario: prefix, check: label, status: 'SKIP', detail: skip }); continue }
       let r
       try {
         r = await this.step(step)

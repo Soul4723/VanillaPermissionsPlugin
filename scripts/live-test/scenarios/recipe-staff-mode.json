@@ -1,0 +1,26 @@
+{
+  "name": "recipe-staff-mode",
+  "description": "Recipe: staff switch themselves between survival and spectator, nothing else, never for other players.",
+  "when": {"plugin": true, "backend": "luckperms"},
+  "players": ["Bot", "Bot2"],
+  "steps": [
+    {"connect": "Bot"},
+    {"connect": "Bot2"},
+    {"console": "lp deletegroup staff", "expect": "\\[LP\\]"},
+    {"console": "lp creategroup staff", "expect": "\\[LP\\].*(created|already exists)"},
+    {"console": "lp user Bot parent add staff", "expect": "\\[LP\\].*(now inherits|already)"},
+    {"console": "lp group staff permission set minecraft.command.gamemode true", "expect": "\\[LP\\].*(Set|already)"},
+    {"console": "lp group staff permission set minecraft.command.gamemode.* false", "expect": "\\[LP\\].*(Set|already)"},
+    {"console": "lp group staff permission set minecraft.command.gamemode.survival true", "expect": "\\[LP\\].*(Set|already)"},
+    {"console": "lp group staff permission set minecraft.command.gamemode.spectator true", "expect": "\\[LP\\].*(Set|already)"},
+    {"wait": 1000},
+    {"name": "can: /gamemode spectator", "as": "Bot", "command": "/gamemode spectator", "expect": {"outcome": "allowed", "gamemode": "spectator"}},
+    {"name": "can: /gamemode survival", "as": "Bot", "command": "/gamemode survival", "expect": {"outcome": "allowed", "gamemode": "survival"}},
+    {"name": "can't: /gamemode creative", "as": "Bot", "command": "/gamemode creative", "expect": {"outcome": "denied", "gamemode": "survival"}},
+    {"name": "can't: /gamemode adventure", "as": "Bot", "command": "/gamemode adventure", "expect": {"outcome": "denied", "gamemode": "survival"}},
+    {"name": "can't: /gamemode spectator Bot2", "as": "Bot", "command": "/gamemode spectator Bot2", "expect": {"outcome": "denied"}},
+    {"name": "can't: /gamemode survival Bot2", "as": "Bot", "command": "/gamemode survival Bot2", "expect": {"outcome": "denied"}},
+    {"name": "Bot2 still in survival", "as": "Bot2", "command": "/gamemode", "expect": {"gamemode": "survival", "settleMs": 300}},
+    {"name": "command list: only survival and spectator", "tree": {"has": ["gamemode survival", "gamemode spectator"], "lacks": ["gamemode creative", "gamemode adventure"]}}
+  ]
+}

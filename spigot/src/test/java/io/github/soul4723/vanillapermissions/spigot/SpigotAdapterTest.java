@@ -110,8 +110,8 @@ class SpigotAdapterTest {
         });
         SpigotAdapter.logSkipped(logger, List.of("lp", "luckperms:lp", "tp", "minecraft:give"));
         assertEquals(List.of(
-            "WARNING Another plugin changed these vanilla commands, so they have no permission checks from VanillaPermissionsPlugin: tp, minecraft:give",
-            "INFO Left 2 commands that other plugins added to the vanilla command dispatcher unchecked",
+            "WARNING Another plugin changed these vanilla commands, so this plugin does not check them: tp, minecraft:give",
+            "INFO 2 commands from other plugins are not checked by this plugin.",
             "FINE Commands other plugins added: lp, luckperms:lp"), records);
     }
 

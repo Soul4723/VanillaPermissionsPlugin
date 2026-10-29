@@ -3,6 +3,9 @@ contact_links:
   - name: Report a security vulnerability
     url: https://github.com/Soul4723/VanillaPermissionsPlugin/blob/main/SECURITY.md
     about: Report security problems privately, not as a public issue.
+  - name: Recipes for common setups
+    url: https://github.com/Soul4723/VanillaPermissionsPlugin/blob/main/docs/recipes.md
+    about: Ready-made setups for staff, builders, moderators, VIPs and operators.
   - name: Setting permissions in LuckPerms
     url: https://luckperms.net/wiki/Home
-    about: How to grant, deny and inherit nodes. Open an issue here only if this plugin misbehaves.
+    about: How to create groups and grant, deny and inherit nodes in LuckPerms.

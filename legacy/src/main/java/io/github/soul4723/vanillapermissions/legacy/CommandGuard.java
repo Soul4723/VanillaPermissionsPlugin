@@ -29,7 +29,7 @@ import java.util.Optional;
 final class CommandGuard {
 
     /** Vanilla's {@code commands.generic.permission} text, which a refused sub-command shows on these versions. */
-    static final String NO_PERMISSION = "You do not have permission to use this command";
+    static final String NO_PERMISSION = "You do not have permission to use this command.";
     static final String SELECTOR_DENIED = SelectorDenial.SYNTAX_DENIED;
     static final String UNRESOLVED = SelectorDenial.UNRESOLVED;
     /** Nested {@code /execute} and {@code commands.yml} alias levels checked before giving up (and denying). */

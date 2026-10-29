@@ -1,0 +1,17 @@
+{
+  "name": "recipe-staff-whitelist",
+  "description": "Recipe: staff join while the whitelist is on, without being on it.",
+  "when": {"plugin": true, "backend": "luckperms"},
+  "players": ["Bot"],
+  "steps": [
+    {"console": "whitelist on", "expect": "whitelist|Turned on"},
+    {"name": "whitelist on: Bot refused", "connect": "Bot", "expect": {"refused": "white-?list"}},
+    {"console": "lp deletegroup staff", "expect": "\\[LP\\]"},
+    {"console": "lp creategroup staff", "expect": "\\[LP\\].*(created|already exists)"},
+    {"console": "lp user bb19ef2f-2f95-39a8-8bad-bda3ed373847 parent add staff", "expect": "\\[LP\\].*(now inherits|already)"},
+    {"console": "lp group staff permission set minecraft.bypass.whitelist true", "expect": "\\[LP\\].*(Set|already)"},
+    {"wait": 1000},
+    {"name": "can: staff Bot joins", "connect": "Bot"},
+    {"console": "whitelist off", "expect": "whitelist|Turned off"}
+  ]
+}

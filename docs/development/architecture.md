@@ -98,7 +98,7 @@ To add an adapter: create the module (depending on `core`, and `brigadier` for a
 ### `legacy`
 
 - **Interception, not patching.** The wrappers in CraftBukkit's `knownCommands` must not be replaced: command-block and `/execute` dispatch test `instanceof VanillaCommandWrapper`, and a swapped `kill` made a command block's `kill @e[type=pig]` do nothing on 1.12.2.
-- **Ten grammars** (`gamemode`, `time`, `weather`, `kill`, `effect`, `give`, `clear`, `tp`/`teleport`, `execute`, `scoreboard`) parse the typed arguments and yield the modern node names; `LegacyVersion` only changes which node paths a grammar lists for 1.8 - 1.12 (for example `time.query.day` from 1.12); parsing is the same on every version. The node lists are in [Permissions](../permissions.md#188---1122-legacy-servers).
+- **Ten grammars** (`gamemode`, `time`, `weather`, `kill`, `effect`, `give`, `clear`, `tp`/`teleport`, `execute`, `scoreboard`) parse the typed arguments and yield the modern node names; `LegacyVersion` only changes which node paths a grammar lists for 1.8 - 1.12 (for example `time.query.day` from 1.12); parsing is the same on every version. The node lists are in [Compatibility](../compatibility.md#188---1122).
 - **Selectors** are resolved with NMS `PlayerSelector` after `MinecraftServer.worldServer` is filled (`LegacyServer`), then checked by `core`'s `SelectorRules`. Anything it cannot resolve or parse is denied.
 - **Tab completion** is filtered by `TabCompleteFilter` through `TabCompleteEvent` (1.9+; 1.8.8 has none).
 - **Other features** live in `legacy/.../feature`: force-gamemode (restores the saved game mode at join), operator blocks and a Netty move-speed hook.

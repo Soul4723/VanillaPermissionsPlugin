@@ -22,8 +22,8 @@ public final class SelectorDenial {
         UNSUPPORTED
     }
 
-    public static final String SYNTAX_DENIED = "You do not have permission to use target selectors";
-    public static final String UNRESOLVED = "The selected targets could not be checked against selector permissions";
+    public static final String SYNTAX_DENIED = "You can't use @ selectors such as @a.";
+    public static final String UNRESOLVED = "You can't target that here.";
 
     private final Reason reason;
     private final int limit;
@@ -52,15 +52,15 @@ public final class SelectorDenial {
         return limit;
     }
 
-    /** The player-facing text, identical to the 1.0.0 Brigadier error messages. */
+    /** The player-facing text. */
     public String message() {
         switch (reason) {
-            case TOO_MANY: return "You can select at most " + limit + (limit == 1 ? " target" : " targets") + " here";
-            case ENTITY: return "You do not have permission to target non-player entities here";
-            case PLAYER: return "You do not have permission to target other players here";
-            case SELF: return "You do not have permission to target yourself here";
-            case WEIGHT: return "You do not have permission to target players with a higher selector weight than yours";
-            case UNSUPPORTED: return "This target cannot be checked against selector permissions, so it is not allowed";
+            case TOO_MANY: return "You can target at most " + limit + (limit == 1 ? " player or entity" : " players or entities") + " here.";
+            case ENTITY: return "You can't target non-player entities here.";
+            case PLAYER: return "You can't target other players here.";
+            case SELF: return "You can't target yourself here.";
+            case WEIGHT: return "You can't target players ranked above you.";
+            case UNSUPPORTED: return UNRESOLVED;
             default: throw new IllegalStateException("unknown reason " + reason);
         }
     }

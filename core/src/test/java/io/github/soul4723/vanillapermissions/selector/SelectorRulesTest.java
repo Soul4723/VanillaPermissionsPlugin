@@ -73,21 +73,21 @@ class SelectorRulesTest {
         permissions.nodes.put("minecraft.selector.player." + PERMISSION_PATH, false);
         assertAllowed(List.of(targetPlayer(SOURCE_ID, source)));
         assertDenied(List.of(targetPlayer(OTHER_ID, other)), SelectorDenial.Reason.PLAYER,
-                "You do not have permission to target other players here");
+                "You can't target other players here.");
     }
 
     @Test
     void entityScopeDenial() {
         permissions.nodes.put("minecraft.selector.entity." + PERMISSION_PATH, false);
         assertDenied(List.of(SelectorRules.Target.entity(entity(OTHER_ID))), SelectorDenial.Reason.ENTITY,
-                "You do not have permission to target non-player entities here");
+                "You can't target non-player entities here.");
     }
 
     @Test
     void selfScopeDenial() {
         permissions.nodes.put("minecraft.selector.self." + PERMISSION_PATH, false);
         assertDenied(List.of(targetPlayer(SOURCE_ID, source)), SelectorDenial.Reason.SELF,
-                "You do not have permission to target yourself here");
+                "You can't target yourself here.");
     }
 
     @Test
@@ -101,18 +101,18 @@ class SelectorRulesTest {
     @Test
     void unsupportedTargetsAreAlwaysDenied() {
         assertDenied(List.of(SelectorRules.Target.unsupported()), SelectorDenial.Reason.UNSUPPORTED,
-                "This target cannot be checked against selector permissions, so it is not allowed");
+                "You can't target that here.");
     }
 
     @Test
     void limitCountsWholeSelection() {
         permissions.meta.put(SOURCE_ID + ":minecraft.selector.limit." + PERMISSION_PATH, 1);
         assertDenied(List.of(targetPlayer(SOURCE_ID, source), targetPlayer(OTHER_ID, other)), SelectorDenial.Reason.TOO_MANY,
-                "You can select at most 1 target here");
+                "You can target at most 1 player or entity here.");
         assertDenied(List.of(SelectorRules.Target.scoreHolder(), SelectorRules.Target.scoreHolder()), SelectorDenial.Reason.TOO_MANY,
-                "You can select at most 1 target here");
+                "You can target at most 1 player or entity here.");
         permissions.meta.put(SOURCE_ID + ":minecraft.selector.limit." + PERMISSION_PATH, 0);
-        assertEquals("You can select at most 0 targets here", denial(List.of(targetPlayer(SOURCE_ID, source))).message());
+        assertEquals("You can target at most 0 players or entities here.", denial(List.of(targetPlayer(SOURCE_ID, source))).message());
         assertEquals(0, denial(List.of(targetPlayer(SOURCE_ID, source))).limit());
     }
 
@@ -121,7 +121,7 @@ class SelectorRulesTest {
         permissions.meta.put(SOURCE_ID + ":minecraft.selector.weight." + PERMISSION_PATH, 2);
         permissions.meta.put(OTHER_ID + ":minecraft.selector.weight." + PERMISSION_PATH, 3);
         assertDenied(List.of(targetPlayer(OTHER_ID, other)), SelectorDenial.Reason.WEIGHT,
-                "You do not have permission to target players with a higher selector weight than yours");
+                "You can't target players ranked above you.");
         permissions.meta.put(OTHER_ID + ":minecraft.selector.weight." + PERMISSION_PATH, 2);
         assertAllowed(List.of(targetPlayer(OTHER_ID, other)));
     }
@@ -157,7 +157,7 @@ class SelectorRulesTest {
         permissions.meta.put(SOURCE_ID + ":minecraft.selector.weight.teleport.targets", 2);
         permissions.meta.put(OTHER_ID + ":minecraft.selector.weight." + PERMISSION_PATH, 3);
         assertDenied(List.of(targetPlayer(OTHER_ID, other)), SelectorDenial.Reason.WEIGHT,
-                "You do not have permission to target players with a higher selector weight than yours");
+                "You can't target players ranked above you.");
         permissions.meta.put(SOURCE_ID + ":minecraft.selector.weight.teleport.targets.targets", 5);
         assertAllowed(List.of(targetPlayer(OTHER_ID, other)));
     }

@@ -1,17 +1,23 @@
 # Documentation
 
-Start with the [project README](../README.md) for what the plugin does and how to install it.
+Start with [How permissions work](how-it-works.md), then pick a [recipe](recipes.md). Installation is in the [project README](../README.md#installation).
 
-## For server admins
+## Setting up
 
-| Page | Contents |
+| Page | Read it to |
 | --- | --- |
-| [Permissions](permissions.md) | How a node resolves (true / false / unset), the full node reference, wildcards, operator defaults |
-| [Recipes](recipes.md) | Copy-paste `/lp` setups, and how to adapt them to another permissions plugin |
-| [Permissions plugins](providers.md) | LuckPerms, other Bukkit permissions plugins, Vault, running without one |
-| [Compatibility](compatibility.md) | Supported servers and versions, features per version, limits |
-| [Commands](commands.md) | `/vanillapermissions check` and `debug`, and the plugin's own nodes |
-| [Troubleshooting](troubleshooting.md) | FAQ, reading the startup log, commands from other plugins |
+| [How permissions work](how-it-works.md) | Understand nodes, true, false and unset, and operators. |
+| [Recipes](recipes.md) | Copy setups for staff, builders, moderators, helpers, VIPs, event hosts and operators. |
+
+## Reference
+
+| Page | Read it to |
+| --- | --- |
+| [Permission nodes](permissions.md) | Look up any node: commands, aliases, selectors, limits, bypasses, command blocks, the debug stick. |
+| [Permissions plugins](providers.md) | Use LuckPerms, GroupManager or another plugin, with or without Vault. |
+| [Compatibility](compatibility.md) | Check supported versions, what works where, 1.8.8 - 1.12.2 and the known limits. |
+| [The /vanillapermissions command](commands.md) | Check a player's node, or see what the plugin found on your server. |
+| [Troubleshooting](troubleshooting.md) | Fix a node that does not work, read the startup log, report a problem. |
 
 ## For contributors
 
@@ -22,4 +28,4 @@ Start with the [project README](../README.md) for what the plugin does and how t
 | [Testing](development/testing.md) | Unit tests, boot smoke test and the live-test harness |
 | [Releasing](development/releasing.md) | Versioning, release process, CI |
 
-See also the [Changelog](../CHANGELOG.md) and the [security policy](../SECURITY.md).
+See also the [changelog](../CHANGELOG.md) and the [security policy](../SECURITY.md).

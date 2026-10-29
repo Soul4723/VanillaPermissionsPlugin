@@ -77,7 +77,7 @@ class OperatorBlockListenerTest {
     void explicitDenialCancelsWithMessage() {
         luckPerms.nodes.put("minecraft.operator_block.command_block.view", Tristate.FALSE);
         assertTrue(viewCancelled(Material.CHAIN_COMMAND_BLOCK));
-        assertEquals(List.of("§cYou do not have permission to open command blocks."), messages);
+        assertEquals(List.of("§cYou can't open command blocks."), messages);
         assertFalse(viewCancelled(Material.STRUCTURE_BLOCK), "Denial leaked to another block type");
     }
 

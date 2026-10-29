@@ -1,0 +1,31 @@
+{
+  "name": "recipe-moderators",
+  "description": "Recipe: moderators kick, ban and pardon players and teleport to and between them; /op, /deop and /stop stay closed. 1.13+; see recipe-moderators-legacy.",
+  "when": {"plugin": true, "backend": "luckperms", "minVersion": "1.13"},
+  "players": ["Bot", "Bot2"],
+  "steps": [
+    {"connect": "Bot"},
+    {"connect": "Bot2"},
+    {"console": "lp deletegroup moderator", "expect": "\\[LP\\]"},
+    {"console": "lp creategroup moderator", "expect": "\\[LP\\].*(created|already exists)"},
+    {"console": "lp user Bot parent add moderator", "expect": "\\[LP\\].*(now inherits|already)"},
+    {"console": "lp group moderator permission set minecraft.command.kick true", "expect": "\\[LP\\].*(Set|already)"},
+    {"console": "lp group moderator permission set minecraft.command.ban true", "expect": "\\[LP\\].*(Set|already)"},
+    {"console": "lp group moderator permission set minecraft.command.pardon true", "expect": "\\[LP\\].*(Set|already)"},
+    {"console": "lp group moderator permission set minecraft.command.teleport true", "expect": "\\[LP\\].*(Set|already)"},
+    {"wait": 1000},
+    {"name": "can: /tp Bot2", "as": "Bot", "command": "/tp Bot2", "expect": {"outcome": "allowed", "teleported": true}},
+    {"name": "can: /teleport Bot2", "as": "Bot", "command": "/teleport Bot2", "expect": {"outcome": "allowed", "teleported": true}},
+    {"name": "can: /tp Bot2 Bot", "as": "Bot", "command": "/tp Bot2 Bot", "expect": {"outcome": "allowed"}},
+    {"name": "can't: /op Bot", "as": "Bot", "command": "/op Bot", "expect": {"outcome": "denied"}},
+    {"name": "can't: /deop Bot2", "as": "Bot", "command": "/deop Bot2", "expect": {"outcome": "denied"}},
+    {"name": "can't: /stop", "as": "Bot", "command": "/stop", "expect": {"outcome": "denied"}},
+    {"name": "can't: /time set day", "as": "Bot", "command": "/time set day", "expect": {"outcome": "denied"}},
+    {"name": "can: /kick Bot2", "as": "Bot", "command": "/kick Bot2", "expect": {"outcome": "allowed", "chat": "Kicked|kick"}},
+    {"disconnect": "Bot2"},
+    {"name": "can: /ban Bot2", "as": "Bot", "command": "/ban Bot2", "expect": {"outcome": "allowed", "chat": "Banned|ban"}},
+    {"name": "banned Bot2 is refused", "connect": "Bot2", "expect": {"refused": "banned"}},
+    {"name": "can: /pardon Bot2", "as": "Bot", "command": "/pardon Bot2", "expect": {"outcome": "allowed", "chat": "Unbanned|pardon|unban"}},
+    {"name": "pardoned Bot2 joins", "connect": "Bot2"}
+  ]
+}

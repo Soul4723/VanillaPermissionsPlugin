@@ -4,24 +4,13 @@
 [![Latest release](https://img.shields.io/github/v/release/Soul4723/VanillaPermissionsPlugin)](https://github.com/Soul4723/VanillaPermissionsPlugin/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Adds permission nodes to vanilla Minecraft commands, `@` selectors and operator features, on Paper, Folia, Spigot, Purpur and Pufferfish from 1.8.8 to 26.3. Without it, a vanilla command is all or nothing: you need the right op level. With it, your permissions plugin can allow or deny each command, sub-command and argument, for example `/gamemode creative` but not `/gamemode spectator`.
+Permission nodes for every vanilla Minecraft command, sub-command and `@` selector, set through LuckPerms or any other permissions plugin.
 
-Each check is a permission *node*, a string such as `minecraft.command.time` that you set to true or false in your permissions plugin. Nodes you leave unset follow vanilla, so operators keep their commands and other players keep what they had. Only vanilla commands are affected; commands from other plugins keep their own permissions.
+Without this plugin, a vanilla command such as `/gamemode` is all or nothing: a player either has it, with every mode and every target, or does not. With it, you decide per part. Let staff use `/gamemode spectator` on themselves but not creative. Let helpers `/tp` to players but not to coordinates. Let VIPs join a full server. Take command blocks away from your operators.
 
-It brings [DrexHD's VanillaPermissions](https://github.com/DrexHD/VanillaPermissions), a Fabric mod, to Bukkit-based servers.
-
-## Features
-
-- **Per-command and per-argument nodes:** `minecraft.command.time`, `minecraft.command.time.set`, `minecraft.command.gamemode.creative`.
-- **Selector control:** allow `@` selectors, limit who can be targeted (yourself, other players, entities), cap the number of targets, and give players a weight so they cannot target anyone ranked above them.
-- **Bypass nodes:** let chosen players skip the whitelist, the player limit, the forced game mode or the "moved too quickly" check.
-- **Operator blocks and the debug stick:** take command blocks, structure blocks, jigsaws and the debug stick (per block) away from operators.
-- **`/execute` extensions:** `if|unless permission`, `feedback` and `oplevel`.
-- **No config file:** everything is set through LuckPerms or any other Bukkit permissions plugin.
+It is a port of [DrexHD's VanillaPermissions](https://github.com/DrexHD/VanillaPermissions) for Fabric, and uses the same node names.
 
 ## Supported servers
-
-One jar covers all of these. It runs on whatever Java your server version already needs.
 
 | Software | Minecraft |
 | --- | --- |
@@ -31,60 +20,56 @@ One jar covers all of these. It runs on whatever Java your server version alread
 | [Purpur](https://purpurmc.org/) | 1.20.6 - 26.3 |
 | Pufferfish | 1.21 - 1.21.10 |
 
-Not supported: Folia before 1.20.6 and Minecraft before 1.8.8. Versions between the tested ones usually work, and `/vanillapermissions debug` tells you whether yours was tested.
-
-Limits you may notice: on 1.8.8 - 1.12.2, sub-command nodes exist for ten commands only. The forced-game-mode and movement bypasses need Paper, so they do nothing on Spigot 1.13 and later. The rest is in [Compatibility](docs/compatibility.md).
-
-LuckPerms is recommended (5.5 needs Java 11 or later; use 5.4.x on Java 8). Without a permissions plugin the plugin still runs, but only Bukkit defaults and operator status apply.
+One jar covers all of them. [LuckPerms](https://luckperms.net/) is recommended: use 5.5 or later, or 5.4.x on a Java 8 server. A few features depend on your server version or software; see [Compatibility](docs/compatibility.md).
 
 ## Installation
 
-1. Download `VanillaPermissionsPlugin-<version>.jar` and `VanillaPermissionsPlugin-<version>.jar.sha256` from the [latest release](https://github.com/Soul4723/VanillaPermissionsPlugin/releases/latest), for example `VanillaPermissionsPlugin-1.0.0.jar`. This is the only official download.
-2. Optional: check the download. On Linux or macOS, in the folder holding both files, `sha256sum -c VanillaPermissionsPlugin-<version>.jar.sha256` should print `OK`. On Windows, run `certutil -hashfile VanillaPermissionsPlugin-<version>.jar SHA256` in Command Prompt and compare the result with the text in the `.sha256` file. [SECURITY.md](SECURITY.md#verifying-a-download) also shows how to check GitHub's signed release attestation.
-3. Put the jar in `plugins/` and restart the server. The log should show a line such as `Using Paper mode on Paper 1.21.11 (...)` (the mode and server vary) and `Added permission checks to <n> vanilla command nodes`. If a line starts with `SEVERE`, the plugin switched itself off and the server runs as if it were not installed; see [Troubleshooting](docs/troubleshooting.md#reading-the-startup-log).
-4. Run `/vanillapermissions debug` to see the mode, server version, whether that version was tested, your permissions plugin and the number of checked nodes.
+1. Download `VanillaPermissionsPlugin-<version>.jar` from the [latest release](https://github.com/Soul4723/VanillaPermissionsPlugin/releases/latest). This is the only official download. To check the file, see [Verifying a download](SECURITY.md#verifying-a-download).
+2. Put the jar in your server's `plugins` folder and restart the server.
+3. Run `/vanillapermissions debug` in the console. It shows your server version, your permissions plugin and how many vanilla commands now have permission checks.
 
-To uninstall, remove the jar and restart.
+There is no config file. Everything is set in your permissions plugin. To uninstall, remove the jar and restart.
+
+If the startup log has a `SEVERE` line from the plugin, it has switched itself off and vanilla commands work as before. See [Reading the startup log](docs/troubleshooting.md#reading-the-startup-log).
 
 ## Quick start
 
-Let the `member` group (use your own group name) use `/time`, from the console or as an operator:
+Let your staff switch themselves between survival and spectator, for example to watch players with a vanish plugin. Run these in the console, or in game as an operator. They use a LuckPerms group called `staff` and a player called `Steve`; use your own names. Create the group with `/lp creategroup staff` if you do not have one yet.
 
 ```text
-/lp group member permission set minecraft.command.time true
+/lp group staff permission set minecraft.command.gamemode true
+/lp group staff permission set minecraft.command.gamemode.* false
+/lp group staff permission set minecraft.command.gamemode.survival true
+/lp group staff permission set minecraft.command.gamemode.spectator true
+/lp user Steve parent add staff
 ```
 
-Operator commands stay closed to players until you grant them. Granting a command also opens its sub-commands (`/time set`, `/time add`) unless you close them:
+Steve can now use `/gamemode spectator` and `/gamemode survival` on themselves. They cannot use creative or adventure mode, and cannot change anyone else's game mode. Changes apply at once, and Steve's tab completion only shows what they may use.
 
-```text
-/lp group member permission set minecraft.command.time.set false
-```
-
-Members can now use `/time` but not `/time set`. Check the result with `/vanillapermissions check <player> minecraft.command.time.set`. Selector limits, bypasses and more setups are in [Recipes](docs/recipes.md).
+The first line grants `/gamemode`. The second closes every mode and target below it. The last two open the two modes you want. [How permissions work](docs/how-it-works.md) explains this in five minutes.
 
 ## Documentation
 
-| | |
+| Page | Read it to |
 | --- | --- |
-| [Permissions](docs/permissions.md) | How a node resolves, every node, wildcards, operator defaults |
-| [Recipes](docs/recipes.md) | Copy-paste setups |
-| [Permissions plugins](docs/providers.md) | LuckPerms, other plugins, Vault, running without one |
-| [Compatibility](docs/compatibility.md) | Supported versions, features per version, limits |
-| [Commands](docs/commands.md) | `/vanillapermissions` and the plugin's own nodes |
-| [Troubleshooting](docs/troubleshooting.md) | FAQ and startup log |
+| [How permissions work](docs/how-it-works.md) | Understand nodes, true, false and unset, and operators. Start here. |
+| [Recipes](docs/recipes.md) | Copy setups for staff, builders, moderators, VIPs, event hosts and operators. |
+| [Permission nodes](docs/permissions.md) | Look up any node: commands, selectors, bypasses, command blocks, the debug stick. |
+| [Permissions plugins](docs/providers.md) | Use LuckPerms, GroupManager or another plugin, with or without Vault. |
+| [Compatibility](docs/compatibility.md) | Check what works on your server version, and the known limits. |
+| [The /vanillapermissions command](docs/commands.md) | Check a player's node, or see what the plugin found on your server. |
+| [Troubleshooting](docs/troubleshooting.md) | Fix a node that does not work, and read the startup log. |
 
-The full index is [docs/README.md](docs/README.md).
+## Getting help
 
-## Getting help and reporting bugs
-
-Ask questions and report bugs on [GitHub Issues](https://github.com/Soul4723/VanillaPermissionsPlugin/issues/new/choose); the templates say what to include. Report security problems privately, not as a public issue: see [SECURITY.md](SECURITY.md).
+Ask questions and report bugs on [GitHub Issues](https://github.com/Soul4723/VanillaPermissionsPlugin/issues/new/choose). Please include the output of `/vanillapermissions debug`. Report security problems privately, as described in [SECURITY.md](SECURITY.md).
 
 ## Building from source
 
-`mvn verify` with JDK 21 and Maven writes the jar to `target/`. See [CONTRIBUTING.md](CONTRIBUTING.md).
+Run `mvn verify` with JDK 21 and Maven. The jar is written to `target/`. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Credits and license
 
-The permission model, node names and `/execute` extensions come from [DrexHD/VanillaPermissions](https://github.com/DrexHD/VanillaPermissions); this is an independent Bukkit implementation of the same idea, and its differences from upstream are listed in [Compatibility](docs/compatibility.md#limits).
+The permission model, node names and `/execute` additions come from [DrexHD/VanillaPermissions](https://github.com/DrexHD/VanillaPermissions). This plugin is an independent implementation of the same idea for Bukkit-based servers. What it cannot offer from the original is listed in [Compatibility](docs/compatibility.md#limits).
 
-MIT. See [LICENSE](LICENSE).
+Released under the MIT license. See [LICENSE](LICENSE).
