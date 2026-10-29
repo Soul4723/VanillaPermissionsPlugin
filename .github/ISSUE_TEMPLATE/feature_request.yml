@@ -6,7 +6,8 @@ body:
   - type: markdown
     attributes:
       value: |
-        The nodes follow [DrexHD's VanillaPermissions](https://github.com/DrexHD/VanillaPermissions) for Fabric; requests that match a node there are most likely to be accepted.
+        The nodes follow [DrexHD's VanillaPermissions](https://github.com/DrexHD/VanillaPermissions) for Fabric. A request that matches a node there is the most likely to be accepted.
+        Check the [recipes](https://github.com/Soul4723/VanillaPermissionsPlugin/blob/main/docs/recipes.md) first: what you want may already be possible.
 
   - type: textarea
     attributes:

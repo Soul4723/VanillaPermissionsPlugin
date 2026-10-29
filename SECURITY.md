@@ -2,16 +2,26 @@
 
 ## Supported versions
 
-Only the latest release receives security fixes.
+Only the latest release gets security fixes.
 
 ## Verifying a download
 
-Releases are published only from [GitHub Releases](https://github.com/Soul4723/VanillaPermissionsPlugin/releases) and are immutable: once published, their files cannot be replaced. Check a jar with the `.sha256` file next to it (`sha256sum -c VanillaPermissionsPlugin-<version>.jar.sha256`), or with GitHub's signed release attestation: `gh release verify-asset v<version> VanillaPermissionsPlugin-<version>.jar -R Soul4723/VanillaPermissionsPlugin`.
+Download the plugin only from [GitHub Releases](https://github.com/Soul4723/VanillaPermissionsPlugin/releases). Published releases cannot be changed afterwards. Each jar comes with a `.sha256` file, so you can check that the jar is the one that was released.
+
+- **Linux or macOS:** put both files in one folder and run `sha256sum -c VanillaPermissionsPlugin-<version>.jar.sha256`. It should print `OK`.
+- **Windows:** run `certutil -hashfile VanillaPermissionsPlugin-<version>.jar SHA256` in Command Prompt. The result must match the text in the `.sha256` file.
+- **GitHub CLI:** releases also carry a signed attestation. Run `gh release verify-asset v<version> VanillaPermissionsPlugin-<version>.jar -R Soul4723/VanillaPermissionsPlugin`.
 
 ## Reporting a vulnerability
 
-Please do not open a public issue for a security problem, for example a way to run a command or reach a target without the permission that should be required.
+Do not open a public issue for a security problem. An example is a way to run a command, or to target a player, without the permission that should be needed.
 
-Report it privately through GitHub: open the repository's **Security** tab and choose **Report a vulnerability**, or go to <https://github.com/Soul4723/VanillaPermissionsPlugin/security/advisories/new>.
+Report it privately instead: open the repository's **Security** tab and choose **Report a vulnerability**, or go to <https://github.com/Soul4723/VanillaPermissionsPlugin/security/advisories/new>.
 
-Include the plugin version, server software and version, permissions plugin and version, the permissions involved, and the steps to reproduce.
+Please include:
+
+- the plugin version;
+- the server software and version;
+- the permissions plugin and its version;
+- the permissions involved;
+- the steps to reproduce.
