@@ -1,18 +1,61 @@
-# Troubleshooting and limitations
+# Troubleshooting
 
-## FAQ
+## A command ignores my nodes
 
-- **I granted a command but the player still can't use part of it.** Run `/vanillapermissions check <player> <node>` for the node you expect, or `/lp verbose on <player> & minecraft.command.<command>` (then `/lp verbose off`), and look for a `false` on a child node, or one inherited from a group. `@` selectors also need `minecraft.selector`, and the selector scope nodes must not be `false`.
-- **The player can do more than I wanted.** Granting a root grants every sub-command and target. Set the unwanted branches or selector scopes to `false`.
-- **An operator lost access.** An explicit `false` beats operator status. Look for the node in the operator's own and inherited groups, including wildcards.
-- **The plugin disabled itself at startup.** The log says why; see [Reading the startup log](#reading-the-startup-log). Usually the server is not a supported version (see [Compatibility](compatibility.md)), or something removed a vanilla command.
-- **`/minecraft:<command>` behaves differently from `/<command>`.** Another plugin owns the plain name; see below.
-- **A change did not reach the player's command list.** LuckPerms re-sends the list itself after a change (its `update-client-command-list` option, on by default). If you turned that option off, tab completion updates when the player rejoins. With other plugins the list refreshes on rejoin, on an operator change, or when the plugin resends it; see [Permissions plugins](providers.md).
-- **A bypass node does nothing.** Bypass nodes are grant-only and default to `false`; check with `/vanillapermissions check <player> <node>`. For the whitelist and player-limit bypasses with a non-LuckPerms plugin, see [Permissions plugins](providers.md#other-permissions-plugins).
+- **Another plugin owns the command name.** EssentialsX has its own `/gamemode`, `/time` and `/tp`. Then `/gamemode` follows the EssentialsX permissions. The vanilla command is still there as `/minecraft:gamemode`, and the nodes on this site apply to it.
+- **Plugin and Bukkit commands are never affected.** `/lp`, `/help` and `/version` keep their own permissions, even under `minecraft.command.*`.
+- **On Spigot 1.13 and later,** a vanilla command that another plugin replaced is left unchecked. The plugin logs a warning about it at startup.
+
+See [Commands from other plugins](how-it-works.md#commands-from-other-plugins).
+
+## A player still can't use part of a command
+
+- Run `/vanillapermissions check Steve <node>` for the node you expect. See [the command page](commands.md#vanillapermissions-check).
+- Or run `/lp verbose on Steve & minecraft.command.<command>`, have Steve try again, then run `/lp verbose off`.
+- Look for a `false` on a sub-command node, or one inherited from a group.
+- Commands with `@` selectors also need [`minecraft.selector`](permissions.md#selectors), and the selector scope nodes must not be `false`.
+
+## A player can do more than I wanted
+
+- Granting a command opens all its sub-commands and targets. See [Granting a command opens its sub-commands](how-it-works.md#granting-a-command-opens-its-sub-commands).
+- Set the unwanted sub-commands, or the selector scopes, to `false`. To allow only a few parts, see [Allowing only a few sub-commands](how-it-works.md#allowing-only-a-few-sub-commands).
+
+## An operator lost a command
+
+- A `false` node beats operator status. See [Operators](how-it-works.md#operators).
+- Look for the node in the operator's own groups and in the groups they inherit from, including wildcards.
+
+## Players can't use @a or @p
+
+- Players who are not operators need `minecraft.selector`.
+- On Paper 1.21.3 and later, a player without it sees `Selector not allowed`.
+- If it is granted and a selector still fails, a selector scope node may be `false`. See [Selectors](permissions.md#selectors).
+
+## Tab completion didn't update
+
+- With LuckPerms the list updates live. If you turned off its `update-client-command-list` option, it updates when the player rejoins.
+- With other plugins the list refreshes on rejoin, on an operator change, or when the plugin resends it. See [Other permissions plugins](providers.md#other-permissions-plugins).
+
+## A bypass node does nothing
+
+- Bypass nodes are grant-only and default to `false`. Check with `/vanillapermissions check Steve <node>`. See [Bypass nodes](permissions.md#bypass-nodes).
+- With a plugin other than LuckPerms, the whitelist and player-limit bypasses have extra requirements. See [Other permissions plugins](providers.md#other-permissions-plugins).
+- The force-gamemode and move-speed bypasses need Paper. See [Limits](compatibility.md#limits).
+
+## The plugin disabled itself at startup
+
+- The log says why. See [Reading the startup log](#reading-the-startup-log).
+- Usually the server version is not supported. See [Supported servers](compatibility.md#supported-servers).
+- Otherwise something removed a vanilla command.
+- While the plugin is disabled, vanilla commands work as they would without it.
+
+## /minecraft:<command> behaves differently from /<command>
+
+Another plugin owns the plain name. See [A command ignores my nodes](#a-command-ignores-my-nodes).
 
 ## Reading the startup log
 
-The plugin logs a few lines as it starts. On Paper 1.21.11 with LuckPerms they look like this (`<n>` is the number of command nodes, which depends on the version):
+On Paper 1.21.11 with LuckPerms, the plugin logs these lines. `<n>` is the number of command nodes and depends on the version.
 
 ```text
 Using Paper mode on Paper 1.21.11 (checks on every vanilla command and sub-command)
@@ -21,26 +64,32 @@ Installed vanilla /execute permission, feedback, and oplevel extensions
 Added permission checks to <n> vanilla command nodes
 ```
 
-- **The mode line** says how the plugin adds its checks: `Paper mode` (Paper, Folia, Purpur, Pufferfish 1.20.6 and later), `Spigot mode` (Spigot 1.13 and later, and Paper 1.13 – 1.20.5, for example `Using Spigot mode on Paper 1.16.5`) or `legacy mode` (1.8.8 – 1.12.2).
-- **On 1.8.8 – 1.12.2** the mode line reads `Using legacy mode on Spigot 1.12.2 (sub-command checks for 10 commands only; other vanilla commands keep their root node)`. There is no `/execute` line, `Added permission checks to <n>` appears one tick after startup, after the server's `Done (...)!` line, and `<n>` is small (over a hundred, not over seven hundred as on 1.13 and later).
-- **On Spigot** an INFO line lists the bypass nodes that need Paper's API and do nothing there (see [Compatibility](compatibility.md#limits)).
-- `/vanillapermissions debug` repeats the mode, the server version, the permissions plugin and the node count.
+The mode line says how the plugin adds its checks:
 
-Problems look like this:
+- `Paper mode` is used on Paper, Folia, Purpur and Pufferfish 1.20.6 and later.
+- `Spigot mode` is used on Spigot 1.13 and later, and on Paper 1.13 - 1.20.5. For example: `Using Spigot mode on Paper 1.16.5`.
+- `legacy mode` is used on 1.8.8 - 1.12.2.
 
-- `Could not add permission checks to vanilla commands on <software> <version> (tested: ...), so VanillaPermissionsPlugin is disabling itself and vanilla commands work as they would without it.` (SEVERE) The server is a version the plugin could not patch. Vanilla commands keep working as if the plugin were not installed. If the version is in the [supported list](compatibility.md), report it with the full startup log.
-- `<software> <version> is not supported (<reason>), so VanillaPermissionsPlugin is disabling itself and leaving vanilla commands unchanged` (SEVERE) The software or version is not supported, for example `Folia is supported from 1.20.6` or `not a CraftBukkit-based server`.
-- `No permissions plugin found, so every node follows Bukkit defaults and operator status; install a permissions plugin such as LuckPerms for granular control` (WARNING) The checks are installed but nobody can be given a node. Install LuckPerms, or another permissions plugin; see [Permissions plugins](providers.md).
-- `Selected after all plugins enabled: ...` means a permissions plugin enabled after this one and was picked up. It is not a problem.
+On 1.8.8 - 1.12.2 the mode line reads `Using legacy mode on Spigot 1.12.2 (sub-command checks for 10 commands only; other vanilla commands keep their root node)`. There is no `/execute` line. The line `Added permission checks to <n>` appears one tick after startup, after the server's `Done (...)!` line. `<n>` is small, over a hundred rather than over seven hundred.
 
-## Commands from other plugins
+On Spigot, an INFO line lists the bypass nodes that need Paper and do nothing there. See [Limits](compatibility.md#limits).
 
-Only vanilla commands get `minecraft.command.*` checks. Bukkit and plugin commands (`/lp`, Bukkit's `/help`, `/version`, EssentialsX…) keep their own permissions, even under `minecraft.command.*`.
+`/vanillapermissions debug` repeats the mode, the server version, the permissions plugin and the node count.
 
-If a plugin takes over a vanilla name (for example EssentialsX `/gamemode` or `/time`), the plugin's version uses the plugin's permissions. The vanilla version stays reachable as `/minecraft:gamemode` with the normal `minecraft.command.gamemode…` nodes.
+These lines mean a problem:
 
-## Limitations
+- **`Could not add permission checks to vanilla commands on <software> <version> (tested: ...), so VanillaPermissionsPlugin is disabling itself and vanilla commands work as they would without it.`** This is SEVERE. The plugin could not add its checks to this server version. If the version is in the [supported list](compatibility.md#supported-servers), report it with the full startup log.
+- **`<software> <version> is not supported (<reason>), so VanillaPermissionsPlugin is disabling itself and leaving vanilla commands unchanged`** This is SEVERE. The software or version is not supported, for example `Folia is supported from 1.20.6` or `not a CraftBukkit-based server`. See [Supported servers](compatibility.md#supported-servers).
+- **`No permissions plugin found, so every node follows Bukkit defaults and operator status; install a permissions plugin such as LuckPerms for granular control`** This is a WARNING. The checks are installed, but you cannot give anyone a node. Install LuckPerms or another permissions plugin. See [Permissions plugins](providers.md).
 
-The limits are listed once, in [Compatibility](compatibility.md#limits): unsupported and untested versions, features missing on some servers, runtime enabling and disabling, and the extra limits on 1.8.8 - 1.12.2. Notes on Folia are in [Compatibility](compatibility.md#folia).
+`Selected after all plugins enabled: …` is not a problem. A permissions plugin enabled after this one, and the plugin picked it up.
 
-Reporting a problem: use the [issue templates](https://github.com/Soul4723/VanillaPermissionsPlugin/issues/new/choose) and include the output of `/vanillapermissions debug` (and `/vanillapermissions check` for the node involved).
+Limits such as unsupported versions and features missing on some servers are listed in [Compatibility](compatibility.md#limits). Folia notes are in [Folia](compatibility.md#folia).
+
+## Reporting a problem
+
+Open an issue from the [issue templates](https://github.com/Soul4723/VanillaPermissionsPlugin/issues/new/choose). Include:
+
+- the output of `/vanillapermissions debug`
+- the output of `/vanillapermissions check <player> <node>` for the node involved
+- the full startup log, if the plugin disabled itself

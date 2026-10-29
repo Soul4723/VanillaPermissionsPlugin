@@ -15,13 +15,13 @@ softdepend: [LuckPerms, Vault]
 
 commands:
   vanillapermissions:
-    description: Inspect how VanillaPermissionsPlugin nodes resolve
+    description: Check a player's vanilla permission nodes, or show what VanillaPermissionsPlugin found on this server
     usage: "/<command> check <player> [node] | /<command> debug"
     permission: vanillapermissions.use
 
 permissions:
   vanillapermissions.use:
-    description: Run /vanillapermissions and see its help
+    description: See the /vanillapermissions help
     default: op
   vanillapermissions.admin:
     description: Use /vanillapermissions check and debug
@@ -29,7 +29,7 @@ permissions:
     children:
       vanillapermissions.use: true
   minecraft.selector:
-    description: Type @ selectors; also passes Paper's parse-time selector check (1.21.3+)
+    description: Use @ selectors such as @a and @p in vanilla commands
     default: op
     children:
       minecraft.command.selector: true
@@ -40,7 +40,7 @@ permissions:
     description: Join when the server is full
     default: false
   minecraft.bypass.force-gamemode:
-    description: Keep your game mode when the server forces the default game mode
+    description: Keep your game mode when the server forces the default one
     default: false
   minecraft.bypass.move-speed.player:
     description: Skip the "moved too quickly" and "moved wrongly" checks

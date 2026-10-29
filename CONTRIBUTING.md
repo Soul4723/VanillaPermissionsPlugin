@@ -23,6 +23,7 @@ Copy the jar to a Paper or Spigot server's `plugins` folder together with a perm
 - Follow the style of the surrounding code; `.editorconfig` sets indentation (4 spaces in Java and XML, 2 in YAML). Java 8 modules must not use APIs newer than Java 8.
 - Add or update tests. CI runs `mvn verify` and a boot matrix of real servers on every pull request. Say which server software and version you tested on.
 - Add a line under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md) for anything users will notice.
+- When you change a node, a command or a supported version, update the matching page in [`docs/`](docs/README.md). Each recipe in [docs/recipes.md](docs/recipes.md) has a live-test scenario, `scripts/live-test/scenarios/recipe-*.json`, that runs its commands as written; change both together.
 - Write commit messages in the imperative mood ("Check selector permissions after redirects"), with the reason in the body if it is not obvious.
 
 Releases are cut by the maintainer; see [Releasing](docs/development/releasing.md).
