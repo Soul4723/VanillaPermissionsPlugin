@@ -1,0 +1,22 @@
+{
+  "name": "execute",
+  "description": "The /execute additions (1.13+; 1.8.8 - 1.12.2 have no if permission or feedback): if permission, feedback silent, and node checks on the new branches.",
+  "when": { "plugin": true, "backend": "luckperms", "minVersion": "1.13" },
+  "players": ["Bot"],
+  "steps": [
+    { "connect": "Bot" },
+    { "perm": { "node": "minecraft.command.execute", "value": true } },
+    { "perm": { "node": "minecraft.command.gamemode", "value": true } },
+    { "perm": { "node": "minecraft.selector", "value": true } },
+    { "name": "tree has execute if permission", "tree": { "has": ["execute if permission", "execute feedback"] } },
+    { "name": "if permission (node unset): condition fails silently", "command": "/execute if permission @s vpp.test.node run gamemode creative", "expect": { "outcome": "allowed", "noChat": "game mode", "gamemode": "survival" } },
+    { "perm": { "node": "vpp.test.node", "value": true } },
+    { "name": "if permission (node true): runs", "command": "/execute if permission @s vpp.test.node run gamemode creative", "expect": { "outcome": "allowed", "gamemode": "creative" } },
+    { "name": "feedback silent: runs without output", "command": "/execute feedback silent run gamemode adventure", "expect": { "gamemode": "adventure", "noChat": "game mode" } },
+    { "perm": { "node": "minecraft.command.execute.if.permission", "value": false } },
+    { "name": "execute.if.permission false: tree hides it", "tree": { "has": ["execute if"], "lacks": ["execute if permission"] } },
+    { "name": "execute.if.permission false: denied", "command": "/execute if permission @s vpp.test.node run gamemode survival", "expect": { "outcome": "denied", "gamemode": "adventure" } },
+    { "perm": { "node": "minecraft.command.execute.feedback.silent", "value": false } },
+    { "name": "feedback.silent false: denied", "command": "/execute feedback silent run gamemode survival", "expect": { "outcome": "denied", "gamemode": "adventure" } }
+  ]
+}

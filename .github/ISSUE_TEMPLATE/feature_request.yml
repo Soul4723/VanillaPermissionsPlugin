@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        This plugin ports [DrexHD's VanillaPermissions](https://github.com/DrexHD/VanillaPermissions) to Paper. Requests that match a node in the original mod are most likely to be accepted.
+        The nodes follow [DrexHD's VanillaPermissions](https://github.com/DrexHD/VanillaPermissions) for Fabric; requests that match a node there are most likely to be accepted.
 
   - type: textarea
     attributes:
@@ -15,17 +15,10 @@ body:
     validations:
       required: true
 
-  - type: textarea
+  - type: input
     attributes:
       label: Suggested node
-      description: The permission node you would expect, if the original mod has one.
+      description: The permission node you would expect, if you have one in mind.
       placeholder: "minecraft.command.example"
-    validations:
-      required: false
-
-  - type: textarea
-    attributes:
-      label: Alternatives
-      description: What you do today, for example with LuckPerms contexts or another plugin.
     validations:
       required: false

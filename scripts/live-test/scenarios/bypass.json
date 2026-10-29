@@ -1,0 +1,31 @@
+{
+  "name": "bypass",
+  "description": "Bypass nodes: player limit, whitelist and forced game mode. Needs max-players=1 and force-gamemode. Skipped on Folia, which refuses even the first player at max-players=1 and ignores the player-limit bypass.",
+  "when": { "plugin": true, "backend": "luckperms", "not": { "software": "folia" } },
+  "server": { "properties": { "max-players": 1, "force-gamemode": true, "gamemode": "survival" } },
+  "players": ["Bot", "Bot2"],
+  "steps": [
+    { "connect": "Bot" },
+    { "name": "full server: Bot2 refused", "connect": "Bot2", "expect": { "refused": "full" } },
+    { "perm": { "user": "Bot2", "node": "minecraft.bypass.player-limit", "value": true } },
+    { "name": "player-limit bypass: Bot2 joins a full server", "connect": "Bot2" },
+    { "disconnect": "Bot2" },
+    { "op": "Bot" },
+    { "name": "op Bot: /gamemode creative", "as": "Bot", "command": "/gamemode creative", "expect": { "outcome": "allowed", "gamemode": "creative" } },
+    { "disconnect": "Bot" },
+    { "name": "force-gamemode: rejoin resets to survival", "connect": "Bot" },
+    { "name": "force-gamemode: mode after rejoin", "as": "Bot", "command": "/gamemode", "expect": { "gamemode": "survival", "settleMs": 500 } },
+    { "perm": { "user": "Bot", "node": "minecraft.bypass.force-gamemode", "value": true } },
+    { "as": "Bot", "command": "/gamemode creative", "expect": { "gamemode": "creative" } },
+    { "disconnect": "Bot" },
+    { "name": "force-gamemode bypass: rejoin", "connect": "Bot" },
+    { "name": "force-gamemode bypass: mode after rejoin", "as": "Bot", "command": "/gamemode", "expect": { "gamemode": "creative", "settleMs": 500 }, "when": { "not": { "software": "spigot", "minVersion": "1.13" } } },
+    { "disconnect": "Bot" },
+    { "deop": "Bot" },
+    { "console": "whitelist on", "expect": "whitelist|Turned on" },
+    { "name": "whitelist on: Bot refused", "connect": "Bot", "expect": { "refused": "white-?list" } },
+    { "perm": { "user": "Bot", "node": "minecraft.bypass.whitelist", "value": true } },
+    { "name": "whitelist bypass: Bot joins", "connect": "Bot" },
+    { "console": "whitelist off", "expect": "whitelist|Turned off" }
+  ]
+}

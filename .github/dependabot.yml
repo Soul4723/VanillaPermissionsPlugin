@@ -1,10 +1,12 @@
 version: 2
+# Monthly and grouped: every update pull request runs the whole boot matrix. The live-test harness under
+# scripts/live-test is not listed: it is run by hand and its client library is bumped together with the
+# Minecraft versions it must speak; Dependabot security updates (a repository setting) cover it.
 updates:
   - package-ecosystem: maven
     directory: /
     schedule:
-      interval: weekly
-    # Wait a week before proposing a brand-new release (ViaVersion/ViaVersion dependabot.yml).
+      interval: monthly
     cooldown:
       default-days: 7
     groups:
@@ -15,12 +17,16 @@ updates:
       # Its versions look like 1.20.6-R0.1-SNAPSHOT, so a new Minecraft version reads as a
       # minor bump; ignore every update instead of only majors.
       - dependency-name: io.papermc.paper:paper-api
+      # The Spigot API versions are API floors chosen deliberately: Minecraft 1.8.8 for core,
+      # 1.13.2 (the first Brigadier release) for the brigadier module.
+      - dependency-name: org.spigotmc:spigot-api
+      # The brigadier module compiles against the Brigadier its oldest servers (1.13.x) shipped.
+      - dependency-name: com.mojang:brigadier
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
-    # Wait a week before proposing a brand-new release (ViaVersion/ViaVersion dependabot.yml).
+      interval: monthly
     cooldown:
       default-days: 7
     groups:

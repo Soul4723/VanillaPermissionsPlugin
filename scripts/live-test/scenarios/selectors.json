@@ -1,0 +1,27 @@
+{
+  "name": "selectors",
+  "description": "minecraft.selector gates @ syntax; scope nodes and limit meta restrict who an argument may target.",
+  "when": { "plugin": true, "backend": "luckperms" },
+  "players": ["Bot", "Bot2"],
+  "steps": [
+    { "connect": "Bot" },
+    { "connect": "Bot2" },
+    { "perm": { "user": "Bot", "node": "minecraft.command.gamemode", "value": true } },
+    { "perm": { "user": "Bot", "node": "minecraft.command.tp", "value": true } },
+    { "name": "no minecraft.selector: /gamemode creative @s denied", "as": "Bot", "command": "/gamemode creative @s", "expect": { "outcome": "denied", "chat": "permission to use target selectors|Selector not allowed", "gamemode": "survival" } },
+    { "name": "no minecraft.selector: plain name still allowed", "as": "Bot", "command": "/gamemode creative Bot", "expect": { "outcome": "allowed", "gamemode": "creative" } },
+    { "perm": { "user": "Bot", "node": "minecraft.selector", "value": true } },
+    { "name": "minecraft.selector: /gamemode survival @s allowed", "as": "Bot", "command": "/gamemode survival @s", "expect": { "outcome": "allowed", "gamemode": "survival" }, "when": { "minVersion": "1.12" } },
+    { "name": "(pre-1.12, @p) minecraft.selector: /gamemode survival @p allowed", "as": "Bot", "command": "/gamemode survival @p", "expect": { "outcome": "allowed", "gamemode": "survival" }, "when": { "maxVersion": "1.11.2" } },
+    { "perm": { "user": "Bot", "node": "minecraft.selector.self.gamemode.target.creative.target", "value": false } },
+    { "name": "self scope false: /gamemode creative @s denied", "as": "Bot", "command": "/gamemode creative @s", "expect": { "chat": "permission to target yourself", "gamemode": "survival" }, "when": { "minVersion": "1.12" } },
+    { "name": "(pre-1.12, @p) self scope false: /gamemode creative @p denied", "as": "Bot", "command": "/gamemode creative @p", "expect": { "chat": "permission to target yourself", "gamemode": "survival" }, "when": { "maxVersion": "1.11.2" } },
+    { "name": "/tp @s ~ ~5 ~ allowed", "as": "Bot", "command": "/tp @s ~ ~5 ~", "expect": { "outcome": "allowed", "teleported": true }, "when": { "minVersion": "1.12" } },
+    { "name": "(pre-1.12, @p) /tp @p ~ ~5 ~ allowed", "as": "Bot", "command": "/tp @p ~ ~5 ~", "expect": { "outcome": "allowed", "teleported": true }, "when": { "maxVersion": "1.11.2" } },
+    { "meta": { "user": "Bot", "key": "minecraft.selector.limit.teleport.targets.targets.location", "value": 1 } },
+    { "name": "limit meta 1: /tp @a ~ ~ ~ (2 players) denied", "as": "Bot", "command": "/tp @a ~ ~ ~", "expect": { "chat": "at most 1 target", "teleported": false } },
+    { "perm": { "user": "Bot", "node": "minecraft.selector.player.teleport.*", "value": false } },
+    { "name": "player scope false: /tp Bot2 ~ ~ ~ denied", "as": "Bot", "command": "/tp Bot2 ~ ~ ~", "expect": { "chat": "permission to target other players" } },
+    { "name": "player scope false: /tp @r ~ ~ ~ denied, since @r could pick Bot2", "as": "Bot", "command": "/tp @r ~ ~ ~", "expect": { "chat": "permission to target other players", "teleported": false } }
+  ]
+}

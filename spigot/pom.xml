@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.github.soul4723</groupId>
+        <artifactId>vanillapermissions-parent</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>vanillapermissions-spigot</artifactId>
+    <name>VanillaPermissionsPlugin Spigot</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.github.soul4723</groupId>
+            <artifactId>vanillapermissions-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.soul4723</groupId>
+            <artifactId>vanillapermissions-brigadier</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.spigotmc</groupId>
+            <artifactId>spigot-api</artifactId>
+            <version>${spigot.brigadier.api.version}</version>
+            <scope>provided</scope>
+            <exclusions>
+                <!-- As in the parent's managed spigot-api: JUnit 4 from json-simple stops surefire running JUnit 5. -->
+                <exclusion>
+                    <groupId>junit</groupId>
+                    <artifactId>junit</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.mojang</groupId>
+            <artifactId>brigadier</artifactId>
+            <version>${brigadier.version}</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <!-- Paper 1.20.5's fake CommandSourceStack has the name of Spigot 26.x's in src/test/java, so it is
+                         compiled apart; OperatorLevelsTest loads it in its own class loader. -->
+                    <execution>
+                        <id>paper-1.20.5-test-classes</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>testCompile</goal>
+                        </goals>
+                        <configuration>
+                            <compileSourceRoots>
+                                <compileSourceRoot>${project.basedir}/src/test/paper-1.20.5</compileSourceRoot>
+                            </compileSourceRoots>
+                            <outputDirectory>${project.build.directory}/paper-1.20.5-test-classes</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

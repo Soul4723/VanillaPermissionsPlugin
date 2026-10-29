@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.github.soul4723</groupId>
+        <artifactId>vanillapermissions-parent</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>vanillapermissions-plugin</artifactId>
+    <name>VanillaPermissionsPlugin Plugin</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.github.soul4723</groupId>
+            <artifactId>vanillapermissions-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.soul4723</groupId>
+            <artifactId>vanillapermissions-brigadier</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.soul4723</groupId>
+            <artifactId>vanillapermissions-spigot</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.soul4723</groupId>
+            <artifactId>vanillapermissions-paper</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.soul4723</groupId>
+            <artifactId>vanillapermissions-legacy</artifactId>
+        </dependency>
+        <!-- For PluginDescriptionFile in the plugin.yml tests. -->
+        <dependency>
+            <groupId>io.papermc.paper</groupId>
+            <artifactId>paper-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+            <resource>
+                <directory>${project.basedir}/..</directory>
+                <includes>
+                    <include>LICENSE</include>
+                </includes>
+                <targetPath>META-INF</targetPath>
+            </resource>
+        </resources>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <!-- The released jar keeps its single-module name and path, so the workflows need no change. -->
+                            <outputFile>${project.basedir}/../target/VanillaPermissionsPlugin-${project.version}.jar</outputFile>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <filters>
+                                <filter>
+                                    <artifact>io.github.soul4723:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <manifestEntries>
+                                        <!-- Native classes are looked up by Mojang name; tells Paper not to remap the jar from Spigot names. -->
+                                        <paperweight-mappings-namespace>mojang</paperweight-mappings-namespace>
+                                    </manifestEntries>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

@@ -3,11 +3,14 @@ target/
 .mvn/
 mvnw
 mvnw.cmd
-#ide and extras
+# IDE and extras
 .idea/
 .vscode/
 *.temp
 *.test
 *.log
 opencode.md
-VanillaPermissionsPlugin.iml
+*.iml
+
+# Node
+node_modules/

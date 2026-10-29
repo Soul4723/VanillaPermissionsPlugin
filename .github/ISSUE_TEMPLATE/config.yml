@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Report a security vulnerability
-    url: https://github.com/Soul4723/VanillaPermissionsPlugin/security/advisories/new
-    about: Report security problems privately, not as a public issue. See SECURITY.md.
-  - name: Ask a question about LuckPerms or permission setup
+    url: https://github.com/Soul4723/VanillaPermissionsPlugin/blob/main/SECURITY.md
+    about: Report security problems privately, not as a public issue.
+  - name: Setting permissions in LuckPerms
     url: https://luckperms.net/wiki/Home
-    about: For how to set permissions in LuckPerms, use the LuckPerms wiki. Open an issue here only if this plugin misbehaves.
+    about: How to grant, deny and inherit nodes. Open an issue here only if this plugin misbehaves.

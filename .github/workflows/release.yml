@@ -1,59 +1,115 @@
 name: Release
 
+# A v<version> tag publishes a GitHub Release; running it by hand only builds and checks.
 on:
   push:
     tags: ['v*']
   workflow_dispatch:
 
-permissions:
-  contents: write
+permissions: {}
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  release:
+  # Builds with read-only permissions; only the publish job can write to the repository.
+  build:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      has-notes: ${{ steps.notes.outputs.has-notes }}
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      # No dependency cache: a release build should not restore files other runs wrote.
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '21'
-          cache: maven
-
-      - name: Check tag matches pom version
-        id: version
-        run: |
-          pom_version=$(mvn -B -ntp -q help:evaluate -Dexpression=project.version -DforceStdout)
-          echo "version=$pom_version" >> "$GITHUB_OUTPUT"
-          if [[ "$GITHUB_REF_TYPE" == "tag" && "${GITHUB_REF_NAME#v}" != "$pom_version" ]]; then
-            echo "::error::Tag $GITHUB_REF_NAME does not match pom version $pom_version"
-            exit 1
-          fi
 
       - run: mvn -B -ntp verify
 
+      - name: Check the tag
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          jar=$(cd target && ls VanillaPermissionsPlugin-*.jar)
+          version=${jar#VanillaPermissionsPlugin-}
+          version=${version%.jar}
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          [[ $GITHUB_REF_TYPE == tag ]] || exit 0
+          if [[ ${GITHUB_REF_NAME#v} != "$version" ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match the pom version $version"
+            exit 1
+          fi
+          # The boot matrix only runs in Build, so publish only a commit it passed on main.
+          commit=$(git rev-parse HEAD)
+          passed=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow build.yml --branch main \
+            --commit "$commit" --status success --json databaseId --jq length)
+          if [[ $passed == 0 ]]; then
+            echo "::error::Build has not passed on main for $commit. Tag a commit whose Build run on main succeeded (run Build by hand if it was skipped), then re-run this workflow."
+            exit 1
+          fi
+
       - name: Checksum and release notes
+        id: notes
         env:
           VERSION: ${{ steps.version.outputs.version }}
+          # A release page resolves relative links against itself, so links into the repository are made absolute.
+          BLOB_URL: ${{ github.server_url }}/${{ github.repository }}/blob/${{ github.ref_name }}/
         run: |
-          cd target
-          sha256sum "VanillaPermissionsPlugin-$VERSION.jar" > "VanillaPermissionsPlugin-$VERSION.jar.sha256"
-          cd ..
+          jar=VanillaPermissionsPlugin-$VERSION.jar
+          (cd target && sha256sum "$jar" > "$jar.sha256")
+          # The "## [<version>]" section, up to the next version heading or the link definitions at the end.
           awk -v v="$VERSION" '
             /^## \[/ { if (found) exit; if (index($0, "## [" v "]") == 1) { found = 1; next } }
             /^\[[^]]+\]: / { if (found) exit }
             found { print }
-          ' CHANGELOG.md > release-notes.md
-          [ -s release-notes.md ] || rm release-notes.md
+          ' CHANGELOG.md | sed -E "s#\]\(([^):\#][^):]*)\)#](${BLOB_URL}\1)#g" > release-notes.md
+          if grep -q '[^[:space:]]' release-notes.md; then
+            echo "has-notes=true" >> "$GITHUB_OUTPUT"
+          elif [[ $VERSION != *-* ]]; then
+            echo "::error::CHANGELOG.md has no '## [$VERSION]' section"
+            exit 1
+          fi
 
-      - uses: softprops/action-gh-release@v3.0.3
-        if: github.ref_type == 'tag'
+      - uses: actions/upload-artifact@v7
         with:
+          name: release-files
+          path: |
+            target/VanillaPermissionsPlugin-*.jar
+            target/VanillaPermissionsPlugin-*.jar.sha256
+            release-notes.md
+          if-no-files-found: error
+
+  publish:
+    if: github.event_name == 'push' && github.ref_type == 'tag'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-files
+      # Pre-releases (a hyphen in the version) may have no changelog section; GitHub then writes the notes.
+      # Releases are immutable, so assets must be attached before publishing. The action does that for releases, but
+      # publishes a pre-release first, so pre-releases stay drafts and are published by hand.
+      - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          fail_on_unmatched_files: true
           files: |
-            target/VanillaPermissionsPlugin-${{ steps.version.outputs.version }}.jar
-            target/VanillaPermissionsPlugin-${{ steps.version.outputs.version }}.jar.sha256
-          body_path: ${{ hashFiles('release-notes.md') != '' && 'release-notes.md' || '' }}
-          generate_release_notes: ${{ hashFiles('release-notes.md') == '' }}
+            target/VanillaPermissionsPlugin-${{ needs.build.outputs.version }}.jar
+            target/VanillaPermissionsPlugin-${{ needs.build.outputs.version }}.jar.sha256
+          body_path: ${{ needs.build.outputs.has-notes == 'true' && 'release-notes.md' || '' }}
+          generate_release_notes: ${{ needs.build.outputs.has-notes != 'true' }}
           prerelease: ${{ contains(github.ref_name, '-') }}
+          draft: ${{ contains(github.ref_name, '-') }}

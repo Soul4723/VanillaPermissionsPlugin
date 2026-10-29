@@ -1,0 +1,17 @@
+{
+  "name": "legacy-execute",
+  "description": "Legacy execute cannot bypass creative denial with slash or namespaced inner commands.",
+  "when": { "plugin": true, "backend": "luckperms", "minVersion": "1.8.8", "maxVersion": "1.12.2" },
+  "players": ["Bot"],
+  "steps": [
+    { "connect": "Bot" },
+    { "perm": { "node": "minecraft.command.execute", "value": true } },
+    { "perm": { "node": "minecraft.command.gamemode", "value": true } },
+    { "perm": { "node": "minecraft.selector", "value": true } },
+    { "perm": { "node": "minecraft.command.gamemode.creative", "value": false } },
+    { "name": "@s /gamemode creative denied", "command": "/execute @s ~ ~ ~ /gamemode 1", "expect": { "outcome": "denied", "gamemode": "survival" }, "when": { "minVersion": "1.12" } },
+    { "name": "@s minecraft:gamemode creative denied", "command": "/execute @s ~ ~ ~ minecraft:gamemode 1", "expect": { "outcome": "denied", "gamemode": "survival" }, "when": { "minVersion": "1.12" } },
+    { "name": "@p /gamemode creative denied", "command": "/execute @p ~ ~ ~ /gamemode 1", "expect": { "outcome": "denied", "gamemode": "survival" }, "when": { "maxVersion": "1.11.2" } },
+    { "name": "@p minecraft:gamemode creative denied", "command": "/execute @p ~ ~ ~ minecraft:gamemode 1", "expect": { "outcome": "denied", "gamemode": "survival" }, "when": { "maxVersion": "1.11.2" } }
+  ]
+}
