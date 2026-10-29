@@ -29,7 +29,7 @@ Any plugin that works through Bukkit's permission API answers true, false or uns
 - **Command list refresh:** the list refreshes when the player rejoins, when their operator status changes, or when the permissions plugin resends it. GroupManager resends it.
 - **Selector limits and weights:** they are read from Vault chat info when Vault and a chat provider are installed. Without them, limits and weights are off. Vault values are read as text first, then as an integer. A value of the wrong type counts as unset.
 - **Whitelist and player-limit bypass:** these are checked while the player logs in. Some plugins attach permissions only after the player joins, and GroupManager is one. For those the plugin asks Vault's permission service, which reads the stored data. Without Vault, these two bypasses need a plugin that attaches permissions at login.
-- **Load order:** it does not matter. The plugin picks its permissions source when it enables, and again after all plugins have enabled. The second pick adds the log line `Selected after all plugins enabled: …`, naming the final source. A `/reload` does not pick again.
+- **Load order:** it does not matter. The plugin picks its permissions source when it enables, and again after all plugins have enabled. The second pick adds the log line `Now using <source> for permissions (it loaded after this plugin).`, naming the final source. A `/reload` does not pick again.
 - **Untested:** VaultUnlocked and Vault 2.
 
 ## GroupManager

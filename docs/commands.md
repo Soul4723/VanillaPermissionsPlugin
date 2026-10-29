@@ -15,7 +15,7 @@ Both default to operators.
 /vanillapermissions check <player> [node]
 ```
 
-This shows how a node resolves for an online player, in their current context. The answer is `true`, `false`, or `unset` followed by what unset means for that node. The meanings are in [True, false and unset](how-it-works.md#true-false-and-unset) and [Defaults](permissions.md#defaults).
+This shows whether an online player has a node, as your permissions plugin answers for them right now. The answer is `true`, `false`, or `unset` followed by what unset means for that node. The meanings are in [True, false and unset](how-it-works.md#true-false-and-unset) and [Defaults](permissions.md#defaults).
 
 ```text
 /vanillapermissions check Steve minecraft.command.time.set
@@ -30,7 +30,7 @@ Steve: minecraft.command.time.set = unset (vanilla behaviour applies)
 - **Other nodes:** any other node shows its value followed by `(not a node this plugin checks)`. This usually means a typo.
 - **Limits and weights:** for a `minecraft.selector.limit.…` or `minecraft.selector.weight.…` node you see the meta value, for example `5 (meta)`. If the value came from a shorter key, the line names that key. When nothing is set you see `unset (no limit)` or `unset (no weight check)`. See [Selector limits and weights](permissions.md#selector-limits-and-weights).
 
-Without a node, the command prints a summary of a few nodes: `minecraft.selector`, the gamemode and teleport roots, and the whitelist and player-limit bypasses. It shows what your permissions plugin answers, defaults included. An operator sees `true` for almost every node, except the bypass nodes, which are `false` unless you set them. A player who is not an operator sees `false` for the command roots that Paper gives to operators.
+If the player is not online, you get `<player> is not online. You can only check online players.` Without a node, the command prints a summary of a few nodes: `minecraft.selector`, the gamemode and teleport roots, and the whitelist and player-limit bypasses. It shows what your permissions plugin answers, defaults included. An operator sees `true` for almost every node, except the bypass nodes, which are `false` unless you set them. A player who is not an operator sees `false` for the command roots that Paper gives to operators.
 
 ```text
 Nodes for Steve (operator: no)
@@ -53,7 +53,7 @@ This shows what the plugin found on your server:
 - the server software and version, marked tested or untested
 - the mode, as in the [startup log](troubleshooting.md#reading-the-startup-log)
 - where node values and selector limits and weights come from: LuckPerms and its version, a Bukkit permissions plugin, Vault chat meta, or nothing
-- how many vanilla command nodes carry checks
+- how many vanilla command nodes carry checks, on the `Permission checks added:` line
 
 Include this output when you [report a problem](troubleshooting.md#reporting-a-problem).
 

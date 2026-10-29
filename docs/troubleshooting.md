@@ -59,8 +59,8 @@ On Paper 1.21.11 with LuckPerms, the plugin logs these lines. `<n>` is the numbe
 
 ```text
 Using Paper mode on Paper 1.21.11 (checks on every vanilla command and sub-command)
-Using LuckPerms <version> for permission checks, ...
-Installed vanilla /execute permission, feedback, and oplevel extensions
+Using LuckPerms <version> for permissions and for selector limits and weights.
+Added /execute if permission, feedback and oplevel.
 Added permission checks to <n> vanilla command nodes
 ```
 
@@ -80,9 +80,11 @@ These lines mean a problem:
 
 - **`Could not add permission checks to vanilla commands on <software> <version> (tested: ...), so VanillaPermissionsPlugin is disabling itself and vanilla commands work as they would without it.`** This is SEVERE. The plugin could not add its checks to this server version. If the version is in the [supported list](compatibility.md#supported-servers), report it with the full startup log.
 - **`<software> <version> is not supported (<reason>), so VanillaPermissionsPlugin is disabling itself and leaving vanilla commands unchanged`** This is SEVERE. The software or version is not supported, for example `Folia is supported from 1.20.6` or `not a CraftBukkit-based server`. See [Supported servers](compatibility.md#supported-servers).
-- **`No permissions plugin found, so every node follows Bukkit defaults and operator status; install a permissions plugin such as LuckPerms for granular control`** This is a WARNING. The checks are installed, but you cannot give anyone a node. Install LuckPerms or another permissions plugin. See [Permissions plugins](providers.md).
+- **`No permissions plugin found. Operators keep vanilla commands; install LuckPerms to set nodes.`** This is a WARNING. The checks are installed, but you cannot give anyone a node. Install LuckPerms or another permissions plugin. See [Permissions plugins](providers.md).
 
-`Selected after all plugins enabled: …` is not a problem. A permissions plugin enabled after this one, and the plugin picked it up.
+- **`LuckPerms is not working, so permissions come from Bukkit for now. Fix the LuckPerms errors above and restart.`** This is SEVERE. LuckPerms is installed but the plugin could not use it. Fix LuckPerms first; until then nodes come from Bukkit.
+
+`Now using <source> for permissions (it loaded after this plugin).` is not a problem. A permissions plugin enabled after this one, and the plugin picked it up.
 
 Limits such as unsupported versions and features missing on some servers are listed in [Compatibility](compatibility.md#limits). Folia notes are in [Folia](compatibility.md#folia).
 

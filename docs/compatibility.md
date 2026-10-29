@@ -71,7 +71,7 @@ Selector nodes (`minecraft.selector`, scope, limit and weight) apply to these te
 - **Grant `/tp` with its own node:** `minecraft.command.teleport` does not open `/tp` here. Grant `minecraft.command.tp`.
 - **Aliases:** `minecraft:<command>` and aliases from `commands.yml` use the same nodes.
 - **Console and command blocks** are never checked.
-- **A denied player** sees "You do not have permission to use this command". A malformed selector gets the plugin's own denial message.
+- **A denied player** sees "You do not have permission to use this command." A malformed selector gets the plugin's own denial message.
 - **Operator blocks** cover command blocks, and structure blocks from 1.10.
 - **Only on 1.13 and later:** the `/execute` additions and the debug stick nodes.
 - **Not run on 1.9.4 - 1.11.2:** the command rules were written against 1.12.2 and have not been run on these versions.

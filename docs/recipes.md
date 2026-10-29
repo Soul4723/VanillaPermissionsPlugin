@@ -153,7 +153,7 @@ Players in `host` can:
 
 They can't:
 
-- affect more than 10 players or mobs with one `/effect` or `/give`. They get `You can select at most 10 targets here`.
+- affect more than 10 players or mobs with one `/effect` or `/give`. They get `You can target at most 10 players or entities here.`
 
 The two `meta` lines are limits, not permissions, so they use `meta set`. More about limits is in [Selector limits and weights](permissions.md#selector-limits-and-weights).
 

@@ -110,13 +110,15 @@ Every step may have `name` (shown in the results), `as` (which bot; default the 
 | `{"meta": {"user", "key", "value"}}` | Sets LuckPerms meta, such as a selector limit. |
 | `{"console": "<cmd>", "expect": "<regex>"}` | Any console command, optionally waiting for a matching line. |
 | `{"command": "/<cmd>", "expect": {...}}` | The bot runs the command; checks below. |
+| `{"use": {"x", "y", "z", "face"}}` | The bot right-clicks the block at `x y z` with its main hand; `face` is the side clicked (default 1, the top). It takes the same `expect` checks as `command`, and is skipped on protocols without a block-place packet. Use it for operator blocks and the debug stick. |
+| `{"wait": 1000}` | Pauses for that many milliseconds, multiplied by `--time-scale`. |
 | `{"tree": {"has": [...], "lacks": [...]}}` | Literal paths in the command tree the bot received (1.13+). Waits for the tree to update after a permission change. |
 | `{"tab": {"text": "/gamemode c", "has": [...], "lacks": [...]}}` | Tab completion. Before 1.13 this is the only way to see which commands a player is offered. |
 | `{"log": "<regex>", "absent": true}` | A line in the server log since boot, or with `absent`, none. |
 
 Command checks in `expect`, all optional:
 
-- `outcome`: `denied` needs a refusal message, `allowed` needs none within the settle time. Vanilla's, Bukkit's, Paper's and this plugin's refusal messages are all recognised.
+- `outcome`: `denied` needs a refusal message, `allowed` needs none within the settle time. A message counts as a refusal if it is one of vanilla's, Bukkit's or Paper's, or one of this plugin's own: `You can't use …`, `You can't target …`, `You can't open|place|break …` and `You can target at most N players or entities here.` The patterns are in `lib/scenario.js`; add to them when the plugin gets a new refusal message.
 - `gamemode`: the bot's game mode afterwards.
 - `chat` / `noChat`: a regex that some message must match, or that no message may match. Common translation keys are rendered in English; others appear as `key(args)`.
 - `teleported`: whether the server teleported the bot.

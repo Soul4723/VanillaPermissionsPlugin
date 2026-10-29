@@ -183,19 +183,18 @@ Denied commands and branches also disappear from the client's command list and t
 | --- | --- | --- |
 | Paper, Folia, Purpur and Pufferfish 1.20.6+ | Not in tab completion. Typing it gives `Unknown or incomplete command, see below for error`. | Not in tab completion. Typing it gives `Unknown or incomplete command, see below for error` or `Incorrect argument for command`. |
 | Spigot 1.13+, Paper 1.13 - 1.20.5 | The server's no-permission message. Aliases such as `/tp` get it too. | Not in tab completion. Typing it gives `Unknown or incomplete command, see below for error` or `Incorrect argument for command`. |
-| 1.8.8 - 1.12.2 | The server's no-permission message. | Red `You do not have permission to use this command`. |
+| 1.8.8 - 1.12.2 | The server's no-permission message. | Red `You do not have permission to use this command.` |
 
 On Spigot the no-permission message is `messages.no-permission` in `spigot.yml`. The default is `I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.`
 
 A failed selector check shows a red message, one of:
 
-- `You do not have permission to use target selectors`
-- `You can select at most N targets here`
-- `You do not have permission to target non-player entities here`
-- `You do not have permission to target other players here`
-- `You do not have permission to target yourself here`
-- `You do not have permission to target players with a higher selector weight than yours`
-- `This target cannot be checked against selector permissions, so it is not allowed`
-- `The selected targets could not be checked against selector permissions`
+- `You can't use @ selectors such as @a.`
+- `You can target at most N players or entities here.` (`1 player or entity` when the limit is 1.)
+- `You can't target non-player entities here.`
+- `You can't target other players here.`
+- `You can't target yourself here.`
+- `You can't target players ranked above you.`
+- `You can't target that here.` The plugin could not tell what the selector picked, so it refuses it.
 
-A denied operator block or debug stick action is cancelled with a red chat message, for example `You do not have permission to open command blocks.` or `You do not have permission to use the debug stick on this block.`
+A denied operator block or debug stick action is cancelled with a red chat message, for example `You can't open command blocks.` or `You can't use the debug stick on this block.`
